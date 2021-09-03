@@ -1,0 +1,55 @@
+<- demo
+
+a! : 1
+c : 2
+
+testLoop : (->) {
+    a! : 0
+    b : 5
+    arr : {1;2;3;4;5}
+    @ i : arr {
+        print(i)
+    }
+    @ i : 0 .. 5 {
+        print(i)
+    }
+    @ a < b {
+        ~@
+    }
+}
+
+testJudge : (->) {
+    a = 1
+    b! : 2
+    s : "hello " + a +  " world"
+    ? a == 1 {
+    } _ {
+    }
+    ? a : 1 {
+    } _ {
+    }
+}
+
+testLambda : (fn (int->)->) {
+}
+
+pack : $ me {
+    software
+    name : "k"
+    age! : 2
+    stop : (->){
+    }
+
+    . title str : ""
+    . description! str : ""
+
+    . run : (->) {
+    }
+
+}
+
+software : $$ {
+    title str
+    description! str
+    run (->)
+}
