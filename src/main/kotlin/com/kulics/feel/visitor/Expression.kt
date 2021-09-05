@@ -66,7 +66,14 @@ internal fun DelegateVisitor.visitPrimaryExpression(ctx: PrimaryExpressionContex
     return if (ctx.literalExpression() != null) {
         visitLiteralExpression(ctx.literalExpression())
     } else {
-        throw CompilingCheckException()
+        val name = visitIdentifier(ctx.identifier())
+        val id = getIdentifier(name)
+        if (id == null) {
+            println("the identifier '${name}' is not define")
+            throw CompilingCheckException()
+        } else {
+            IdentifierExpressionNode(id)
+        }
     }
 }
 

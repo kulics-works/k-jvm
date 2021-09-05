@@ -1,9 +1,16 @@
 package com.kulics.feel.node
 
+import com.kulics.feel.visitor.Identifier
 import com.kulics.feel.visitor.Type
 
 sealed class ExpressionNode(val type: Type) : Node() {
     abstract fun generateCode(): String
+}
+
+class IdentifierExpressionNode(private val id: Identifier) : ExpressionNode(id.type) {
+    override fun generateCode(): String {
+        return id.name
+    }
 }
 
 class LiteralExpressionNode(private val text: String, ty: Type) : ExpressionNode(ty) {

@@ -23,7 +23,7 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
     }
-    addIdentifier(id)
+    addIdentifier(Identifier(id, type, IdentifierKind.Mutable))
     return "var $id: ${type.generateTypeName()} = ${expr.generateCode()}$Wrap"
 }
 
@@ -44,7 +44,7 @@ internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantD
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
     }
-    addIdentifier(id)
+    addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
     return "val $id: ${type.generateTypeName()} = ${expr.generateCode()}$Wrap"
 }
 

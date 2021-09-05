@@ -9,19 +9,23 @@ class DelegateVisitor {
     }
 
     internal fun hasIdentifier(id: String): Boolean {
-        return scopes.find { hasIdentifier(id) }
+        return scopes.any { it.hasIdentifier(id) }
     }
 
     internal fun isRedefineIdentifier(id: String): Boolean {
         return scopes.peek().hasIdentifier(id)
     }
 
-    internal fun addIdentifier(id: String) {
+    internal fun addIdentifier(id: Identifier) {
         scopes.peek().addIdentifier(id)
     }
 
+    internal fun getIdentifier(id: String): Identifier? {
+        return scopes.firstNotNullOfOrNull { it.getIdentifier(id) }
+    }
+
     internal fun hasType(ty: String): Boolean {
-        return scopes.find { hasType(ty) }
+        return scopes.any { it.hasType(ty) }
     }
 
     internal fun getType(ty: String): Type? {
@@ -42,15 +46,19 @@ class DelegateVisitor {
 }
 
 class Scope {
-    private val identifiers = HashSet<String>()
+    private val identifiers = HashMap<String, Identifier>()
     private val types = HashMap<String, Type>()
 
-    internal fun addIdentifier(id: String) {
-        identifiers.add(id)
+    internal fun addIdentifier(id: Identifier) {
+        identifiers[id.name] = id
     }
 
     internal fun hasIdentifier(id: String): Boolean {
         return identifiers.contains(id)
+    }
+
+    internal fun getIdentifier(id: String): Identifier? {
+        return identifiers[id]
     }
 
     internal fun addType(ty: Type) {
