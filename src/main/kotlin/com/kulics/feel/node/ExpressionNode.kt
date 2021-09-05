@@ -61,3 +61,9 @@ class MultiplicativeExpressionNode(
         }
     }
 }
+
+class BlockExpressionNode(val expr: ExpressionNode) : ExpressionNode(expr.type) {
+    override fun generateCode(): String {
+        return ""
+    }
+}

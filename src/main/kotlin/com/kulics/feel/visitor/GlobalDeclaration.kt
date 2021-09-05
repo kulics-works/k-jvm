@@ -48,11 +48,40 @@ internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantD
     return "val $id: ${type.generateTypeName()} = ${expr.generateCode()}$Wrap"
 }
 
+internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): String {
+    val id = visitConstantIdentifier(ctx.constantIdentifier())
+    if (isRedefineIdentifier(id)) {
+        println("identifier: '$id' is redefined")
+        throw CompilingCheckException()
+    }
+    val returnTypeName = visitType(ctx.type())
+    val returnType = getType(returnTypeName)
+    if (returnType == null) {
+        println("type: '${returnTypeName}' is undefined")
+        throw CompilingCheckException()
+    }
+    val type = FunctionType(returnType, returnType)
+    val blockCode = if (ctx.blockExpression() != null) {
+        val blockExpr = visitBlockExpression(ctx.blockExpression())
+        if (blockExpr.type != returnType) {
+            println("the return is '${returnTypeName}', but find '${blockExpr.type.name}'")
+            throw CompilingCheckException()
+        }
+        "${blockExpr.generateCode()}${Wrap}return ${blockExpr.expr.generateCode()}$Wrap"
+    } else {
+        ""
+    }
+    addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
+    return "fun ${id}(): ${returnType.generateTypeName()} {$blockCode}$Wrap"
+}
+
 internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {
     return if (ctx.globalVariableDeclaration() != null) {
         visitGlobalVariableDeclaration(ctx.globalVariableDeclaration())
     } else if (ctx.globalConstantDeclaration() != null) {
         visitGlobalConstantDeclaration(ctx.globalConstantDeclaration())
+    } else if (ctx.globalFunctionDeclaration() != null) {
+        visitGlobalFunctionDeclaration(ctx.globalFunctionDeclaration())
     } else {
         throw CompilingCheckException()
     }

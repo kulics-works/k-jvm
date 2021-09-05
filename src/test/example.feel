@@ -11,3 +11,7 @@ var d Int = B + (c * 2);
 var e Bool = true;
 
 var f Bool = false;
+
+fun G() Int {
+    1 + 2 + 3
+};
