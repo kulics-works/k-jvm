@@ -2,15 +2,15 @@ mod demo;
 
 let a Float = 0.1 + 0.3;
 
-var b Int = 321 - 300;
+let mut b Int = 321 - 300;
 
 let c Int = 2 * 2;
 
-var d Int = b + (c * 2);
+let mut d Int = b + (c * 2);
 
-var e Bool = true;
+let T Bool = true;
 
-var f Bool = false;
+let F Bool = false;
 
 let g() Int = 1 + 2 + 3 + b;
 

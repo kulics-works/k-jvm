@@ -13,7 +13,7 @@ globalDeclaration
     ) Semi
     ;
 
-globalVariableDeclaration: Var identifier type Equal expression;
+globalVariableDeclaration: Let Mut identifier type Equal expression;
 globalConstantDeclaration: Let identifier type Equal expression;
 globalFunctionDeclaration: Let identifier parameterList type Equal expression;
 
@@ -37,7 +37,7 @@ expression
     | expression additiveOperator expression
     ;
 
-variableDeclaration: Var identifier type? Equal expression;
+variableDeclaration: Let Mut identifier type? Equal expression;
 constantDeclaration: Let identifier type? Equal expression;
 
 conditionExpression

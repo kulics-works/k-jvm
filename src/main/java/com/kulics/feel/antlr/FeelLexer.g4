@@ -41,7 +41,7 @@ Caret: '^';
 BackQuote: '`';
 Sharp: '#';
 
-Var: 'var';
+Mut: 'mut';
 Let: 'let';
 Module: 'mod';
 If: 'if';

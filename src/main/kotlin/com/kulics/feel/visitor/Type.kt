@@ -13,11 +13,11 @@ class PrimitiveType(override val name: String, private val backendName: String? 
     }
 }
 
-class FunctionType(val inType: Type, val outType: Type) : Type {
-    override val name: String = "Func[${inType.name},${outType.name}]"
+class FunctionType(val parameterTypes: Type, val returnType: Type) : Type {
+    override val name: String = "Func[${parameterTypes.name},${returnType.name}]"
 
     override fun generateTypeName(): String {
-        return "(${inType.generateTypeName()})->${outType.generateTypeName()}"
+        return "(${parameterTypes.generateTypeName()})->${returnType.generateTypeName()}"
     }
 }
 
