@@ -1,8 +1,10 @@
 mod demo;
 
-var a Int = 123;
+var a Float = 0.1 + 0.3;
 
-var B Int = 321;
+var B Int = 321 - 300;
+
+var c Int = 2 * 2;
 
 // var c Str = 1;
 

@@ -18,7 +18,7 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
-    if (expr.type != null && expr.type != type) {
+    if (expr.type != type) {
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
     }
@@ -38,7 +38,7 @@ internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantD
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
-    if (expr.type != null && expr.type != type) {
+    if (expr.type != type) {
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
     }
