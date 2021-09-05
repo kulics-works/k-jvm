@@ -5,6 +5,9 @@ class DelegateVisitor {
         push(Scope().apply {
             addType(builtinTypeInt)
             addType(builtinTypeFloat)
+            addType(builtinTypeBool)
+            addIdentifier(builtinLiteralTrue)
+            addIdentifier(builtinLiteralFalse)
         })
     }
 

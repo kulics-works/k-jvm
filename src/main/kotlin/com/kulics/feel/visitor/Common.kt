@@ -68,3 +68,6 @@ class ArrayStack<T> : Collection<T> {
 
 val builtinTypeInt = Type("Int", "Int")
 val builtinTypeFloat = Type("Float", "Double")
+val builtinTypeBool = Type("Bool", "Boolean")
+val builtinLiteralTrue = Identifier("true", builtinTypeBool, IdentifierKind.Immutable)
+val builtinLiteralFalse = Identifier("false", builtinTypeBool, IdentifierKind.Immutable)

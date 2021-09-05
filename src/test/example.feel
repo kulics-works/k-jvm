@@ -7,3 +7,7 @@ var B Int = 321 - 300;
 var c Int = 2 * 2;
 
 var d Int = B + (c * 2);
+
+var e Bool = true;
+
+var f Bool = false;
