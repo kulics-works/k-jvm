@@ -15,7 +15,11 @@ globalDeclaration
 
 globalVariableDeclaration: Var identifier type Equal expression;
 globalConstantDeclaration: Let identifier type Equal expression;
-globalFunctionDeclaration: Let identifier LeftParen RightParen type Equal expression;
+globalFunctionDeclaration: Let identifier parameterList type Equal expression;
+
+parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
+
+parameter: identifier type;
 
 block: LeftBrace statement* RightBrace;
 

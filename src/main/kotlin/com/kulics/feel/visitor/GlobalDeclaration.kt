@@ -60,6 +60,8 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         println("type: '${returnTypeName}' is undefined")
         throw CompilingCheckException()
     }
+    pushScope()
+    val params = visitParameterList(ctx.parameterList())
     val type = FunctionType(returnType, returnType)
     val expr = visitExpression(ctx.expression())
     if (expr.type != returnType) {
@@ -67,7 +69,39 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         throw CompilingCheckException()
     }
     addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-    return "fun ${id}(): ${returnType.generateTypeName()} {${Wrap}return ${expr.generateCode()}$Wrap}$Wrap"
+    popScope()
+    return "fun ${id}($params): ${returnType.generateTypeName()} {${Wrap}return ${expr.generateCode()}$Wrap}$Wrap"
+}
+
+internal fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): String {
+    val params = ctx.parameter()
+    val buf = StringBuilder()
+    if (params.size > 0) {
+        val first = visitParameter(params[0])
+        fun genParam(id: Identifier): String {
+            return "${id.name}: ${id.type.generateTypeName()}"
+        }
+        buf.append(genParam(first))
+        for (i in 1 until params.size) {
+            buf.append(", ${genParam(visitParameter(params[i]))}")
+        }
+    }
+    return buf.toString()
+}
+
+internal fun DelegateVisitor.visitParameter(ctx: ParameterContext): Identifier {
+    val id = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(id)) {
+        println("identifier: '$id' is redefined")
+        throw CompilingCheckException()
+    }
+    val typeName = visitType(ctx.type())
+    val type = getType(typeName)
+    if (type == null) {
+        println("type: '${typeName}' is undefined")
+        throw CompilingCheckException()
+    }
+    return Identifier(id, type, IdentifierKind.Immutable).also { addIdentifier(it) }
 }
 
 internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {

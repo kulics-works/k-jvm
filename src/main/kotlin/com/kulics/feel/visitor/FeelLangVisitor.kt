@@ -32,6 +32,14 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitGlobalFunctionDeclaration(ctx)
     }
 
+    override fun visitParameterList(ctx: ParameterListContext): String {
+        return delegate.visitParameterList(ctx)
+    }
+
+    override fun visitParameter(ctx: ParameterContext): Identifier {
+        return delegate.visitParameter(ctx)
+    }
+
     override fun visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {
         return delegate.visitBlockExpression(ctx)
     }

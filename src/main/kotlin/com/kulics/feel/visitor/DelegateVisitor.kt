@@ -32,7 +32,7 @@ class DelegateVisitor {
     }
 
     internal fun getType(ty: String): Type? {
-        return scopes.peek().getType(ty)
+        return scopes.firstNotNullOfOrNull { it.getType(ty) }
     }
 
     internal fun isRedefineType(ty: String): Boolean {
