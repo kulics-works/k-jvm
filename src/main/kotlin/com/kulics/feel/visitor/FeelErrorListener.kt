@@ -16,7 +16,7 @@ class FeelErrorListener : BaseErrorListener() {
         println("------Syntax Error------")
         // println("File: ${me.FileDir}")
         println("Line: $line  Column: $charPositionInLine")
-//        println("OffendingSymbol: $offendingSymbol")
+        println("OffendingSymbol: $offendingSymbol")
         println("Message: $msg")
     }
 }

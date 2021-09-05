@@ -6,6 +6,8 @@ import com.kulics.feel.node.*
 internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): ExpressionNode {
     return if (ctx.primaryExpression() != null) {
         visitPrimaryExpression(ctx.primaryExpression())
+    } else if (ctx.parenExpression() != null) {
+        visitParenExpression(ctx.parenExpression())
     } else if (ctx.childCount == 3) {
         val op = ctx.getChild(1)
         val lhs = visitExpression(ctx.expression(0))
@@ -60,6 +62,10 @@ internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): Expression
     } else {
         throw CompilingCheckException()
     }
+}
+
+internal fun DelegateVisitor.visitParenExpression(ctx: ParenExpressionContext): ExpressionNode {
+    return ParenExpressionNode(visitExpression(ctx.expression()))
 }
 
 internal fun DelegateVisitor.visitPrimaryExpression(ctx: PrimaryExpressionContext): ExpressionNode {

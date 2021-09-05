@@ -25,6 +25,7 @@ statement: expression Semi;
 
 expression
     : primaryExpression
+    | parenExpression
     | variableDeclaration
     | constantDeclaration
     | conditionExpression
@@ -44,6 +45,8 @@ primaryExpression
     : literalExpression
     | identifier
     ;
+
+parenExpression: LeftParen expression RightParen;
 
 literalExpression
     : integerExpression

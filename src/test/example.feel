@@ -6,4 +6,4 @@ var B Int = 321 - 300;
 
 var c Int = 2 * 2;
 
-var d Int = B + c;
+var d Int = B + (c * 2);

@@ -7,6 +7,12 @@ sealed class ExpressionNode(val type: Type) : Node() {
     abstract fun generateCode(): String
 }
 
+class ParenExpressionNode(private val expr: ExpressionNode) : ExpressionNode(expr.type) {
+    override fun generateCode(): String {
+        return "(${expr.generateCode()})"
+    }
+}
+
 class IdentifierExpressionNode(private val id: Identifier) : ExpressionNode(id.type) {
     override fun generateCode(): String {
         return id.name

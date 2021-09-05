@@ -47,6 +47,10 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitPrimaryExpression(ctx)
     }
 
+    override fun visitParenExpression(ctx: ParenExpressionContext): ExpressionNode {
+        return delegate.visitParenExpression(ctx)
+    }
+
     override fun visitLiteralExpression(ctx: LiteralExpressionContext): ExpressionNode {
         return delegate.visitLiteralExpression(ctx)
     }
