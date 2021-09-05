@@ -18,7 +18,7 @@ val keywords = arrayOf(
     "virtual", "void", "volatile", "while"
 )
 
-class CompilingCheckException: Exception()
+class CompilingCheckException : Exception()
 
 class ArrayStack<T> {
     private var data = ArrayList<T>()
@@ -44,3 +44,6 @@ class ArrayStack<T> {
         return false
     }
 }
+
+val builtinTypeInt = Type("Int", "Int")
+val builtinTypeFloat = Type("Float", "Double")

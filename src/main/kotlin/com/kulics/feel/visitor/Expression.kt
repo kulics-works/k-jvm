@@ -13,16 +13,16 @@ internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): Expression
         when (op) {
             is AdditiveOperatorContext -> {
                 when (lhs.type) {
-                    Type("Int") -> if (rhs.type != Type("Int")) {
-                        println("the type of right value is not 'Int'")
+                    builtinTypeInt -> if (rhs.type != builtinTypeInt) {
+                        println("the type of right value is not '${builtinTypeInt.name}'")
                         throw CompilingCheckException()
                     }
-                    Type("Float") -> if (rhs.type != Type("Float")) {
-                        println("the type of right value is not 'Float'")
+                    builtinTypeFloat -> if (rhs.type != builtinTypeFloat) {
+                        println("the type of right value is not '${builtinTypeFloat.name}'")
                         throw CompilingCheckException()
                     }
                     else -> {
-                        println("the type of left value is not 'Int' or 'Float'")
+                        println("the type of left value is not '${builtinTypeInt.name}' or '${builtinTypeFloat.name}'")
                         throw CompilingCheckException()
                     }
                 }
@@ -34,16 +34,16 @@ internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): Expression
             }
             is MultiplicativeOperatorContext -> {
                 when (lhs.type) {
-                    Type("Int") -> if (rhs.type != Type("Int")) {
-                        println("the type of right value is not 'Int'")
+                    builtinTypeInt -> if (rhs.type != builtinTypeInt) {
+                        println("the type of right value is not '${builtinTypeInt.name}'")
                         throw CompilingCheckException()
                     }
-                    Type("Float") -> if (rhs.type != Type("Float")) {
-                        println("the type of right value is not 'Float'")
+                    builtinTypeFloat -> if (rhs.type != builtinTypeFloat) {
+                        println("the type of right value is not '${builtinTypeFloat.name}'")
                         throw CompilingCheckException()
                     }
                     else -> {
-                        println("the type of left value is not 'Int' or 'Float'")
+                        println("the type of left value is not '${builtinTypeInt.name}' or '${builtinTypeFloat.name}'")
                         throw CompilingCheckException()
                     }
                 }
@@ -72,8 +72,8 @@ internal fun DelegateVisitor.visitPrimaryExpression(ctx: PrimaryExpressionContex
 
 internal fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContext): ExpressionNode {
     return if (ctx.integerExpression() != null) {
-        LiteralExpressionNode(ctx.integerExpression().text, Type("Int"))
+        LiteralExpressionNode(ctx.integerExpression().text, builtinTypeInt)
     } else {
-        LiteralExpressionNode(ctx.floatExpression().text, Type("Float"))
+        LiteralExpressionNode(ctx.floatExpression().text, builtinTypeFloat)
     }
 }

@@ -3,8 +3,8 @@ package com.kulics.feel.visitor
 class DelegateVisitor {
     private val scopes = ArrayStack<Scope>().apply {
         push(Scope().apply {
-            addType(Type("Int"))
-            addType(Type("Float"))
+            addType(builtinTypeInt)
+            addType(builtinTypeFloat)
         })
     }
 
@@ -16,16 +16,20 @@ class DelegateVisitor {
         return scopes.peek().hasIdentifier(id)
     }
 
-    internal fun hasType(ty: Type): Boolean {
+    internal fun addIdentifier(id: String) {
+        scopes.peek().addIdentifier(id)
+    }
+
+    internal fun hasType(ty: String): Boolean {
         return scopes.find { hasType(ty) }
     }
 
-    internal fun isRedefineType(ty: Type): Boolean {
-        return scopes.peek().hasType(ty)
+    internal fun getType(ty: String): Type? {
+        return scopes.peek().getType(ty)
     }
 
-    internal fun addIdentifier(id: String) {
-        scopes.peek().addIdentifier(id)
+    internal fun isRedefineType(ty: String): Boolean {
+        return scopes.peek().hasType(ty)
     }
 
     internal fun pushScope() {
@@ -39,7 +43,7 @@ class DelegateVisitor {
 
 class Scope {
     private val identifiers = HashSet<String>()
-    private val types = HashSet<Type>()
+    private val types = HashMap<String, Type>()
 
     internal fun addIdentifier(id: String) {
         identifiers.add(id)
@@ -50,11 +54,15 @@ class Scope {
     }
 
     internal fun addType(ty: Type) {
-        types.add(ty)
+        types[ty.name] = ty
     }
 
-    internal fun hasType(ty: Type): Boolean {
+    internal fun hasType(ty: String): Boolean {
         return types.contains(ty)
+    }
+
+    internal fun getType(ty: String): Type? {
+        return types[ty]
     }
 }
 

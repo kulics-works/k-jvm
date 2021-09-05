@@ -24,8 +24,8 @@ class AdditiveExpressionNode(
 ) : ExpressionNode(ty) {
     override fun generateCode(): String {
         return when (op) {
-            AdditiveOperator.Add -> "${lhs.generateCode()} + ${rhs.generateCode()}"
-            AdditiveOperator.Sub -> "${lhs.generateCode()} - ${rhs.generateCode()}"
+            AdditiveOperator.Add -> "(${lhs.generateCode()} + ${rhs.generateCode()})"
+            AdditiveOperator.Sub -> "(${lhs.generateCode()} - ${rhs.generateCode()})"
         }
     }
 }

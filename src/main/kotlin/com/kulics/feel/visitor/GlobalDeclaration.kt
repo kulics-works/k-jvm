@@ -12,9 +12,10 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
-    val type = Type(visitType(ctx.type()))
-    if (!hasType(type)) {
-        println("type: '${type.name}' is undefined")
+    val typeName = visitType(ctx.type())
+    val type = getType(typeName)
+    if (type == null) {
+        println("type: '${typeName}' is undefined")
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
@@ -23,7 +24,7 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
         throw CompilingCheckException()
     }
     addIdentifier(id)
-    return "var $id: ${type.name} = ${expr.generateCode()}$Wrap"
+    return "var $id: ${type.generateTypeName()} = ${expr.generateCode()}$Wrap"
 }
 
 internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantDeclarationContext): String {
@@ -32,9 +33,10 @@ internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantD
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
-    val type = Type(visitType(ctx.type()))
-    if (!hasType(type)) {
-        println("type: '${type.name}' is undefined")
+    val typeName = visitType(ctx.type())
+    val type = getType(typeName)
+    if (type == null) {
+        println("type: '${typeName}' is undefined")
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
@@ -43,7 +45,7 @@ internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantD
         throw CompilingCheckException()
     }
     addIdentifier(id)
-    return "val $id: ${type.name} = ${expr.generateCode()}$Wrap"
+    return "val $id: ${type.generateTypeName()} = ${expr.generateCode()}$Wrap"
 }
 
 internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {
