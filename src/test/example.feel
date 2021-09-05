@@ -1,17 +1,15 @@
 mod demo;
 
-var a Float = 0.1 + 0.3;
+let a Float = 0.1 + 0.3;
 
-var B Int = 321 - 300;
+var b Int = 321 - 300;
 
-var c Int = 2 * 2;
+let c Int = 2 * 2;
 
-var d Int = B + (c * 2);
+var d Int = b + (c * 2);
 
 var e Bool = true;
 
 var f Bool = false;
 
-fun G() Int {
-    1 + 2 + 3
-};
+let g() Int = 1 + 2 + 3;

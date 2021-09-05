@@ -16,14 +16,6 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitIdentifier(ctx)
     }
 
-    override fun visitVariableIdentifier(ctx: VariableIdentifierContext): String {
-        return delegate.visitVariableIdentifier(ctx)
-    }
-
-    override fun visitConstantIdentifier(ctx: ConstantIdentifierContext): String {
-        return delegate.visitConstantIdentifier(ctx)
-    }
-
     override fun visitModuleDeclaration(ctx: ModuleDeclarationContext): String {
         return delegate.visitModuleDeclaration(ctx)
     }

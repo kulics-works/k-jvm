@@ -22,5 +22,5 @@ class FunctionType(val inType: Type, val outType: Type) : Type {
 }
 
 internal fun DelegateVisitor.visitType(ctx: TypeContext): String {
-    return visitConstantIdentifier(ctx.constantIdentifier())
+    return visitIdentifier(ctx.identifier())
 }

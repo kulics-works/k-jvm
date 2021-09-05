@@ -42,7 +42,7 @@ BackQuote: '`';
 Sharp: '#';
 
 Var: 'var';
-Fun: 'fun';
+Let: 'let';
 Module: 'mod';
 If: 'if';
 Else: 'else';
@@ -56,8 +56,7 @@ fragment Digit: [0-9] | [0-9] [0-9_]* [0-9];   // 单个数字
 fragment Exponent: [eE] [+-]? [0-9]+;
 
 CharLiteral: '\'' ('\\\'' | '\\' [btnfr\\] | .)*? '\''; // 单字符
-VariableIdentifier: [a-z] [0-9a-zA-Z_]*; // 私有标识符
-ConstantIdentifier: [A-Z] [0-9a-zA-Z_]*; // 公有标识符
+Identifier: [a-zA-Z] [0-9a-zA-Z_]*; // 标识符
 Discard: '_'; // 匿名变量
 
 CommentBlock: '/*' .*? '*/' -> skip; // 块注释

@@ -7,7 +7,7 @@ internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContex
 }
 
 internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): String {
-    val id = visitVariableIdentifier(ctx.variableIdentifier())
+    val id = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(id)) {
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
@@ -28,7 +28,7 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
 }
 
 internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantDeclarationContext): String {
-    val id = visitConstantIdentifier(ctx.constantIdentifier())
+    val id = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(id)) {
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
@@ -49,7 +49,7 @@ internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantD
 }
 
 internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): String {
-    val id = visitConstantIdentifier(ctx.constantIdentifier())
+    val id = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(id)) {
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
@@ -61,18 +61,13 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         throw CompilingCheckException()
     }
     val type = FunctionType(returnType, returnType)
-    val blockCode = if (ctx.blockExpression() != null) {
-        val blockExpr = visitBlockExpression(ctx.blockExpression())
-        if (blockExpr.type != returnType) {
-            println("the return is '${returnTypeName}', but find '${blockExpr.type.name}'")
-            throw CompilingCheckException()
-        }
-        "${blockExpr.generateCode()}${Wrap}return ${blockExpr.expr.generateCode()}$Wrap"
-    } else {
-        ""
+    val expr = visitExpression(ctx.expression())
+    if (expr.type != returnType) {
+        println("the return is '${returnTypeName}', but find '${expr.type.name}'")
+        throw CompilingCheckException()
     }
     addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-    return "fun ${id}(): ${returnType.generateTypeName()} {$blockCode}$Wrap"
+    return "fun ${id}(): ${returnType.generateTypeName()} {${Wrap}return ${expr.generateCode()}$Wrap}$Wrap"
 }
 
 internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {

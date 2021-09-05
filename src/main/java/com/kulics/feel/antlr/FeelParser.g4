@@ -13,9 +13,9 @@ globalDeclaration
     ) Semi
     ;
 
-globalVariableDeclaration: Var variableIdentifier type Equal expression;
-globalConstantDeclaration: Var constantIdentifier type Equal expression;
-globalFunctionDeclaration: Fun constantIdentifier LeftParen RightParen type (block|blockExpression);
+globalVariableDeclaration: Var identifier type Equal expression;
+globalConstantDeclaration: Let identifier type Equal expression;
+globalFunctionDeclaration: Let identifier LeftParen RightParen type Equal expression;
 
 block: LeftBrace statement* RightBrace;
 
@@ -33,8 +33,8 @@ expression
     | expression additiveOperator expression
     ;
 
-variableDeclaration: Var variableIdentifier type? Equal expression;
-constantDeclaration: Var constantIdentifier type? Equal expression;
+variableDeclaration: Var identifier type? Equal expression;
+constantDeclaration: Let identifier type? Equal expression;
 
 conditionExpression
     : If LeftParen expression RightParen block Else block
@@ -54,13 +54,10 @@ literalExpression
     ;
 
 type
-    : constantIdentifier
+    : identifier
     ;
 
-identifier: variableIdentifier | constantIdentifier;
-
-variableIdentifier: VariableIdentifier;
-constantIdentifier: ConstantIdentifier;
+identifier: Identifier;
 
 floatExpression: FloatLiteral;
 
