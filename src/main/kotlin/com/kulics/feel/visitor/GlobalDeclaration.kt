@@ -60,48 +60,56 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         println("type: '${returnTypeName}' is undefined")
         throw CompilingCheckException()
     }
-    pushScope()
+
     val params = visitParameterList(ctx.parameterList())
-    val type = FunctionType(returnType, returnType)
+    val type = FunctionType(params.first.map { it.type }, returnType)
+    addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
+    pushScope()
+    for (v in params.first) {
+        if (isRedefineIdentifier(v.name)) {
+            println("identifier: '${v.name}' is redefined")
+            throw CompilingCheckException()
+        }
+        addIdentifier(v)
+    }
     val expr = visitExpression(ctx.expression())
     if (expr.type != returnType) {
         println("the return is '${returnTypeName}', but find '${expr.type.name}'")
         throw CompilingCheckException()
     }
-    addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
     popScope()
-    return "fun ${id}($params): ${returnType.generateTypeName()} {${Wrap}return ${expr.generateCode()}$Wrap}$Wrap"
+    return "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return ${expr.generateCode()}$Wrap}$Wrap"
 }
 
-internal fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): String {
+internal fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): Pair<ArrayList<Identifier>, String> {
     val params = ctx.parameter()
     val buf = StringBuilder()
+    val ids = ArrayList<Identifier>()
     if (params.size > 0) {
         val first = visitParameter(params[0])
         fun genParam(id: Identifier): String {
             return "${id.name}: ${id.type.generateTypeName()}"
         }
         buf.append(genParam(first))
+        ids.add(first)
         for (i in 1 until params.size) {
-            buf.append(", ${genParam(visitParameter(params[i]))}")
+            val id = visitParameter(params[i])
+            ids.add(id)
+            buf.append(", ${genParam(id)}")
         }
     }
-    return buf.toString()
+    return ids to buf.toString()
 }
 
 internal fun DelegateVisitor.visitParameter(ctx: ParameterContext): Identifier {
     val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
-        throw CompilingCheckException()
-    }
     val typeName = visitType(ctx.type())
     val type = getType(typeName)
     if (type == null) {
         println("type: '${typeName}' is undefined")
         throw CompilingCheckException()
     }
-    return Identifier(id, type, IdentifierKind.Immutable).also { addIdentifier(it) }
+    return Identifier(id, type, IdentifierKind.Immutable)
 }
 
 internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {

@@ -32,7 +32,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitGlobalFunctionDeclaration(ctx)
     }
 
-    override fun visitParameterList(ctx: ParameterListContext): String {
+    override fun visitParameterList(ctx: ParameterListContext): Pair<ArrayList<Identifier>, String> {
         return delegate.visitParameterList(ctx)
     }
 
