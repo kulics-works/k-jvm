@@ -33,12 +33,15 @@ expression
     | variableDeclaration
     | constantDeclaration
     | conditionExpression
+    | expression callSuffix
     | expression multiplicativeOperator expression
     | expression additiveOperator expression
     ;
 
 variableDeclaration: Let Mut identifier type? Equal expression;
 constantDeclaration: Let identifier type? Equal expression;
+
+callSuffix: LeftParen (expression (Comma expression)*)? RightParen;
 
 conditionExpression
     : If LeftParen expression RightParen block Else block

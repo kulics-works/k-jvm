@@ -67,3 +67,11 @@ class BlockExpressionNode(val expr: ExpressionNode) : ExpressionNode(expr.type) 
         return ""
     }
 }
+
+class CallExpressionNode(val expr: ExpressionNode, val args: List<ExpressionNode>, type: Type) : ExpressionNode(type) {
+    override fun generateCode(): String {
+        return "${expr.generateCode()}(${
+            args.foldIndexed("") { index, acc, it -> if (index == 0) it.generateCode() else "${acc}, ${it.generateCode()}" }
+        })"
+    }
+}

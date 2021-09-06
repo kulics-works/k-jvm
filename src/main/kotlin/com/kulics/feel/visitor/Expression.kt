@@ -8,6 +8,22 @@ internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): Expression
         visitPrimaryExpression(ctx.primaryExpression())
     } else if (ctx.parenExpression() != null) {
         visitParenExpression(ctx.parenExpression())
+    } else if (ctx.childCount == 2) {
+        val expr = visitExpression(ctx.expression(0))
+        val callArgs = visitCallSuffix(ctx.callSuffix())
+        val type = expr.type
+        if (type is FunctionType) {
+            for ((i, v) in type.parameterTypes.withIndex()) {
+                if (callArgs[i].type != v) {
+                    println("the type of args${i}: '${callArgs[i].type.name}' is not '${v.name}'")
+                    throw CompilingCheckException()
+                }
+            }
+            CallExpressionNode(expr, callArgs, type.returnType)
+        } else {
+            println("the type of expression is not a function")
+            throw CompilingCheckException()
+        }
     } else if (ctx.childCount == 3) {
         val op = ctx.getChild(1)
         val lhs = visitExpression(ctx.expression(0))
@@ -62,6 +78,11 @@ internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): Expression
     } else {
         throw CompilingCheckException()
     }
+}
+
+internal fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): List<ExpressionNode> {
+    val args = ctx.expression()
+    return args.map { visitExpression(it) }
 }
 
 internal fun DelegateVisitor.visitParenExpression(ctx: ParenExpressionContext): ExpressionNode {

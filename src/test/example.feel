@@ -15,3 +15,5 @@ let F Bool = false;
 let g() Int = 1 + 2 + 3 + b;
 
 let add(a Int, b Int) Int = a + b;
+
+let double(x Int) Int = add(x, x);
