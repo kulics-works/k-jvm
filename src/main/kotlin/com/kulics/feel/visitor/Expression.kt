@@ -13,6 +13,10 @@ internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): Expression
         val callArgs = visitCallSuffix(ctx.callSuffix())
         val type = expr.type
         if (type is FunctionType) {
+            if (type.parameterTypes.size != callArgs.size) {
+                println("the size of args is ${callArgs.size}, but need ${type.parameterTypes.size}")
+                throw CompilingCheckException()
+            }
             for ((i, v) in type.parameterTypes.withIndex()) {
                 if (callArgs[i].type != v) {
                     println("the type of args${i}: '${callArgs[i].type.name}' is not '${v.name}'")
