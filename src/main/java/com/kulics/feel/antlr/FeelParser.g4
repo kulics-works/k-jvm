@@ -21,17 +21,18 @@ parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
 
 parameter: identifier type;
 
-block: LeftBrace statement* RightBrace;
+block: LeftBrace (statement Semi)* RightBrace;
 
-blockExpression: LeftBrace statement* expression RightBrace;
-
-statement: expression Semi;
+statement
+    : variableDeclaration
+    | constantDeclaration
+    | expression
+    ;
 
 expression
     : primaryExpression
     | parenExpression
-    | variableDeclaration
-    | constantDeclaration
+    | blockExpression
     | conditionExpression
     | expression callSuffix
     | expression multiplicativeOperator expression
@@ -44,9 +45,10 @@ constantDeclaration: Let identifier type? Equal expression;
 callSuffix: LeftParen (expression (Comma expression)*)? RightParen;
 
 conditionExpression
-    : If LeftParen expression RightParen block Else block
-    | If LeftParen expression RightParen blockExpression Else blockExpression
+    : If LeftParen expression RightParen expression Else expression
     ;
+
+blockExpression: LeftBrace (statement Semi)* expression RightBrace;
 
 primaryExpression
     : literalExpression

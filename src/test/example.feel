@@ -16,4 +16,16 @@ let g() Int = 1 + 2 + 3 + b;
 
 let add(a Int, b Int) Int = a + b;
 
-let double(x Int) Int = add(x, x);
+let double(x Int) Int = add(x, x) + x + 1;
+
+let blockExpr1 Int = {
+    let a = 0;
+    let b = 0;
+    1 + 2
+};
+
+let blockExpr2() Int = {
+    let a = 0;
+    let b = 0;
+    1 + 2
+};

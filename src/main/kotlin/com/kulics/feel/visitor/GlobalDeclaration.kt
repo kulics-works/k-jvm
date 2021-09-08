@@ -24,7 +24,7 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
         throw CompilingCheckException()
     }
     addIdentifier(Identifier(id, type, IdentifierKind.Mutable))
-    return "var $id: ${type.generateTypeName()} = ${expr.generateCode()}$Wrap"
+    return "var $id: ${type.generateTypeName()} = (${expr.generateCode()});$Wrap"
 }
 
 internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantDeclarationContext): String {
@@ -45,7 +45,7 @@ internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantD
         throw CompilingCheckException()
     }
     addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-    return "val $id: ${type.generateTypeName()} = ${expr.generateCode()}$Wrap"
+    return "val $id: ${type.generateTypeName()} = (${expr.generateCode()});$Wrap"
 }
 
 internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): String {
@@ -78,7 +78,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         throw CompilingCheckException()
     }
     popScope()
-    return "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return ${expr.generateCode()}$Wrap}$Wrap"
+    return "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
 }
 
 internal fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): Pair<ArrayList<Identifier>, String> {

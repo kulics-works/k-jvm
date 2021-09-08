@@ -2,6 +2,7 @@ package com.kulics.feel.node
 
 import com.kulics.feel.visitor.Identifier
 import com.kulics.feel.visitor.Type
+import com.kulics.feel.visitor.Wrap
 
 sealed class ExpressionNode(val type: Type) : Node() {
     abstract fun generateCode(): String
@@ -62,9 +63,9 @@ class MultiplicativeExpressionNode(
     }
 }
 
-class BlockExpressionNode(val expr: ExpressionNode) : ExpressionNode(expr.type) {
+class BlockExpressionNode(val code: String, val expr: ExpressionNode) : ExpressionNode(expr.type) {
     override fun generateCode(): String {
-        return ""
+        return "run{${code}${expr.generateCode()}}"
     }
 }
 
