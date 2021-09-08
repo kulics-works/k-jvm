@@ -76,3 +76,14 @@ class CallExpressionNode(val expr: ExpressionNode, val args: List<ExpressionNode
         })"
     }
 }
+
+class ConditionExpressionNode(
+    val condExpr: ExpressionNode,
+    val thenExpr: ExpressionNode,
+    val elseExpr: ExpressionNode,
+    ty: Type
+) : ExpressionNode(ty) {
+    override fun generateCode(): String {
+        return "if (${condExpr.generateCode()}) { ${thenExpr.generateCode()} } else { ${elseExpr.generateCode()} }"
+    }
+}

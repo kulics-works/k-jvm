@@ -8,6 +8,7 @@ internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): Expression
         is PrimaryExpressionContext -> visitPrimaryExpression(expr)
         is ParenExpressionContext -> visitParenExpression(expr)
         is BlockExpressionContext -> visitBlockExpression(expr)
+        is ConditionExpressionContext -> visitConditionExpression(expr)
         else -> throw CompilingCheckException()
     }
     2 -> {
@@ -161,5 +162,16 @@ internal fun DelegateVisitor.visitConstantDeclaration(ctx: ConstantDeclarationCo
 }
 
 internal fun DelegateVisitor.visitConditionExpression(ctx: ConditionExpressionContext): ExpressionNode {
-    return throw CompilingCheckException()
+    val cond = visitExpression(ctx.expression(0))
+    if (cond.type != builtinTypeBool) {
+        println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
+        throw CompilingCheckException()
+    }
+    val thenBranch = visitExpression(ctx.expression(1))
+    val elseBranch = visitExpression(ctx.expression(2))
+    if (thenBranch.type != elseBranch.type) {
+        println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
+        throw CompilingCheckException()
+    }
+    return ConditionExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
 }
