@@ -7,6 +7,7 @@ internal fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
     return when (val stat = ctx.getChild(0)) {
         is VariableDeclarationContext -> visitVariableDeclaration(stat)
         is ConstantDeclarationContext -> visitConstantDeclaration(stat)
+        is AssignmentContext -> visitAssignment(stat)
         is IfStatementContext -> visitIfStatement(stat)
         is ExpressionContext -> visitExpression(stat).generateCode()
         else -> throw CompilingCheckException()
@@ -35,7 +36,7 @@ internal fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationCo
         }
         type
     }
-    addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
+    addIdentifier(Identifier(id, type, IdentifierKind.Mutable))
     return "var $id: ${type.generateTypeName()} = ${expr.generateCode()}"
 }
 
@@ -63,6 +64,21 @@ internal fun DelegateVisitor.visitConstantDeclaration(ctx: ConstantDeclarationCo
     }
     addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
     return "val $id: ${type.generateTypeName()} = ${expr.generateCode()}"
+}
+
+internal fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {
+    val idName = visitIdentifier(ctx.identifier())
+    val id = getIdentifier(idName)
+    if (id == null) {
+        println("the identifier '${idName}' is not defined")
+        throw CompilingCheckException()
+    }
+    if (id.kind == IdentifierKind.Immutable) {
+        println("the identifier '${idName}' is not mutable")
+        throw CompilingCheckException()
+    }
+    val expr = visitExpression(ctx.expression())
+    return "${id.name} = ${expr.generateCode()}"
 }
 
 internal fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {

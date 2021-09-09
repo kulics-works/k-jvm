@@ -26,6 +26,7 @@ block: LeftBrace (statement Semi)* RightBrace;
 statement
     : variableDeclaration
     | constantDeclaration
+    | assignment
     | ifStatement
     | expression
     ;
@@ -46,6 +47,8 @@ variableDeclaration: Let Mut identifier type? Equal expression;
 constantDeclaration: Let identifier type? Equal expression;
 
 callSuffix: LeftParen (expression (Comma expression)*)? RightParen;
+
+assignment: identifier Equal expression;
 
 ifStatement
     : If LeftParen expression RightParen block (Else (block | ifStatement))?

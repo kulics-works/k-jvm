@@ -60,4 +60,9 @@ let ifStat Void = {
     } else {
         2;
     };
-}
+};
+
+let assignment Void = {
+    let mut a = 0;
+    a = 1;
+};
