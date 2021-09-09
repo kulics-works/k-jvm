@@ -37,6 +37,8 @@ expression
     | expression callSuffix
     | expression multiplicativeOperator expression
     | expression additiveOperator expression
+    | expression compareOperator expression
+    | expression logicOperator expression
     ;
 
 variableDeclaration: Let Mut identifier type? Equal expression;
@@ -48,7 +50,7 @@ conditionExpression
     : If LeftParen expression RightParen expression Else expression
     ;
 
-blockExpression: LeftBrace (statement Semi)* expression RightBrace;
+blockExpression: LeftBrace (statement Semi)* expression? RightBrace;
 
 primaryExpression
     : literalExpression
@@ -75,3 +77,7 @@ integerExpression: DecimalLiteral | BinaryLiteral | OctalLiteral | HexLiteral;
 multiplicativeOperator: Mul | Div | Mod;
 
 additiveOperator: Add | Sub ;
+
+logicOperator: And | Or ;
+
+compareOperator: Less | Greater | LessEqual | GreaterEqual | EqualEqual | NotEqual;

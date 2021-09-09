@@ -6,9 +6,11 @@ import com.kulics.feel.node.ExpressionNode
 
 internal fun DelegateVisitor.visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {
     pushScope()
-    val node = BlockExpressionNode(ctx.statement().fold(StringBuilder()) { acc, v ->
-        acc.append("${visitStatement(v)};")
-    }.toString(), visitExpression(ctx.expression()))
+    val code = ctx.statement().fold(StringBuilder()) { acc, v -> acc.append("${visitStatement(v)};") }.toString()
+    val node = BlockExpressionNode(code, when (val expr = ctx.expression()) {
+        null -> null
+        else -> visitExpression(expr)
+    })
     popScope()
     return node
 }

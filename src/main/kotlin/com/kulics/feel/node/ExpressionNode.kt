@@ -1,8 +1,6 @@
 package com.kulics.feel.node
 
-import com.kulics.feel.visitor.Identifier
-import com.kulics.feel.visitor.Type
-import com.kulics.feel.visitor.Wrap
+import com.kulics.feel.visitor.*
 
 sealed class ExpressionNode(val type: Type) : Node() {
     abstract fun generateCode(): String
@@ -63,9 +61,47 @@ class MultiplicativeExpressionNode(
     }
 }
 
-class BlockExpressionNode(val code: String, val expr: ExpressionNode) : ExpressionNode(expr.type) {
+enum class CompareOperator {
+    Equal, NotEqual, Less, LessEqual, Greater, GreaterEqual
+}
+
+class CompareExpressionNode(
+    private val lhs: ExpressionNode,
+    private val rhs: ExpressionNode,
+    private val op: CompareOperator
+) : ExpressionNode(builtinTypeBool) {
     override fun generateCode(): String {
-        return "run{${code}${expr.generateCode()}}"
+        return when (op) {
+            CompareOperator.Equal -> "(${lhs.generateCode()} == ${rhs.generateCode()})"
+            CompareOperator.NotEqual -> "(${lhs.generateCode()} != ${rhs.generateCode()})"
+            CompareOperator.Less -> "(${lhs.generateCode()} < ${rhs.generateCode()})"
+            CompareOperator.LessEqual -> "(${lhs.generateCode()} <= ${rhs.generateCode()})"
+            CompareOperator.Greater -> "(${lhs.generateCode()} > ${rhs.generateCode()})"
+            CompareOperator.GreaterEqual -> "(${lhs.generateCode()} >= ${rhs.generateCode()})"
+        }
+    }
+}
+
+enum class LogicOperator {
+    And, Or
+}
+
+class LogicExpressionNode(
+    private val lhs: ExpressionNode,
+    private val rhs: ExpressionNode,
+    private val op: LogicOperator
+) : ExpressionNode(builtinTypeBool) {
+    override fun generateCode(): String {
+        return when (op) {
+            LogicOperator.And -> "(${lhs.generateCode()} && ${rhs.generateCode()})"
+            LogicOperator.Or -> "(${lhs.generateCode()} || ${rhs.generateCode()})"
+        }
+    }
+}
+
+class BlockExpressionNode(val code: String, val expr: ExpressionNode?) : ExpressionNode(expr?.type ?: builtinTypeVoid) {
+    override fun generateCode(): String {
+        return "run{${code}${expr?.generateCode() ?: "Unit"}}"
     }
 }
 

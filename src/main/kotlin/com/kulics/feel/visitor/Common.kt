@@ -66,6 +66,7 @@ class ArrayStack<T> : Collection<T> {
     }
 }
 
+val builtinTypeVoid = PrimitiveType("Void", "Unit")
 val builtinTypeInt = PrimitiveType("Int", "Int")
 val builtinTypeFloat = PrimitiveType("Float", "Double")
 val builtinTypeBool = PrimitiveType("Bool", "Boolean")

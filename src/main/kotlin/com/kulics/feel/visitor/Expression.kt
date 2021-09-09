@@ -34,37 +34,104 @@ internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): Expression
     3 -> {
         val lhs = visitExpression(ctx.expression(0))
         val rhs = visitExpression(ctx.expression(1))
-        when (lhs.type) {
-            builtinTypeInt -> if (rhs.type != builtinTypeInt) {
-                println("the type of right value is not '${builtinTypeInt.name}'")
-                throw CompilingCheckException()
-            }
-            builtinTypeFloat -> if (rhs.type != builtinTypeFloat) {
-                println("the type of right value is not '${builtinTypeFloat.name}'")
-                throw CompilingCheckException()
-            }
-            else -> {
-                println("the type of left value is not '${builtinTypeInt.name}' or '${builtinTypeFloat.name}'")
-                throw CompilingCheckException()
-            }
-        }
         when (val op = ctx.getChild(1)) {
-            is AdditiveOperatorContext -> if (op.Add() != null) {
-                AdditiveExpressionNode(lhs, rhs, AdditiveOperator.Add, lhs.type)
-            } else {
-                AdditiveExpressionNode(lhs, rhs, AdditiveOperator.Sub, lhs.type)
+            is AdditiveOperatorContext -> {
+                checkCalculateExpressionType(lhs, rhs)
+                val symbol = if (op.Add() != null) {
+                    AdditiveOperator.Add
+                } else {
+                    AdditiveOperator.Sub
+                }
+                AdditiveExpressionNode(lhs, rhs, symbol, lhs.type)
             }
-            is MultiplicativeOperatorContext -> if (op.Mul() != null) {
-                MultiplicativeExpressionNode(lhs, rhs, MultiplicativeOperator.Mul, lhs.type)
-            } else if (op.Div() != null) {
-                MultiplicativeExpressionNode(lhs, rhs, MultiplicativeOperator.Div, lhs.type)
-            } else {
-                MultiplicativeExpressionNode(lhs, rhs, MultiplicativeOperator.Mod, lhs.type)
+            is MultiplicativeOperatorContext -> {
+                checkCalculateExpressionType(lhs, rhs)
+                val symbol = if (op.Mul() != null) {
+                    MultiplicativeOperator.Mul
+                } else if (op.Div() != null) {
+                    MultiplicativeOperator.Div
+                } else {
+                    MultiplicativeOperator.Mod
+                }
+                MultiplicativeExpressionNode(lhs, rhs, symbol, lhs.type)
+            }
+            is CompareOperatorContext -> {
+                checkCompareExpressionType(lhs, rhs)
+                val symbol = if (op.EqualEqual() != null) {
+                    CompareOperator.Equal
+                } else if (op.NotEqual() != null) {
+                    CompareOperator.NotEqual
+                } else if (op.Less() != null) {
+                    CompareOperator.Less
+                } else if (op.LessEqual() != null) {
+                    CompareOperator.LessEqual
+                } else if (op.Greater() != null) {
+                    CompareOperator.Greater
+                } else {
+                    CompareOperator.GreaterEqual
+                }
+                CompareExpressionNode(lhs, rhs, symbol)
+            }
+            is LogicOperatorContext -> {
+                checkLogicExpressionType(lhs, rhs)
+                val symbol = if (op.And() != null) {
+                    LogicOperator.And
+                } else {
+                    LogicOperator.Or
+                }
+                LogicExpressionNode(lhs, rhs, symbol)
             }
             else -> throw CompilingCheckException()
         }
     }
     else -> throw CompilingCheckException()
+}
+
+fun checkCalculateExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
+    when (lhs.type) {
+        builtinTypeInt -> if (rhs.type != builtinTypeInt) {
+            println("the type of right value is not '${builtinTypeInt.name}'")
+            throw CompilingCheckException()
+        }
+        builtinTypeFloat -> if (rhs.type != builtinTypeFloat) {
+            println("the type of right value is not '${builtinTypeFloat.name}'")
+            throw CompilingCheckException()
+        }
+        else -> {
+            println("the type of left value is not '${builtinTypeInt.name}' or '${builtinTypeFloat.name}'")
+            throw CompilingCheckException()
+        }
+    }
+}
+
+fun checkCompareExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
+    when (lhs.type) {
+        builtinTypeInt -> if (rhs.type != builtinTypeInt) {
+            println("the type of right value is not '${builtinTypeInt.name}'")
+            throw CompilingCheckException()
+        }
+        builtinTypeFloat -> if (rhs.type != builtinTypeFloat) {
+            println("the type of right value is not '${builtinTypeFloat.name}'")
+            throw CompilingCheckException()
+        }
+        else -> {
+            println("the type of left value is not '${builtinTypeInt.name}' or '${builtinTypeFloat.name}'")
+            throw CompilingCheckException()
+        }
+    }
+}
+
+fun checkLogicExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
+    when (lhs.type) {
+        builtinTypeBool -> if (rhs.type != builtinTypeBool) {
+            println("the type of right value is not '${builtinTypeBool.name}'")
+            throw CompilingCheckException()
+        }
+        else -> {
+            println("the type of left value is not '${builtinTypeBool.name}'")
+            throw CompilingCheckException()
+        }
+    }
 }
 
 internal fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): List<ExpressionNode> {

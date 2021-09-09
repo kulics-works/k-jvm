@@ -3,6 +3,7 @@ package com.kulics.feel.visitor
 class DelegateVisitor {
     private val scopes = ArrayStack<Scope>().apply {
         push(Scope().apply {
+            addType(builtinTypeVoid)
             addType(builtinTypeInt)
             addType(builtinTypeFloat)
             addType(builtinTypeBool)
