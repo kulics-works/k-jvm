@@ -9,6 +9,7 @@ internal fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
         is ConstantDeclarationContext -> visitConstantDeclaration(stat)
         is AssignmentContext -> visitAssignment(stat)
         is IfStatementContext -> visitIfStatement(stat)
+        is WhileStatementContext -> visitWhileStatement(stat)
         is ExpressionContext -> visitExpression(stat).generateCode()
         else -> throw CompilingCheckException()
     }
@@ -95,6 +96,16 @@ internal fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
     } else {
         "if (${cond.generateCode()}) { $thenBranch } else { ${visitBlock(ctx.block(1))} }"
     }
+}
+
+internal fun DelegateVisitor.visitWhileStatement(ctx: WhileStatementContext): String {
+    val cond = visitExpression(ctx.expression())
+    if (cond.type != builtinTypeBool) {
+        println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
+        throw CompilingCheckException()
+    }
+    val block = visitBlock(ctx.block())
+    return "while (${cond.generateCode()}) { $block }"
 }
 
 internal fun DelegateVisitor.visitBlock(ctx: BlockContext): String {

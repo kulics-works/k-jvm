@@ -46,6 +46,7 @@ Let: 'let';
 Module: 'mod';
 If: 'if';
 Else: 'else';
+While: 'while';
 
 FloatLiteral: Digit (Exponent | '.' Digit Exponent?);
 DecimalLiteral: Digit;

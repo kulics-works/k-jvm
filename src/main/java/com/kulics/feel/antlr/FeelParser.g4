@@ -28,6 +28,7 @@ statement
     | constantDeclaration
     | assignment
     | ifStatement
+    | whileStatement
     | expression
     ;
 
@@ -56,6 +57,10 @@ ifStatement
 
 ifExpression
     : If LeftParen expression RightParen expression Else expression
+    ;
+
+whileStatement
+    : While LeftParen expression RightParen block
     ;
 
 blockExpression: LeftBrace (statement Semi)* expression? RightBrace;

@@ -76,6 +76,10 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitIfExpression(ctx)
     }
 
+    override fun visitWhileStatement(ctx: WhileStatementContext): String {
+        return delegate.visitWhileStatement(ctx)
+    }
+
     override fun visitExpression(ctx: ExpressionContext): ExpressionNode {
         return delegate.visitExpression(ctx)
     }

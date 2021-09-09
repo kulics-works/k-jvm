@@ -66,3 +66,10 @@ let assignment Void = {
     let mut a = 0;
     a = 1;
 };
+
+let whileStat() Void = {
+    let mut i = 0;
+    while (i <= 10) {
+        i = i + 1;
+    };
+};
