@@ -40,6 +40,10 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitParameter(ctx)
     }
 
+    override fun visitBlock(ctx: BlockContext): String {
+        return delegate.visitBlock(ctx)
+    }
+
     override fun visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {
         return delegate.visitBlockExpression(ctx)
     }
@@ -60,8 +64,12 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitConstantDeclaration(ctx)
     }
 
-    override fun visitConditionExpression(ctx: ConditionExpressionContext): ExpressionNode {
-        return delegate.visitConditionExpression(ctx)
+    override fun visitIfStatement(ctx: IfStatementContext): String {
+        return delegate.visitIfStatement(ctx)
+    }
+
+    override fun visitIfExpression(ctx: IfExpressionContext): ExpressionNode {
+        return delegate.visitIfExpression(ctx)
     }
 
     override fun visitExpression(ctx: ExpressionContext): ExpressionNode {

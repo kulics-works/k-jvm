@@ -32,12 +32,6 @@ let blockExpr2() Int = {
 
 let blockExpr3 Void = {};
 
-let ifExpr1 Int = if(true) 0 else if(true) 0 else 0;
-
-let ifExpr2 Int = if(true) { 0 } else { 1 };
-
-let ifExpr3 Void = if(true) {} else {};
-
 let compareExpr Void = {
     let a = 1;
     let b = 1;
@@ -51,3 +45,19 @@ let logicExpr Void = {
     let a = true & true;
     let b = true | false;
 };
+
+let ifExpr1 Int = if(true) 0 else if(true) 0 else 0;
+
+let ifExpr2 Int = if(true) { 0 } else { 1 };
+
+let ifExpr3 Void = if(true) {} else {};
+
+let ifStat Void = {
+    if(true) {
+        0;
+    } else if(true) {
+        1;
+    } else {
+        2;
+    };
+}

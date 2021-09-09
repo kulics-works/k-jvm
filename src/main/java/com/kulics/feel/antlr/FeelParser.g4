@@ -26,6 +26,7 @@ block: LeftBrace (statement Semi)* RightBrace;
 statement
     : variableDeclaration
     | constantDeclaration
+    | ifStatement
     | expression
     ;
 
@@ -33,7 +34,7 @@ expression
     : primaryExpression
     | parenExpression
     | blockExpression
-    | conditionExpression
+    | ifExpression
     | expression callSuffix
     | expression multiplicativeOperator expression
     | expression additiveOperator expression
@@ -46,7 +47,11 @@ constantDeclaration: Let identifier type? Equal expression;
 
 callSuffix: LeftParen (expression (Comma expression)*)? RightParen;
 
-conditionExpression
+ifStatement
+    : If LeftParen expression RightParen block (Else (block | ifStatement))?
+    ;
+
+ifExpression
     : If LeftParen expression RightParen expression Else expression
     ;
 

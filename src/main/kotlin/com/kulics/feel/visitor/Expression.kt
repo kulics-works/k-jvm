@@ -8,7 +8,7 @@ internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): Expression
         is PrimaryExpressionContext -> visitPrimaryExpression(expr)
         is ParenExpressionContext -> visitParenExpression(expr)
         is BlockExpressionContext -> visitBlockExpression(expr)
-        is ConditionExpressionContext -> visitConditionExpression(expr)
+        is IfExpressionContext -> visitIfExpression(expr)
         else -> throw CompilingCheckException()
     }
     2 -> {
@@ -166,69 +166,7 @@ internal fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContex
     }
 }
 
-internal fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
-    return when (val stat = ctx.getChild(0)) {
-        is VariableDeclarationContext -> visitVariableDeclaration(stat)
-        is ConstantDeclarationContext -> visitConstantDeclaration(stat)
-        is ConditionExpressionContext -> visitConditionExpression(stat).generateCode()
-        is ExpressionContext -> visitExpression(stat).generateCode()
-        else -> throw CompilingCheckException()
-    }
-}
-
-internal fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationContext): String {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
-        throw CompilingCheckException()
-    }
-    val expr = visitExpression(ctx.expression())
-    val type = if (ctx.type() == null) {
-        expr.type
-    } else {
-        val typeName = visitType(ctx.type())
-        val type = getType(typeName)
-        if (type == null) {
-            println("type: '${typeName}' is undefined")
-            throw CompilingCheckException()
-        }
-        if (expr.type != type) {
-            println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
-            throw CompilingCheckException()
-        }
-        type
-    }
-    addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-    return "var $id: ${type.generateTypeName()} = ${expr.generateCode()}"
-}
-
-internal fun DelegateVisitor.visitConstantDeclaration(ctx: ConstantDeclarationContext): String {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
-        throw CompilingCheckException()
-    }
-    val expr = visitExpression(ctx.expression())
-    val type = if (ctx.type() == null) {
-        expr.type
-    } else {
-        val typeName = visitType(ctx.type())
-        val type = getType(typeName)
-        if (type == null) {
-            println("type: '${typeName}' is undefined")
-            throw CompilingCheckException()
-        }
-        if (expr.type != type) {
-            println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
-            throw CompilingCheckException()
-        }
-        type
-    }
-    addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-    return "val $id: ${type.generateTypeName()} = ${expr.generateCode()}"
-}
-
-internal fun DelegateVisitor.visitConditionExpression(ctx: ConditionExpressionContext): ExpressionNode {
+internal fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): ExpressionNode {
     val cond = visitExpression(ctx.expression(0))
     if (cond.type != builtinTypeBool) {
         println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
@@ -241,4 +179,15 @@ internal fun DelegateVisitor.visitConditionExpression(ctx: ConditionExpressionCo
         throw CompilingCheckException()
     }
     return ConditionExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
+}
+
+internal fun DelegateVisitor.visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {
+    pushScope()
+    val code = ctx.statement().fold(StringBuilder()) { acc, v -> acc.append("${visitStatement(v)};") }.toString()
+    val node = BlockExpressionNode(code, when (val expr = ctx.expression()) {
+        null -> null
+        else -> visitExpression(expr)
+    })
+    popScope()
+    return node
 }
