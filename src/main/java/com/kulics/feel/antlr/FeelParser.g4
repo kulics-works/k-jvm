@@ -13,9 +13,9 @@ globalDeclaration
     ) Semi
     ;
 
-globalVariableDeclaration: Let Mut identifier type Equal expression;
-globalConstantDeclaration: Let identifier type Equal expression;
-globalFunctionDeclaration: Let identifier parameterList type Equal expression;
+globalVariableDeclaration: Let Mut identifier type? Equal expression;
+globalConstantDeclaration: Let identifier type? Equal expression;
+globalFunctionDeclaration: Let identifier parameterList type? Equal expression;
 
 parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
 
