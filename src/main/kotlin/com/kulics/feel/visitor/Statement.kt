@@ -7,6 +7,7 @@ internal fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
     return when (val stat = ctx.getChild(0)) {
         is VariableDeclarationContext -> visitVariableDeclaration(stat)
         is ConstantDeclarationContext -> visitConstantDeclaration(stat)
+        is FunctionDeclarationContext -> visitFunctionDeclaration(stat)
         is AssignmentContext -> visitAssignment(stat)
         is IfStatementContext -> visitIfStatement(stat)
         is WhileStatementContext -> visitWhileStatement(stat)
@@ -65,6 +66,56 @@ internal fun DelegateVisitor.visitConstantDeclaration(ctx: ConstantDeclarationCo
     }
     addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
     return "val $id: ${type.generateTypeName()} = ${expr.generateCode()}"
+}
+
+internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): String {
+    val id = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(id)) {
+        println("identifier: '$id' is redefined")
+        throw CompilingCheckException()
+    }
+    return if (ctx.type() == null) {
+        val params = visitParameterList(ctx.parameterList())
+        pushScope()
+        for (v in params.first) {
+            if (isRedefineIdentifier(v.name)) {
+                println("identifier: '${v.name}' is redefined")
+                throw CompilingCheckException()
+            }
+            addIdentifier(v)
+        }
+        val expr = visitExpression(ctx.expression())
+        val returnType = expr.type
+        popScope()
+        val type = FunctionType(params.first.map { it.type }, returnType)
+        addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
+        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+    } else {
+        val returnTypeName = visitType(ctx.type())
+        val returnType = getType(returnTypeName)
+        if (returnType == null) {
+            println("type: '${returnTypeName}' is undefined")
+            throw CompilingCheckException()
+        }
+        val params = visitParameterList(ctx.parameterList())
+        val type = FunctionType(params.first.map { it.type }, returnType)
+        addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
+        pushScope()
+        for (v in params.first) {
+            if (isRedefineIdentifier(v.name)) {
+                println("identifier: '${v.name}' is redefined")
+                throw CompilingCheckException()
+            }
+            addIdentifier(v)
+        }
+        val expr = visitExpression(ctx.expression())
+        if (expr.type != returnType) {
+            println("the return is '${returnTypeName}', but find '${expr.type.name}'")
+            throw CompilingCheckException()
+        }
+        popScope()
+        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+    }
 }
 
 internal fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {

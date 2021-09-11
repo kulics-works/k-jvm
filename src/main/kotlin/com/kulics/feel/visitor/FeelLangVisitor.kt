@@ -64,6 +64,10 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitConstantDeclaration(ctx)
     }
 
+    override fun visitFunctionDeclaration(ctx: FunctionDeclarationContext): String {
+        return delegate.visitFunctionDeclaration(ctx)
+    }
+
     override fun visitAssignment(ctx: AssignmentContext): String {
         return delegate.visitAssignment(ctx)
     }

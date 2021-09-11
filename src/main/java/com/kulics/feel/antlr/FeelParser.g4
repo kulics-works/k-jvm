@@ -13,9 +13,9 @@ globalDeclaration
     ) Semi
     ;
 
-globalVariableDeclaration: Let Mut identifier type? Equal expression;
-globalConstantDeclaration: Let identifier type? Equal expression;
-globalFunctionDeclaration: Let identifier parameterList type? Equal expression;
+globalVariableDeclaration: Let Mut identifier type Equal expression;
+globalConstantDeclaration: Let identifier type Equal expression;
+globalFunctionDeclaration: Let identifier parameterList type Equal expression;
 
 parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
 
@@ -26,6 +26,7 @@ block: LeftBrace (statement Semi)* RightBrace;
 statement
     : variableDeclaration
     | constantDeclaration
+    | functionDeclaration
     | assignment
     | ifStatement
     | whileStatement
@@ -46,6 +47,7 @@ expression
 
 variableDeclaration: Let Mut identifier type? Equal expression;
 constantDeclaration: Let identifier type? Equal expression;
+functionDeclaration: Let identifier parameterList type? Equal expression;
 
 callSuffix: LeftParen (expression (Comma expression)*)? RightParen;
 

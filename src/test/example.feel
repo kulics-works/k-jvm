@@ -1,38 +1,38 @@
 mod demo;
 
-let a = 0.1 + 0.3;
+let a Float = 0.1 + 0.3;
 
-let mut b = 321 - 300;
+let mut b Int = 321 - 300;
 
-let c = 2 * 2;
+let c Int = 2 * 2;
 
-let mut d = b + (c * 2);
+let mut d Int = b + (c * 2);
 
-let T = true;
+let T Bool = true;
 
-let F = false;
+let F Bool = false;
 
-let g() = 1 + 2 + 3 + b;
+let g() Int = 1 + 2 + 3 + b;
 
-let add(a Int, b Int) = a + b;
+let add(a Int, b Int) Int = a + b;
 
-let double(x Int) = add(x, x) + x + 1;
+let double(x Int) Int = add(x, x) + x + 1;
 
-let blockExpr1 = {
+let blockExpr1 Int = {
     let a = 0;
     let b = 0;
     a + b
 };
 
-let blockExpr2() = {
+let blockExpr2() Int = {
     let a = 0;
     let b = 0;
     a + b
 };
 
-let blockExpr3 = {};
+let blockExpr3 Void = {};
 
-let compareExpr = {
+let compareExpr Void = {
     let a = 1;
     let b = 1;
     let c = a == b;
@@ -41,18 +41,18 @@ let compareExpr = {
     let f = a < b;
 };
 
-let logicExpr = {
+let logicExpr Void = {
     let a = true & true;
     let b = true | false;
 };
 
-let ifExpr1 = if(true) 0 else if(true) 0 else 0;
+let ifExpr1 Int = if(true) 0 else if(true) 0 else 0;
 
-let ifExpr2 = if(true) { 0 } else { 1 };
+let ifExpr2 Int = if(true) { 0 } else { 1 };
 
-let ifExpr3 = if(true) {} else {};
+let ifExpr3 Void = if(true) {} else {};
 
-let ifStat = {
+let ifStat Void = {
     if(true) {
         0;
     } else if(true) {
@@ -62,14 +62,20 @@ let ifStat = {
     };
 };
 
-let assignment = {
+let assignment Void = {
     let mut a = 0;
     a = 1;
 };
 
-let whileStat() = {
+let whileStat() Void = {
     let mut i = 0;
     while (i <= 10) {
         i = i + 1;
     };
+};
+
+let localFunction() Int = {
+    let f() = 123;
+    let a = f();
+    a
 };
