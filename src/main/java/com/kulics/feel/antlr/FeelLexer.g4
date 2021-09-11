@@ -43,6 +43,8 @@ Sharp: '#';
 
 Mut: 'mut';
 Let: 'let';
+Def: 'def';
+Case: 'case';
 Module: 'mod';
 If: 'if';
 Else: 'else';

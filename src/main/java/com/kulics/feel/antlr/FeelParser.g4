@@ -10,16 +10,22 @@ globalDeclaration
     : (globalVariableDeclaration
     | globalConstantDeclaration
     | globalFunctionDeclaration
+    | globalRecordDeclaration
     ) Semi
     ;
 
 globalVariableDeclaration: Let Mut identifier type Equal expression;
 globalConstantDeclaration: Let identifier type Equal expression;
 globalFunctionDeclaration: Let identifier parameterList type Equal expression;
+globalRecordDeclaration: Def identifier Equal Case fieldList;
 
 parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
 
 parameter: identifier type;
+
+fieldList: LeftParen (field (Comma field)*)? RightParen;
+
+field: Mut? identifier type;
 
 block: LeftBrace (statement Semi)* RightBrace;
 

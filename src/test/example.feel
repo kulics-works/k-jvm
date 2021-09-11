@@ -79,3 +79,6 @@ let localFunction() Int = {
     let a = f();
     a
 };
+
+def Point = case(x Int, y Int);
+let somePoint Point = Point(1, 2);

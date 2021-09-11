@@ -6,6 +6,25 @@ internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContex
     return "package ${visitIdentifier(ctx.identifier())}$Wrap"
 }
 
+internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
+    val result = StringBuilder()
+    result.append(visitModuleDeclaration(ctx.moduleDeclaration()))
+    for (item in ctx.globalDeclaration()) {
+        result.append(visitGlobalDeclaration(item))
+    }
+    return result.toString()
+}
+
+internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {
+    return when (val declaration = ctx.getChild(0)) {
+        is GlobalVariableDeclarationContext -> visitGlobalVariableDeclaration(declaration)
+        is GlobalConstantDeclarationContext -> visitGlobalConstantDeclaration(declaration)
+        is GlobalFunctionDeclarationContext -> visitGlobalFunctionDeclaration(declaration)
+        is GlobalRecordDeclarationContext -> visitGlobalRecordDeclaration(declaration)
+        else -> throw CompilingCheckException()
+    }
+}
+
 internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): String {
     val id = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(id)) {
@@ -111,25 +130,50 @@ internal fun DelegateVisitor.visitParameter(ctx: ParameterContext): Identifier {
     return Identifier(id, type, IdentifierKind.Immutable)
 }
 
-internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {
-    return if (ctx.globalVariableDeclaration() != null) {
-        visitGlobalVariableDeclaration(ctx.globalVariableDeclaration())
-    } else if (ctx.globalConstantDeclaration() != null) {
-        visitGlobalConstantDeclaration(ctx.globalConstantDeclaration())
-    } else if (ctx.globalFunctionDeclaration() != null) {
-        visitGlobalFunctionDeclaration(ctx.globalFunctionDeclaration())
-    } else {
+internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationContext): String {
+    val id = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(id) || isRedefineType(id)) {
+        println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
+    val fieldList = visitFieldList(ctx.fieldList())
+    val type = RecordType(id, fieldList.first)
+    addType(type)
+    val constructorType = FunctionType(fieldList.first.map { it.type }, type)
+    addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
+    return "class ${id}(${fieldList.second});$Wrap"
 }
 
-internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
-    val result = StringBuilder()
-    result.append(visitModuleDeclaration(ctx.moduleDeclaration()))
-    for (item in ctx.globalDeclaration()) {
-        result.append(visitGlobalDeclaration(item))
+internal fun DelegateVisitor.visitFieldList(ctx: FieldListContext): Pair<ArrayList<Identifier>, String> {
+    val fields = ctx.field()
+    val buf = StringBuilder()
+    val ids = ArrayList<Identifier>()
+    if (fields.size > 0) {
+        val first = visitField(fields[0])
+        fun genParam(id: Identifier): String {
+            return "${
+                if (id.kind == IdentifierKind.Immutable) "val"
+                else "var"
+            } ${id.name}: ${id.type.generateTypeName()}"
+        }
+        buf.append(genParam(first))
+        ids.add(first)
+        for (i in 1 until fields.size) {
+            val id = visitField(fields[i])
+            ids.add(id)
+            buf.append(", ${genParam(id)}")
+        }
     }
-    return result.toString()
+    return ids to buf.toString()
 }
 
-
+internal fun DelegateVisitor.visitField(ctx: FieldContext): Identifier {
+    val id = visitIdentifier(ctx.identifier())
+    val typeName = visitType(ctx.type())
+    val type = getType(typeName)
+    if (type == null) {
+        println("type: '${typeName}' is undefined")
+        throw CompilingCheckException()
+    }
+    return Identifier(id, type, if (ctx.Mut() == null) IdentifierKind.Immutable else IdentifierKind.Mutable)
+}

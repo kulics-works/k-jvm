@@ -32,6 +32,10 @@ class DelegateVisitor {
         return scopes.any { it.hasType(ty) }
     }
 
+    internal fun addType(ty: Type) {
+        scopes.peek().addType(ty)
+    }
+
     internal fun getType(ty: String): Type? {
         return scopes.firstNotNullOfOrNull { it.getType(ty) }
     }

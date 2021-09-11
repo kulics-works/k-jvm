@@ -1,7 +1,6 @@
 package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser.*
-import com.kulics.feel.node.BlockExpressionNode
 
 internal fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
     return when (val stat = ctx.getChild(0)) {
