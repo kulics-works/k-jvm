@@ -60,6 +60,14 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitMethod(ctx)
     }
 
+    override fun visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarationContext): String {
+        return delegate.visitGlobalEnumDeclaration(ctx)
+    }
+
+    override fun visitFlagList(ctx: FlagListContext): Set<String> {
+        return delegate.visitFlagList(ctx)
+    }
+
     override fun visitBlock(ctx: BlockContext): String {
         return delegate.visitBlock(ctx)
     }

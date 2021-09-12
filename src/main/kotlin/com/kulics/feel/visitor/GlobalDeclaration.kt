@@ -21,6 +21,7 @@ internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContex
         is GlobalConstantDeclarationContext -> visitGlobalConstantDeclaration(declaration)
         is GlobalFunctionDeclarationContext -> visitGlobalFunctionDeclaration(declaration)
         is GlobalRecordDeclarationContext -> visitGlobalRecordDeclaration(declaration)
+        is GlobalEnumDeclarationContext -> visitGlobalEnumDeclaration(declaration)
         else -> throw CompilingCheckException()
     }
 }
@@ -145,13 +146,14 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
     addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
     pushScope()
     fieldList.first.forEach { addIdentifier(it) }
-    var methodCode = ""
-    if (ctx.methodList() != null) {
+    val methodCode = if (ctx.methodList() == null) {
+        ""
+    } else {
         val methods = visitMethodList(ctx.methodList())
         for (v in methods.first) {
             type.member[v.name] = v
         }
-        methodCode = " {${methods.second}}"
+        " {${methods.second}}"
     }
     popScope()
     return "class ${id}(${fieldList.second})${methodCode};$Wrap"
@@ -233,4 +235,46 @@ internal fun DelegateVisitor.visitMethod(ctx: MethodContext): Pair<Identifier, S
     }
     popScope()
     return identifier to "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+}
+
+internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarationContext): String {
+    val id = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(id)) {
+        println("identifier: '$id' is redefined")
+        throw CompilingCheckException()
+    }
+    val flags = visitFlagList(ctx.flagList())
+    val type = EnumType(id, mutableMapOf(), flags)
+    addType(type)
+    var buf = StringBuilder()
+    for (v in flags) {
+        addIdentifier(Identifier(v, type, IdentifierKind.Immutable))
+        buf.append("object ${v}: ${type.name}();$Wrap")
+    }
+    pushScope()
+    val methodCode = if (ctx.methodList() == null) {
+        ""
+    } else {
+        val methods = visitMethodList(ctx.methodList())
+        for (v in methods.first) {
+            type.member[v.name] = v
+        }
+        "{ ${methods.second} }"
+    }
+    popScope()
+    return "sealed class $id ${methodCode}$Wrap${buf.toString()}"
+}
+
+internal fun DelegateVisitor.visitFlagList(ctx: FlagListContext): Set<String> {
+    val set = HashSet<String>()
+    for (v in ctx.identifier()) {
+        val identifier = visitIdentifier(v)
+        if (set.contains(identifier)) {
+            println("identifier: '${identifier}' is redefined")
+            throw CompilingCheckException()
+        } else {
+            set.add(identifier)
+        }
+    }
+    return set
 }

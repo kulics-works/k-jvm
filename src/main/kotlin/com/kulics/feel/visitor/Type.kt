@@ -39,6 +39,12 @@ class RecordType(override val name: String, val member: MutableMap<String, Ident
     }
 }
 
+class EnumType(override val name: String, val member: MutableMap<String, Identifier>, val flags: Set<String>) : Type {
+    override fun getMember(name: String): Identifier? {
+        return member[name]
+    }
+}
+
 internal fun DelegateVisitor.visitType(ctx: TypeContext): String {
     return visitIdentifier(ctx.identifier())
 }
