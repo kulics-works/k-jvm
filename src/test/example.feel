@@ -80,7 +80,7 @@ let localFunction() Int = {
     a
 };
 
-def Point(x Int, y Int) {
+def Point = case(x Int, y Int) {
     copy() Point = Point(x, y);
     plus(other Point) Point = Point(x + other.x, y + other.y);
 };
