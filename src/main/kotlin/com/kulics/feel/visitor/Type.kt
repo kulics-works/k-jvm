@@ -33,7 +33,7 @@ class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type 
     }
 }
 
-class RecordType(override val name: String, val member: Map<String, Identifier>) : Type {
+class RecordType(override val name: String, val member: MutableMap<String, Identifier>) : Type {
     override fun getMember(name: String): Identifier? {
         return member[name]
     }

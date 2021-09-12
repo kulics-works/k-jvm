@@ -17,7 +17,7 @@ globalDeclaration
 globalVariableDeclaration: Let Mut identifier type Equal expression;
 globalConstantDeclaration: Let identifier type Equal expression;
 globalFunctionDeclaration: Let identifier parameterList type Equal expression;
-globalRecordDeclaration: Def identifier Equal Case fieldList;
+globalRecordDeclaration: Def identifier Equal Case fieldList methodList?;
 
 parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
 
@@ -26,6 +26,10 @@ parameter: identifier type;
 fieldList: LeftParen (field (Comma field)*)? RightParen;
 
 field: Mut? identifier type;
+
+methodList: LeftBrace (method Semi)* RightBrace;
+
+method: identifier parameterList type Equal expression;
 
 block: LeftBrace (statement Semi)* RightBrace;
 
