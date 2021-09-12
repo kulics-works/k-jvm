@@ -80,12 +80,12 @@ let localFunction() Int = {
     a
 };
 
-def Point = case(x Int, y Int) {
+def Point(x Int, y Int) {
     copy() Point = Point(x, y);
     plus(other Point) Point = Point(x + other.x, y + other.y);
 };
 let somePoint Point = Point(1, 2);
 let memberAccess(a Point, b Point) Point = Point(a.x+b.x, a.y+b.y).copy();
 
-def Color = case[Red, Green, Blue];
+def Color case Red | Green | Blue;
 let red Color = Red;

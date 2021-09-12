@@ -246,9 +246,10 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
     val flags = visitFlagList(ctx.flagList())
     val type = EnumType(id, mutableMapOf(), flags)
     addType(type)
-    var buf = StringBuilder()
+    val buf = StringBuilder()
     for (v in flags) {
         addIdentifier(Identifier(v, type, IdentifierKind.Immutable))
+        addType(RecordType(v, mutableMapOf()))
         buf.append("object ${v}: ${type.name}();$Wrap")
     }
     pushScope()
@@ -262,7 +263,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
         "{ ${methods.second} }"
     }
     popScope()
-    return "sealed class $id ${methodCode}$Wrap${buf.toString()}"
+    return "sealed class ${id}${methodCode};$Wrap${buf}"
 }
 
 internal fun DelegateVisitor.visitFlagList(ctx: FlagListContext): Set<String> {
