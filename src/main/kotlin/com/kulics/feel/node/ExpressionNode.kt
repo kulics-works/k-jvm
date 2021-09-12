@@ -113,6 +113,12 @@ class CallExpressionNode(val expr: ExpressionNode, val args: List<ExpressionNode
     }
 }
 
+class MemberExpressionNode(val expr: ExpressionNode, val member: Identifier) : ExpressionNode(member.type) {
+    override fun generateCode(): String {
+        return "${expr.generateCode()}.${member.name}"
+    }
+}
+
 class ConditionExpressionNode(
     val condExpr: ExpressionNode,
     val thenExpr: ExpressionNode,

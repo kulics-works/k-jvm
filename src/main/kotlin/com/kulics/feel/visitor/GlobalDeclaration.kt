@@ -137,7 +137,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         throw CompilingCheckException()
     }
     val fieldList = visitFieldList(ctx.fieldList())
-    val type = RecordType(id, fieldList.first)
+    val type = RecordType(id, fieldList.first.associateBy { it.name })
     addType(type)
     val constructorType = FunctionType(fieldList.first.map { it.type }, type)
     addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))

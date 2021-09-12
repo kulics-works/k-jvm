@@ -45,6 +45,7 @@ expression
     | blockExpression
     | ifExpression
     | expression callSuffix
+    | expression memberAccess
     | expression multiplicativeOperator expression
     | expression additiveOperator expression
     | expression compareOperator expression
@@ -56,6 +57,8 @@ constantDeclaration: Let identifier type? Equal expression;
 functionDeclaration: Let identifier parameterList type? Equal expression;
 
 callSuffix: LeftParen (expression (Comma expression)*)? RightParen;
+
+memberAccess: Dot identifier;
 
 assignment: identifier Equal expression;
 

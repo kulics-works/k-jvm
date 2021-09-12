@@ -4,7 +4,8 @@ import com.kulics.feel.grammar.FeelParser.*
 
 sealed interface Type {
     val name: String
-    fun generateTypeName(): String
+    fun generateTypeName(): String = name
+    fun getMember(name: String): Identifier? = null
 }
 
 class PrimitiveType(override val name: String, private val backendName: String? = null) : Type {
@@ -32,8 +33,10 @@ class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type 
     }
 }
 
-class RecordType(override val name: String, val memberField: List<Identifier>) : Type {
-    override fun generateTypeName(): String = name
+class RecordType(override val name: String, val member: Map<String, Identifier>) : Type {
+    override fun getMember(name: String): Identifier? {
+        return member[name]
+    }
 }
 
 internal fun DelegateVisitor.visitType(ctx: TypeContext): String {

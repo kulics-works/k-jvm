@@ -2,89 +2,107 @@ package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser.*
 import com.kulics.feel.node.*
+import org.antlr.v4.runtime.tree.ParseTree
 
 internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): ExpressionNode = when (ctx.childCount) {
-    1 -> when (val expr = ctx.getChild(0)) {
+    1 -> visitSingleExpression(ctx.getChild(0))
+    2 -> if (ctx.callSuffix() != null) {
+        visitFunctionCallExpression(ctx.expression(0), ctx.callSuffix())
+    } else {
+        visitMemberAccessExpression(ctx.expression(0), ctx.memberAccess())
+    }
+    3 -> visitBinaryExpression(ctx.expression(0), ctx.getChild(1), ctx.expression(1))
+    else -> throw CompilingCheckException()
+}
+
+fun DelegateVisitor.visitSingleExpression(expr: ParseTree): ExpressionNode {
+    return when (expr) {
         is PrimaryExpressionContext -> visitPrimaryExpression(expr)
         is ParenExpressionContext -> visitParenExpression(expr)
         is BlockExpressionContext -> visitBlockExpression(expr)
         is IfExpressionContext -> visitIfExpression(expr)
         else -> throw CompilingCheckException()
     }
-    2 -> {
-        val expr = visitExpression(ctx.expression(0))
-        val callArgs = visitCallSuffix(ctx.callSuffix())
-        val type = expr.type
-        if (type !is FunctionType) {
-            println("the type of expression is not a function")
+}
+
+fun DelegateVisitor.visitFunctionCallExpression(
+    exprCtx: ExpressionContext,
+    callCtx: CallSuffixContext
+): ExpressionNode {
+    val expr = visitExpression(exprCtx)
+    val callArgs = visitCallSuffix(callCtx)
+    val type = expr.type
+    if (type !is FunctionType) {
+        println("the type of expression is not a function")
+        throw CompilingCheckException()
+    }
+    if (type.parameterTypes.size != callArgs.size) {
+        println("the size of args is ${callArgs.size}, but need ${type.parameterTypes.size}")
+        throw CompilingCheckException()
+    }
+    for ((i, v) in type.parameterTypes.withIndex()) {
+        if (callArgs[i].type != v) {
+            println("the type of args${i}: '${callArgs[i].type.name}' is not '${v.name}'")
             throw CompilingCheckException()
         }
-        if (type.parameterTypes.size != callArgs.size) {
-            println("the size of args is ${callArgs.size}, but need ${type.parameterTypes.size}")
-            throw CompilingCheckException()
-        }
-        for ((i, v) in type.parameterTypes.withIndex()) {
-            if (callArgs[i].type != v) {
-                println("the type of args${i}: '${callArgs[i].type.name}' is not '${v.name}'")
-                throw CompilingCheckException()
-            }
-        }
-        CallExpressionNode(expr, callArgs, type.returnType)
     }
-    3 -> {
-        val lhs = visitExpression(ctx.expression(0))
-        val rhs = visitExpression(ctx.expression(1))
-        when (val op = ctx.getChild(1)) {
-            is AdditiveOperatorContext -> {
-                checkCalculateExpressionType(lhs, rhs)
-                val symbol = if (op.Add() != null) {
-                    AdditiveOperator.Add
-                } else {
-                    AdditiveOperator.Sub
-                }
-                AdditiveExpressionNode(lhs, rhs, symbol, lhs.type)
-            }
-            is MultiplicativeOperatorContext -> {
-                checkCalculateExpressionType(lhs, rhs)
-                val symbol = if (op.Mul() != null) {
-                    MultiplicativeOperator.Mul
-                } else if (op.Div() != null) {
-                    MultiplicativeOperator.Div
-                } else {
-                    MultiplicativeOperator.Mod
-                }
-                MultiplicativeExpressionNode(lhs, rhs, symbol, lhs.type)
-            }
-            is CompareOperatorContext -> {
-                checkCompareExpressionType(lhs, rhs)
-                val symbol = if (op.EqualEqual() != null) {
-                    CompareOperator.Equal
-                } else if (op.NotEqual() != null) {
-                    CompareOperator.NotEqual
-                } else if (op.Less() != null) {
-                    CompareOperator.Less
-                } else if (op.LessEqual() != null) {
-                    CompareOperator.LessEqual
-                } else if (op.Greater() != null) {
-                    CompareOperator.Greater
-                } else {
-                    CompareOperator.GreaterEqual
-                }
-                CompareExpressionNode(lhs, rhs, symbol)
-            }
-            is LogicOperatorContext -> {
-                checkLogicExpressionType(lhs, rhs)
-                val symbol = if (op.And() != null) {
-                    LogicOperator.And
-                } else {
-                    LogicOperator.Or
-                }
-                LogicExpressionNode(lhs, rhs, symbol)
-            }
-            else -> throw CompilingCheckException()
-        }
+    return CallExpressionNode(expr, callArgs, type.returnType)
+}
+
+fun DelegateVisitor.visitMemberAccessExpression(
+    exprCtx: ExpressionContext,
+    memberCtx: MemberAccessContext
+): ExpressionNode {
+    val expr = visitExpression(exprCtx)
+    val memberIdentifier = visitMemberAccess(memberCtx)
+    val member = expr.type.getMember(memberIdentifier)
+    if (member != null) {
+        return MemberExpressionNode(expr, member)
+    } else {
+        println("the type '${expr.type.name}' have not member '${memberIdentifier}'")
+        throw CompilingCheckException()
     }
-    else -> throw CompilingCheckException()
+}
+
+fun DelegateVisitor.visitBinaryExpression(
+    lhs: ExpressionContext,
+    op: ParseTree,
+    rhs: ExpressionContext
+): ExpressionNode {
+    val lhsExpr = visitExpression(lhs)
+    val rhsExpr = visitExpression(rhs)
+    return when (op) {
+        is AdditiveOperatorContext -> {
+            checkCalculateExpressionType(lhsExpr, rhsExpr)
+            val symbol = if (op.Add() != null) AdditiveOperator.Add
+            else AdditiveOperator.Sub
+            AdditiveExpressionNode(lhsExpr, rhsExpr, symbol, lhsExpr.type)
+        }
+        is MultiplicativeOperatorContext -> {
+            checkCalculateExpressionType(lhsExpr, rhsExpr)
+            val symbol = if (op.Mul() != null) MultiplicativeOperator.Mul
+            else if (op.Div() != null) MultiplicativeOperator.Div
+            else MultiplicativeOperator.Mod
+            MultiplicativeExpressionNode(lhsExpr, rhsExpr, symbol, lhsExpr.type)
+        }
+        is CompareOperatorContext -> {
+            checkCompareExpressionType(lhsExpr, rhsExpr)
+            val symbol = if (op.EqualEqual() != null) CompareOperator.Equal
+            else if (op.NotEqual() != null) CompareOperator.NotEqual
+            else if (op.Less() != null) CompareOperator.Less
+            else if (op.LessEqual() != null) CompareOperator.LessEqual
+            else if (op.Greater() != null) CompareOperator.Greater
+            else CompareOperator.GreaterEqual
+            CompareExpressionNode(lhsExpr, rhsExpr, symbol)
+        }
+        is LogicOperatorContext -> {
+            checkLogicExpressionType(lhsExpr, rhsExpr)
+            val symbol = if (op.And() != null) LogicOperator.And
+            else LogicOperator.Or
+            LogicExpressionNode(lhsExpr, rhsExpr, symbol)
+        }
+        else -> throw CompilingCheckException()
+    }
 }
 
 fun checkCalculateExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
@@ -135,8 +153,11 @@ fun checkLogicExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
 }
 
 internal fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): List<ExpressionNode> {
-    val args = ctx.expression()
-    return args.map { visitExpression(it) }
+    return ctx.expression().map { visitExpression(it) }
+}
+
+internal fun DelegateVisitor.visitMemberAccess(ctx: MemberAccessContext): String {
+    return visitIdentifier(ctx.identifier())
 }
 
 internal fun DelegateVisitor.visitParenExpression(ctx: ParenExpressionContext): ExpressionNode {
@@ -184,10 +205,12 @@ internal fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): Expres
 internal fun DelegateVisitor.visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {
     pushScope()
     val code = ctx.statement().fold(StringBuilder()) { acc, v -> acc.append("${visitStatement(v)};") }.toString()
-    val node = BlockExpressionNode(code, when (val expr = ctx.expression()) {
-        null -> null
-        else -> visitExpression(expr)
-    })
+    val node = BlockExpressionNode(
+        code, when (val expr = ctx.expression()) {
+            null -> null
+            else -> visitExpression(expr)
+        }
+    )
     popScope()
     return node
 }
