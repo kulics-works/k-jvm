@@ -39,7 +39,11 @@ class RecordType(override val name: String, val member: MutableMap<String, Ident
     }
 }
 
-class EnumType(override val name: String, val member: MutableMap<String, Identifier>, val flags: Set<String>) : Type {
+class EnumType(
+    override val name: String,
+    val member: MutableMap<String, Identifier>,
+    val constructors: MutableMap<String, Identifier>
+) : Type {
     override fun getMember(name: String): Identifier? {
         return member[name]
     }

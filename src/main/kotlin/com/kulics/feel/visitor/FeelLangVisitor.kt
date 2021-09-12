@@ -64,8 +64,12 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitGlobalEnumDeclaration(ctx)
     }
 
-    override fun visitFlagList(ctx: FlagListContext): Set<String> {
-        return delegate.visitFlagList(ctx)
+    override fun visitConstructorList(ctx: ConstructorListContext): Map<String, Pair<ArrayList<Identifier>, String>> {
+        return delegate.visitConstructorList(ctx)
+    }
+
+    override fun visitConstructor(ctx: ConstructorContext): Triple<String, ArrayList<Identifier>, String> {
+        return delegate.visitConstructor(ctx)
     }
 
     override fun visitBlock(ctx: BlockContext): String {

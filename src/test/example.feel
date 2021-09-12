@@ -89,3 +89,6 @@ let memberAccess(a Point, b Point) Point = Point(a.x+b.x, a.y+b.y).copy();
 
 def Color case Red | Green | Blue;
 let red Color = Red;
+
+def IntList case Nil | Cons(head Int, tail IntList);
+let li IntList = Cons(1, Cons(2, Cons(3, Nil)));

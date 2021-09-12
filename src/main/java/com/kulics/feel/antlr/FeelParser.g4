@@ -19,7 +19,7 @@ globalVariableDeclaration: Let Mut identifier type Equal expression;
 globalConstantDeclaration: Let identifier type Equal expression;
 globalFunctionDeclaration: Let identifier parameterList type Equal expression;
 globalRecordDeclaration: Def identifier fieldList methodList?;
-globalEnumDeclaration: Def identifier Case flagList methodList?;
+globalEnumDeclaration: Def identifier Case constructorList methodList?;
 
 parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
 
@@ -33,7 +33,9 @@ methodList: LeftBrace (method Semi)* RightBrace;
 
 method: identifier parameterList type Equal expression;
 
-flagList: Or? identifier (Or identifier)*;
+constructorList: Or? constructor (Or constructor)*;
+
+constructor: identifier fieldList?;
 
 block: LeftBrace (statement Semi)* RightBrace;
 

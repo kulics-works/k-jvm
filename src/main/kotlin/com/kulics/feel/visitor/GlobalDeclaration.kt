@@ -243,14 +243,23 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
-    val flags = visitFlagList(ctx.flagList())
-    val type = EnumType(id, mutableMapOf(), flags)
+    val type = EnumType(id, mutableMapOf(), mutableMapOf())
     addType(type)
+    val constructors = visitConstructorList(ctx.constructorList())
     val buf = StringBuilder()
-    for (v in flags) {
-        addIdentifier(Identifier(v, type, IdentifierKind.Immutable))
-        addType(RecordType(v, mutableMapOf()))
-        buf.append("object ${v}: ${type.name}();$Wrap")
+    for ((name, info) in constructors) {
+        val (fields, code) = info
+        if (fields.size == 0) {
+            val constructor = Identifier(name, type, IdentifierKind.Immutable)
+            addIdentifier(constructor)
+            type.constructors[name] = constructor
+        } else {
+            val constructorType = FunctionType(fields.map { it.type }, type)
+            val constructor = Identifier(name, constructorType, IdentifierKind.Immutable)
+            addIdentifier(constructor)
+            type.constructors[name] = constructor
+        }
+        buf.append("${code}: ${id}();$Wrap")
     }
     pushScope()
     val methodCode = if (ctx.methodList() == null) {
@@ -266,16 +275,28 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
     return "sealed class ${id}${methodCode};$Wrap${buf}"
 }
 
-internal fun DelegateVisitor.visitFlagList(ctx: FlagListContext): Set<String> {
-    val set = HashSet<String>()
-    for (v in ctx.identifier()) {
-        val identifier = visitIdentifier(v)
-        if (set.contains(identifier)) {
-            println("identifier: '${identifier}' is redefined")
+internal fun DelegateVisitor.visitConstructorList(ctx: ConstructorListContext): Map<String, Pair<ArrayList<Identifier>, String>> {
+    val map = HashMap<String, Pair<ArrayList<Identifier>, String>>()
+    for (v in ctx.constructor()) {
+        val (name, fields, code) = visitConstructor(v)
+        if (map.contains(name)) {
+            println("constructor: '${name}' is redefined")
             throw CompilingCheckException()
         } else {
-            set.add(identifier)
+            map[name] = fields to code
         }
     }
-    return set
+    return map
+}
+
+internal fun DelegateVisitor.visitConstructor(ctx: ConstructorContext): Triple<String, ArrayList<Identifier>, String> {
+    val id = visitIdentifier(ctx.identifier())
+    return if (ctx.fieldList() == null) {
+        Triple(id, arrayListOf(), "object $id")
+    } else {
+        pushScope()
+        val fields = visitFieldList(ctx.fieldList())
+        popScope()
+        Triple(id, fields.first, "class ${id}(${fields.second})")
+    }
 }
