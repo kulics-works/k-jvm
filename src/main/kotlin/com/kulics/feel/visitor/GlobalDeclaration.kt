@@ -39,7 +39,7 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
         println("type: '${typeName}' is undefined")
         throw CompilingCheckException()
     }
-    if (expr.type != type) {
+    if (expr.type.cannotAssignTo(type)) {
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
     }
@@ -60,7 +60,7 @@ internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantD
         println("type: '${typeName}' is undefined")
         throw CompilingCheckException()
     }
-    if (expr.type != type) {
+    if (expr.type.cannotAssignTo(type)) {
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
     }
@@ -92,7 +92,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         addIdentifier(v)
     }
     val expr = visitExpression(ctx.expression())
-    if (expr.type != returnType) {
+    if (expr.type.cannotAssignTo(returnType)) {
         println("the return is '${returnTypeName}', but find '${expr.type.name}'")
         throw CompilingCheckException()
     }
@@ -243,22 +243,20 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
-    val type = EnumType(id, mutableMapOf(), mutableMapOf())
+    val members = mutableMapOf<String, Identifier>()
+    val permitsTypes = mutableSetOf<Type>()
+    val type = InterfaceType(id, members, permitsTypes)
     addType(type)
     val constructors = visitConstructorList(ctx.constructorList())
     val buf = StringBuilder()
     for ((name, info) in constructors) {
         val (fields, code) = info
-        if (fields.size == 0) {
-            val constructor = Identifier(name, type, IdentifierKind.Immutable)
-            addIdentifier(constructor)
-            type.constructors[name] = constructor
-        } else {
-            val constructorType = FunctionType(fields.map { it.type }, type)
-            val constructor = Identifier(name, constructorType, IdentifierKind.Immutable)
-            addIdentifier(constructor)
-            type.constructors[name] = constructor
-        }
+        val constructorType = RecordType(name, members)
+        val constructorInitType = FunctionType(fields.map { it.type }, constructorType)
+        val constructor = Identifier(name, constructorInitType, IdentifierKind.Immutable)
+        addType(constructorType)
+        addIdentifier(constructor)
+        permitsTypes.add(constructorType)
         buf.append("${code}: ${id}();$Wrap")
     }
     pushScope()
@@ -267,7 +265,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
     } else {
         val methods = visitMethodList(ctx.methodList())
         for (v in methods.first) {
-            type.member[v.name] = v
+            members[v.name] = v
         }
         "{ ${methods.second} }"
     }
@@ -280,7 +278,7 @@ internal fun DelegateVisitor.visitConstructorList(ctx: ConstructorListContext): 
     for (v in ctx.constructor()) {
         val (name, fields, code) = visitConstructor(v)
         if (map.contains(name)) {
-            println("constructor: '${name}' is redefined")
+            println("type: '${name}' is redefined")
             throw CompilingCheckException()
         } else {
             map[name] = fields to code
@@ -291,12 +289,8 @@ internal fun DelegateVisitor.visitConstructorList(ctx: ConstructorListContext): 
 
 internal fun DelegateVisitor.visitConstructor(ctx: ConstructorContext): Triple<String, ArrayList<Identifier>, String> {
     val id = visitIdentifier(ctx.identifier())
-    return if (ctx.fieldList() == null) {
-        Triple(id, arrayListOf(), "object $id")
-    } else {
-        pushScope()
-        val fields = visitFieldList(ctx.fieldList())
-        popScope()
-        Triple(id, fields.first, "class ${id}(${fields.second})")
-    }
+    pushScope()
+    val fields = visitFieldList(ctx.fieldList())
+    popScope()
+    return Triple(id, fields.first, "class ${id}(${fields.second})")
 }

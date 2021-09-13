@@ -45,6 +45,7 @@ Mut: 'mut';
 Let: 'let';
 Def: 'def';
 Case: 'case';
+Of: 'of';
 Module: 'mod';
 If: 'if';
 Else: 'else';

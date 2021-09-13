@@ -31,7 +31,7 @@ internal fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationCo
             println("type: '${typeName}' is undefined")
             throw CompilingCheckException()
         }
-        if (expr.type != type) {
+        if (expr.type.cannotAssignTo(type)) {
             println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
             throw CompilingCheckException()
         }
@@ -57,7 +57,7 @@ internal fun DelegateVisitor.visitConstantDeclaration(ctx: ConstantDeclarationCo
             println("type: '${typeName}' is undefined")
             throw CompilingCheckException()
         }
-        if (expr.type != type) {
+        if (expr.type.cannotAssignTo(type)) {
             println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
             throw CompilingCheckException()
         }
@@ -108,7 +108,7 @@ internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationCo
             addIdentifier(v)
         }
         val expr = visitExpression(ctx.expression())
-        if (expr.type != returnType) {
+        if (expr.type.cannotAssignTo(returnType)) {
             println("the return is '${returnTypeName}', but find '${expr.type.name}'")
             throw CompilingCheckException()
         }
@@ -129,6 +129,10 @@ internal fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
+    if (expr.type.cannotAssignTo(id.type)) {
+        println("the type of assign value '${expr.type.name}' is not confirm '${id.type.name}'")
+        throw CompilingCheckException()
+    }
     return "${id.name} = ${expr.generateCode()}"
 }
 

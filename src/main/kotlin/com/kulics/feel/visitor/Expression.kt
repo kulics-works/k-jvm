@@ -41,7 +41,7 @@ fun DelegateVisitor.visitFunctionCallExpression(
         throw CompilingCheckException()
     }
     for ((i, v) in type.parameterTypes.withIndex()) {
-        if (callArgs[i].type != v) {
+        if (callArgs[i].type.cannotAssignTo(v)) {
             println("the type of args${i}: '${callArgs[i].type.name}' is not '${v.name}'")
             throw CompilingCheckException()
         }

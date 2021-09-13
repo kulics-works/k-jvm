@@ -39,10 +39,10 @@ class RecordType(override val name: String, val member: MutableMap<String, Ident
     }
 }
 
-class EnumType(
+class InterfaceType(
     override val name: String,
-    val member: MutableMap<String, Identifier>,
-    val constructors: MutableMap<String, Identifier>
+    private val member: MutableMap<String, Identifier>,
+    val permits: MutableSet<Type>
 ) : Type {
     override fun getMember(name: String): Identifier? {
         return member[name]
@@ -51,4 +51,8 @@ class EnumType(
 
 internal fun DelegateVisitor.visitType(ctx: TypeContext): String {
     return visitIdentifier(ctx.identifier())
+}
+
+internal fun Type.cannotAssignTo(ty: Type): Boolean {
+    return !(this == ty || (ty is InterfaceType && ty.permits.contains(this)))
 }
