@@ -50,6 +50,7 @@ Module: 'mod';
 If: 'if';
 Else: 'else';
 While: 'while';
+Is: 'is';
 
 FloatLiteral: Digit (Exponent | '.' Digit Exponent?);
 DecimalLiteral: Digit;
