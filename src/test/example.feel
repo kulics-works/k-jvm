@@ -87,10 +87,10 @@ def Point(x Int, y Int) {
 let somePoint Point = Point(1, 2);
 let memberAccess(a Point, b Point) Point = Point(a.x+b.x, a.y+b.y).copy();
 
-def Color case Red() | Green() | Blue();
+def Color is Red() | Green() | Blue();
 let red Color = Red();
 
-def IntList case Nil() | Cons(head Int, tail IntList) {
+def IntList is Nil() | Cons(head Int, tail IntList) {
     sum() Int = 0;
 };
 let enum() Void = {
