@@ -97,7 +97,7 @@ fun DelegateVisitor.visitBinaryExpression(
         }
         is LogicOperatorContext -> {
             checkLogicExpressionType(lhsExpr, rhsExpr)
-            val symbol = if (op.And() != null) LogicOperator.And
+            val symbol = if (op.AndAnd() != null) LogicOperator.And
             else LogicOperator.Or
             LogicExpressionNode(lhsExpr, rhsExpr, symbol)
         }

@@ -5,6 +5,9 @@ LessEqual: '<=';
 GreaterEqual: '>=';
 NotEqual: '<>';
 
+AndAnd: '&&';
+OrOr: '||';
+
 Dot: '.';
 Comma: ',';
 

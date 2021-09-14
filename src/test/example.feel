@@ -42,8 +42,8 @@ let compareExpr Void = {
 };
 
 let logicExpr Void = {
-    let a = true & true;
-    let b = true | false;
+    let a = true && true;
+    let b = true || false;
 };
 
 let ifExpr1 Int = if(true) 0 else if(true) 0 else 0;

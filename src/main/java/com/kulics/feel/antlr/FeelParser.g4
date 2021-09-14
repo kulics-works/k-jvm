@@ -112,6 +112,6 @@ multiplicativeOperator: Mul | Div | Mod;
 
 additiveOperator: Add | Sub ;
 
-logicOperator: And | Or ;
+logicOperator: AndAnd | OrOr ;
 
 compareOperator: Less | Greater | LessEqual | GreaterEqual | EqualEqual | NotEqual;
