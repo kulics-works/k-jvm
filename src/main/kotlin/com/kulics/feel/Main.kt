@@ -6,6 +6,7 @@ import com.kulics.feel.visitor.FeelErrorListener
 import com.kulics.feel.visitor.FeelLangVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import java.io.File
 
 fun main(arg: Array<String>) {
     val input = CharStreams.fromFileName("./src/test/example.feel")
@@ -18,5 +19,10 @@ fun main(arg: Array<String>) {
     val tree = parser.program() // parse
     val vt = FeelLangVisitor()
     val result = vt.generateCode(tree)
-    println(result)
+    val output = File("./src/test/kotlin/example.kt")
+    output.bufferedWriter().use {
+        it.write(result)
+    }
+
+    println("feel compile completed")
 }

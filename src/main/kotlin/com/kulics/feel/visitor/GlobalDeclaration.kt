@@ -12,8 +12,7 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
     result.append(
         """
         object BuiltinTool {
-            @JvmStatic
-            fun <T> cast(obj: Any) = obj as? T
+            inline fun <reified T> cast(obj: Any): T? = obj as? T
         };$Wrap
     """.trimIndent()
     )

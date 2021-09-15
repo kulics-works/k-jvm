@@ -97,9 +97,15 @@ let red Color = Red();
 def IntList is Nil() | Cons(head Int, tail IntList) {
     sum() Int = 0;
 };
-let enum() Void = {
+let makeIntList() IntList = {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
     li.sum();
+    li
+};
+let sumIntList(li IntList) Int = if(li is Cons v) {
+    v.head + sumIntList(v.tail)
+} else {
+    0
 };
 
 let typePattern() Void = {
