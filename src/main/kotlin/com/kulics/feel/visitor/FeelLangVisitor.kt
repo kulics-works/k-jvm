@@ -140,6 +140,10 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitLiteralExpression(ctx)
     }
 
+    override fun visitIdentifierPattern(ctx: IdentifierPatternContext): String {
+        return delegate.visitIdentifierPattern(ctx)
+    }
+
     override fun visitType(ctx: TypeContext): String {
         return delegate.visitType(ctx)
     }

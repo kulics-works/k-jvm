@@ -1,5 +1,9 @@
 mod demo;
 
+let main() Void = {
+
+};
+
 let a Float = 0.1 + 0.3;
 
 let mut b Int = 321 - 300;
@@ -96,6 +100,13 @@ def IntList is Nil() | Cons(head Int, tail IntList) {
 let enum() Void = {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
     li.sum();
-    Cons(1, Nil()).sum();
-    Nil().sum();
+};
+
+let typePattern() Void = {
+    let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
+    let i = if (li is Cons v) {
+        v.head
+    } else {
+        0
+    };
 };

@@ -189,17 +189,51 @@ internal fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContex
 
 internal fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): ExpressionNode {
     val cond = visitExpression(ctx.expression(0))
-    if (cond.type != builtinTypeBool) {
-        println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
-        throw CompilingCheckException()
+    return if (ctx.pattern() == null) {
+        if (cond.type != builtinTypeBool) {
+            println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
+            throw CompilingCheckException()
+        }
+        val thenBranch = visitExpression(ctx.expression(1))
+        val elseBranch = visitExpression(ctx.expression(2))
+        if (thenBranch.type != elseBranch.type) {
+            println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
+            throw CompilingCheckException()
+        }
+        ConditionExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
+    } else {
+        val pattern = ctx.pattern().typePattern() ?: throw CompilingCheckException()
+        val castTypeName = visitType(pattern.type())
+        val castType = getType(castTypeName)
+        if (castType == null) {
+            println("type: '${castTypeName}' is undefined")
+            throw CompilingCheckException()
+        }
+        val castIdentifier = visitIdentifierPattern(pattern.identifierPattern())
+        val castCode =
+            "val $castIdentifier = BuiltinTool.cast<${castType.generateTypeName()}>(${cond.generateCode()});$Wrap"
+        pushScope()
+        addIdentifier(Identifier(castIdentifier, castType))
+        val thenBranch = visitExpression(ctx.expression(1))
+        popScope()
+        val elseBranch = visitExpression(ctx.expression(2))
+        if (thenBranch.type != elseBranch.type) {
+            println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
+            throw CompilingCheckException()
+        }
+        val condExpr =
+            ConditionExpressionNode(
+                LiteralExpressionNode("$castIdentifier != null", builtinTypeBool),
+                thenBranch,
+                elseBranch,
+                thenBranch.type
+            )
+        BlockExpressionNode(castCode, condExpr)
     }
-    val thenBranch = visitExpression(ctx.expression(1))
-    val elseBranch = visitExpression(ctx.expression(2))
-    if (thenBranch.type != elseBranch.type) {
-        println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
-        throw CompilingCheckException()
-    }
-    return ConditionExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
+}
+
+internal fun DelegateVisitor.visitIdentifierPattern(ctx: IdentifierPatternContext): String {
+    return visitIdentifier(ctx.identifier())
 }
 
 internal fun DelegateVisitor.visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {

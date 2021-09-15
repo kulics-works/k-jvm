@@ -9,6 +9,14 @@ internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContex
 internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
     val result = StringBuilder()
     result.append(visitModuleDeclaration(ctx.moduleDeclaration()))
+    result.append(
+        """
+        object BuiltinTool {
+            @JvmStatic
+            fun <T> cast(obj: Any) = obj as? T
+        };$Wrap
+    """.trimIndent()
+    )
     for (item in ctx.globalDeclaration()) {
         result.append(visitGlobalDeclaration(item))
     }
@@ -251,8 +259,14 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
     val buf = StringBuilder()
     for ((name, info) in constructors) {
         val (fields, code) = info
-        val constructorType = RecordType(name, members)
-        val constructorInitType = FunctionType(fields.map { it.type }, constructorType)
+        val constructorMembers = mutableMapOf<String, Identifier>()
+        val constructorInitParamList = mutableListOf<Type>()
+        for (v in fields) {
+            constructorMembers[v.name] = v
+            constructorInitParamList.add(v.type)
+        }
+        val constructorType = RecordType(name, constructorMembers)
+        val constructorInitType = FunctionType(constructorInitParamList, constructorType)
         val constructor = Identifier(name, constructorInitType, IdentifierKind.Immutable)
         addType(constructorType)
         addIdentifier(constructor)

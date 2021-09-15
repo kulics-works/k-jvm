@@ -73,11 +73,11 @@ memberAccess: Dot identifier;
 assignment: identifier Equal expression;
 
 ifStatement
-    : If LeftParen expression RightParen block (Else (block | ifStatement))?
+    : If LeftParen expression (Is pattern)? RightParen block (Else (block | ifStatement))?
     ;
 
 ifExpression
-    : If LeftParen expression RightParen expression Else expression
+    : If LeftParen expression (Is pattern)? RightParen expression Else expression
     ;
 
 whileStatement
@@ -85,6 +85,36 @@ whileStatement
     ;
 
 blockExpression: LeftBrace (statement Semi)* expression? RightBrace;
+
+pattern
+    : typePattern
+    | literalPattern
+    | identifierPattern
+    | deconstructPattern
+    | wildcardPattern
+    ;
+
+typePattern
+    : type identifierPattern
+    | type wildcardPattern
+    | type deconstructPattern
+    ;
+
+deconstructPattern
+    : LeftParen (pattern (Comma pattern)*)? RightParen
+    ;
+
+identifierPattern
+    : identifier
+    ;
+
+wildcardPattern
+    : Discard
+    ;
+
+literalPattern
+    : literalExpression
+    ;
 
 primaryExpression
     : literalExpression
