@@ -17,9 +17,13 @@ globalDeclaration
 
 globalVariableDeclaration: Let Mut identifier type Equal expression;
 globalConstantDeclaration: Let identifier type Equal expression;
-globalFunctionDeclaration: Let identifier parameterList type Equal expression;
+globalFunctionDeclaration: Let identifier typeParameterList? parameterList type Equal expression;
 globalRecordDeclaration: Def identifier fieldList methodList?;
 globalEnumDeclaration: Def identifier Is constructorList methodList?;
+
+typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
+
+typeParameter: identifier type;
 
 parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
 
@@ -66,7 +70,9 @@ variableDeclaration: Let Mut identifier type? Equal expression;
 constantDeclaration: Let identifier type? Equal expression;
 functionDeclaration: Let identifier parameterList type? Equal expression;
 
-callSuffix: LeftParen (expression (Comma expression)*)? RightParen;
+callSuffix: typeArgumentList? LeftParen (expression (Comma expression)*)? RightParen;
+
+typeArgumentList: LeftBrack type (Comma type)* RightBrack;
 
 memberAccess: Dot identifier;
 

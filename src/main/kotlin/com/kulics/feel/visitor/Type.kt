@@ -33,6 +33,12 @@ class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type 
     }
 }
 
+class KindType(
+    override val name: String,
+    val typeConstructor: (List<Type>) -> Type,
+    val typeConstraint: List<Type>
+) : Type
+
 class RecordType(override val name: String, val member: MutableMap<String, Identifier>) : Type {
     override fun getMember(name: String): Identifier? {
         return member[name]

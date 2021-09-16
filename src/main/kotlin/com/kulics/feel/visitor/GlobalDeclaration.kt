@@ -81,30 +81,35 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
-    val returnTypeName = visitType(ctx.type())
-    val returnType = getType(returnTypeName)
-    if (returnType == null) {
-        println("type: '${returnTypeName}' is undefined")
-        throw CompilingCheckException()
-    }
-    val params = visitParameterList(ctx.parameterList())
-    val type = FunctionType(params.first.map { it.type }, returnType)
-    addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-    pushScope()
-    for (v in params.first) {
-        if (isRedefineIdentifier(v.name)) {
-            println("identifier: '${v.name}' is redefined")
+    val typeParameterList = ctx.typeParameterList()
+    if (typeParameterList != null){
+        TODO()
+    } else {
+        val returnTypeName = visitType(ctx.type())
+        val returnType = getType(returnTypeName)
+        if (returnType == null) {
+            println("type: '${returnTypeName}' is undefined")
             throw CompilingCheckException()
         }
-        addIdentifier(v)
+        val params = visitParameterList(ctx.parameterList())
+        val type = FunctionType(params.first.map { it.type }, returnType)
+        addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
+        pushScope()
+        for (v in params.first) {
+            if (isRedefineIdentifier(v.name)) {
+                println("identifier: '${v.name}' is redefined")
+                throw CompilingCheckException()
+            }
+            addIdentifier(v)
+        }
+        val expr = visitExpression(ctx.expression())
+        if (expr.type.cannotAssignTo(returnType)) {
+            println("the return is '${returnTypeName}', but find '${expr.type.name}'")
+            throw CompilingCheckException()
+        }
+        popScope()
+        return "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
     }
-    val expr = visitExpression(ctx.expression())
-    if (expr.type.cannotAssignTo(returnType)) {
-        println("the return is '${returnTypeName}', but find '${expr.type.name}'")
-        throw CompilingCheckException()
-    }
-    popScope()
-    return "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
 }
 
 internal fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): Pair<ArrayList<Identifier>, String> {

@@ -4,20 +4,6 @@ import kotlin.collections.ArrayList
 
 const val Wrap = "\r\n"
 
-const val BlockLeft = "{"
-const val BlockRight = "}"
-
-val keywords = arrayOf(
-    "abstract", "as", "base", "bool", "break", "byte", "case", "catch",
-    "char", "checked", "class", "const", "continue", "decimal", "default", "delegate", "do", "double", "_",
-    "enum", "event", "explicit", "extern", "false", "finally", "fixed", "float", "for", "foreach", "goto",
-    "?", "implicit", "in", "int", "interface", "internal", "is", "lock", "long", "namespace", "new", "null",
-    "object", "operator", "out", "override", "params", "private", "protected", "public", "readonly", "ref",
-    "return", "sbyte", "sealed", "short", "sizeof", "stackalloc", "static", "string", "struct", "switch",
-    "this", "throw", "true", "try", "typeof", "uint", "ulong", "unchecked", "unsafe", "ushort", "using",
-    "virtual", "void", "volatile", "while"
-)
-
 class CompilingCheckException : Exception()
 
 class ArrayStack<T> : Collection<T> {
@@ -66,6 +52,7 @@ class ArrayStack<T> : Collection<T> {
     }
 }
 
+val builtinTypeAny = PrimitiveType("Any", "Any")
 val builtinTypeVoid = PrimitiveType("Void", "Unit")
 val builtinTypeInt = PrimitiveType("Int", "Int")
 val builtinTypeFloat = PrimitiveType("Float", "Double")
