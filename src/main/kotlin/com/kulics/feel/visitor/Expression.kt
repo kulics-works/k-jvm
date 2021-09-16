@@ -202,18 +202,12 @@ internal fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): Expres
         }
         ConditionExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
     } else {
-        val pattern = ctx.pattern().typePattern() ?: throw CompilingCheckException()
-        val castTypeName = visitType(pattern.type())
-        val castType = getType(castTypeName)
-        if (castType == null) {
-            println("type: '${castTypeName}' is undefined")
-            throw CompilingCheckException()
-        }
-        val castIdentifier = visitIdentifierPattern(pattern.identifierPattern())
-        val castCode =
-            "val $castIdentifier = BuiltinTool.cast<${castType.generateTypeName()}>(${cond.generateCode()});$Wrap"
         pushScope()
-        addIdentifier(Identifier(castIdentifier, castType))
+        val pattern = visitPattern(ctx.pattern())
+        if (pattern is IdentifierPattern) {
+            val identifier = Identifier(pattern.identifier, cond.type)
+            addIdentifier(identifier)
+        }
         val thenBranch = visitExpression(ctx.expression(1))
         popScope()
         val elseBranch = visitExpression(ctx.expression(2))
@@ -221,14 +215,38 @@ internal fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): Expres
             println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
             throw CompilingCheckException()
         }
-        val condExpr =
-            ConditionExpressionNode(
-                LiteralExpressionNode("$castIdentifier != null", builtinTypeBool),
-                thenBranch,
-                elseBranch,
-                thenBranch.type
-            )
-        BlockExpressionNode(castCode, condExpr)
+        return when (pattern) {
+            is TypePattern -> {
+                val matchCode =
+                    "val ${pattern.identifier.name} = BuiltinTool.cast<${
+                        pattern.type.generateTypeName()
+                    }>(${cond.generateCode()});$Wrap"
+                val condExpr =
+                    ConditionExpressionNode(
+                        LiteralExpressionNode("${pattern.identifier.name} != null", builtinTypeBool),
+                        thenBranch,
+                        elseBranch,
+                        thenBranch.type
+                    )
+                BlockExpressionNode(matchCode, condExpr)
+            }
+            is IdentifierPattern -> {
+                val matchCode = "val ${pattern.identifier} = ${cond.generateCode()};$Wrap"
+                BlockExpressionNode(matchCode, thenBranch)
+            }
+            is LiteralPattern -> {
+                checkCompareExpressionType(cond, pattern.expr)
+                ConditionExpressionNode(
+                    LiteralExpressionNode("${cond.generateCode()} == ${pattern.expr.generateCode()}", builtinTypeBool),
+                    thenBranch,
+                    elseBranch,
+                    thenBranch.type
+                )
+            }
+            is WildcardPattern -> {
+                BlockExpressionNode("${cond.generateCode()};$Wrap", thenBranch)
+            }
+        }
     }
 }
 

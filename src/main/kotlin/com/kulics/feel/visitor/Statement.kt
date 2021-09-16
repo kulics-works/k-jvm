@@ -138,17 +138,66 @@ internal fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {
 
 internal fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
     val cond = visitExpression(ctx.expression())
-    if (cond.type != builtinTypeBool) {
-        println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
-        throw CompilingCheckException()
-    }
-    val thenBranch = visitBlock(ctx.block(0))
-    return if (ctx.ifStatement() != null) {
-        "if (${cond.generateCode()}) { $thenBranch } else ${visitIfStatement(ctx.ifStatement())}"
-    } else if (ctx.block().size == 1) {
-        "if (${cond.generateCode()}) { $thenBranch }"
+    if (ctx.pattern() == null) {
+        if (cond.type != builtinTypeBool) {
+            println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
+            throw CompilingCheckException()
+        }
+        val thenBranch = visitBlock(ctx.block(0))
+        return if (ctx.ifStatement() != null) {
+            "if (${cond.generateCode()}) { $thenBranch } else {${visitIfStatement(ctx.ifStatement())}}"
+        } else if (ctx.block().size == 1) {
+            "if (${cond.generateCode()}) { $thenBranch }"
+        } else {
+            "if (${cond.generateCode()}) { $thenBranch } else { ${visitBlock(ctx.block(1))} }"
+        }
     } else {
-        "if (${cond.generateCode()}) { $thenBranch } else { ${visitBlock(ctx.block(1))} }"
+        pushScope()
+        val pattern = visitPattern(ctx.pattern())
+        if (pattern is IdentifierPattern) {
+            val identifier = Identifier(pattern.identifier, cond.type)
+            addIdentifier(identifier)
+        }
+        val thenBranch = visitBlock(ctx.block(0))
+        popScope()
+        return when (pattern) {
+            is TypePattern -> {
+                val matchCode =
+                    "val ${pattern.identifier.name} = BuiltinTool.cast<${
+                        pattern.type.generateTypeName()
+                    }>(${cond.generateCode()});$Wrap"
+                val condCode = "${pattern.identifier.name} != null"
+                if (ctx.ifStatement() != null) {
+                    "$matchCode if (${condCode}) { $thenBranch } else {${visitIfStatement(ctx.ifStatement())}}"
+                } else if (ctx.block().size == 1) {
+                    "$matchCode if (${condCode}) { $thenBranch }"
+                } else {
+                    "$matchCode if (${condCode}) { $thenBranch } else { ${visitBlock(ctx.block(1))} }"
+                }
+            }
+            is IdentifierPattern ->
+                "run{val ${pattern.identifier} = ${cond.generateCode()};$Wrap ${thenBranch}${Wrap}};Unit;$Wrap"
+            is LiteralPattern -> {
+                checkCompareExpressionType(cond, pattern.expr)
+                if (ctx.ifStatement() != null) {
+                    "if (${cond.generateCode()} == ${pattern.expr.generateCode()}) { $thenBranch } else {${
+                        visitIfStatement(
+                            ctx.ifStatement()
+                        )
+                    }}"
+                } else if (ctx.block().size == 1) {
+                    "if (${cond.generateCode()} == ${pattern.expr.generateCode()}) { $thenBranch }"
+                } else {
+                    "if (${cond.generateCode()} == ${pattern.expr.generateCode()}) { $thenBranch } else { ${
+                        visitBlock(
+                            ctx.block(1)
+                        )
+                    } }"
+                }
+            }
+            is WildcardPattern ->
+                "run{${cond.generateCode()};$Wrap ${thenBranch}${Wrap}};Unit;$Wrap"
+        }
     }
 }
 

@@ -116,3 +116,60 @@ let typePattern() Void = {
         0
     };
 };
+
+let typePattern2() Void = {
+    let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
+    if (li is Cons v) {
+        v.head;
+    } else {
+        0;
+    };
+};
+
+let identifierPattern() Int = {
+    let a = 1;
+    if (a is a) 123 else 123
+};
+
+let identifierPattern2() Void = {
+    let a = 1;
+    if (a is a) {
+        localFunction();
+    } else if (a is b) {
+        localFunction();
+    } else {
+        localFunction();
+    };
+};
+
+let wildcardPattern() Int = {
+    let a = 1;
+    if (a is _) 123 else 123
+};
+
+let wildcardPattern2() Void = {
+    let a = 1;
+    if (a is _) {
+        localFunction();
+    } else if (a is _) {
+        localFunction();
+    } else {
+        localFunction();
+    };
+};
+
+let literalPattern() Int = {
+    let a = 1;
+    if (a is 1) 123 else 123
+};
+
+let literalPattern2() Void = {
+    let a = 1;
+    if (a is 1) {
+        localFunction();
+    } else if (a is 1) {
+        localFunction();
+    } else {
+        localFunction();
+    };
+};
