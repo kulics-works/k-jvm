@@ -13,7 +13,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
     }
 
     override fun visitIdentifier(ctx: IdentifierContext): String {
-        return delegate.visitIdentifier(ctx)
+        return visitIdentifier(ctx)
     }
 
     override fun visitModuleDeclaration(ctx: ModuleDeclarationContext): String {
@@ -76,7 +76,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitConstructorList(ctx)
     }
 
-    override fun visitConstructor(ctx: ConstructorContext): Triple<String, ArrayList<Identifier>, String> {
+    override fun visitConstructor(ctx: ConstructorContext): Pair<String, Pair<ArrayList<Identifier>, String>> {
         return delegate.visitConstructor(ctx)
     }
 

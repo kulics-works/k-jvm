@@ -206,17 +206,14 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             for (i in li.indices) {
                 typeMap[typeParameter.first[i].name] = li[i]
             }
-            typeSubstitution(RecordType("${id}[${
-                li.foldIndexed("") { index, acc, type ->
-                    if (index == 0) type.name
-                    else "${acc}, ${type.name}"
-                }
-            }]", members, "${id}<${
-                li.foldIndexed("") { index, acc, type ->
-                    if (index == 0) type.generateTypeName()
-                    else "${acc}, ${type.generateTypeName()}"
-                }
-            }>"), typeMap)
+            typeSubstitution(
+                RecordType(
+                    "${id}[${joinTypeName(li) { it.name }}]",
+                    members,
+                    "${id}<${joinTypeName(li) { it.name }}>"
+                ),
+                typeMap
+            )
         }
         addType(type)
         val constructorType = GenericsType(id, typeParameter.first) { li ->
@@ -340,58 +337,141 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
     }
     val members = mutableMapOf<String, Identifier>()
     val permitsTypes = mutableSetOf<Type>()
-    val type = InterfaceType(id, members, permitsTypes)
-    addType(type)
-    val constructors = visitConstructorList(ctx.constructorList())
-    val buf = StringBuilder()
-    for ((name, info) in constructors) {
-        val (fields, code) = info
-        val constructorMembers = mutableMapOf<String, Identifier>()
-        val constructorInitParamList = mutableListOf<Type>()
-        for (v in fields) {
-            constructorMembers[v.name] = v
-            constructorInitParamList.add(v.type)
+    val typeParameterList = ctx.typeParameterList()
+    return if (typeParameterList != null) {
+        val typeParameter = visitTypeParameterList(typeParameterList)
+        val type = GenericsType(id, typeParameter.first) { li ->
+            val typeMap = mutableMapOf<String, Type>()
+            for (i in li.indices) {
+                typeMap[typeParameter.first[i].name] = li[i]
+            }
+            typeSubstitution(
+                InterfaceType(
+                    "${id}[${joinTypeName(li) { it.name }}]",
+                    members,
+                    permitsTypes.fold(mutableSetOf()) { acc, it ->
+                        val typeInstance = (it as GenericsType).typeConstructor(li)
+                        acc.add(typeSubstitution(typeInstance, typeMap))
+                        acc
+                    },
+                    "${id}<${joinTypeName(li) { it.generateTypeName() }}>"
+                ), typeMap
+            )
         }
-        val constructorType = RecordType(name, constructorMembers, null)
-        val constructorInitType = FunctionType(constructorInitParamList, constructorType)
-        val constructor = Identifier(name, constructorInitType, IdentifierKind.Immutable)
-        addType(constructorType)
-        addIdentifier(constructor)
-        permitsTypes.add(constructorType)
-        buf.append("${code}: ${id}();$Wrap")
-    }
-    pushScope()
-    val methodCode = if (ctx.methodList() == null) {
-        ""
+        addType(type)
+        pushScope()
+        for (v in typeParameter.first) {
+            addType(v)
+        }
+        val constructors = visitConstructorList(ctx.constructorList())
+        popScope()
+        val buf = StringBuilder()
+        for ((constructorName, info) in constructors) {
+            val (fields, code) = info
+            val constructorMembers = mutableMapOf<String, Identifier>()
+            val constructorInitParamList = mutableListOf<Type>()
+            for (v in fields) {
+                constructorMembers[v.name] = v
+                constructorInitParamList.add(v.type)
+            }
+            val constructorType = GenericsType(constructorName, typeParameter.first) { li ->
+                val typeMap = mutableMapOf<String, Type>()
+                for (i in li.indices) {
+                    typeMap[typeParameter.first[i].name] = li[i]
+                }
+                typeSubstitution(
+                    RecordType(
+                        "${constructorName}[${joinTypeName(li) { it.name }}]",
+                        constructorMembers,
+                        "${constructorName}<${joinTypeName(li) { it.name }}>"
+                    ),
+                    typeMap
+                )
+            }
+            val constructorInitType = GenericsType(id, typeParameter.first) { li ->
+                val typeMap = mutableMapOf<String, Type>()
+                for (i in li.indices) {
+                    typeMap[typeParameter.first[i].name] = li[i]
+                }
+                typeSubstitution(FunctionType(constructorInitParamList, constructorType.typeConstructor(li)), typeMap)
+            }
+            val constructor = Identifier(constructorName, constructorInitType, IdentifierKind.Immutable)
+            addType(constructorType)
+            addIdentifier(constructor)
+            permitsTypes.add(constructorType)
+            buf.append("class ${constructorName}<${typeParameter.second}>(${code}): ${id}<${
+                joinTypeName(typeParameter.first) { it.name }
+            }>();$Wrap")
+        }
+        pushScope()
+        for (v in typeParameter.first) {
+            addType(v)
+        }
+        val methodCode = if (ctx.methodList() == null) {
+            ""
+        } else {
+            val methods = visitMethodList(ctx.methodList())
+            for (v in methods.first) {
+                members[v.name] = v
+            }
+            "{ ${methods.second} }"
+        }
+        popScope()
+        "sealed class ${id}<${typeParameter.second}>${methodCode};$Wrap${buf}"
     } else {
-        val methods = visitMethodList(ctx.methodList())
-        for (v in methods.first) {
-            members[v.name] = v
+        val type = InterfaceType(id, members, permitsTypes, null)
+        addType(type)
+        val constructors = visitConstructorList(ctx.constructorList())
+        val buf = StringBuilder()
+        for ((constructorName, info) in constructors) {
+            val (fields, code) = info
+            val constructorMembers = mutableMapOf<String, Identifier>()
+            val constructorInitParamList = mutableListOf<Type>()
+            for (v in fields) {
+                constructorMembers[v.name] = v
+                constructorInitParamList.add(v.type)
+            }
+            val constructorType = RecordType(constructorName, constructorMembers, null)
+            val constructorInitType = FunctionType(constructorInitParamList, constructorType)
+            val constructor = Identifier(constructorName, constructorInitType, IdentifierKind.Immutable)
+            addType(constructorType)
+            addIdentifier(constructor)
+            permitsTypes.add(constructorType)
+            buf.append("class ${constructorName}(${code}): ${id}();$Wrap")
         }
-        "{ ${methods.second} }"
+        pushScope()
+        val methodCode = if (ctx.methodList() == null) {
+            ""
+        } else {
+            val methods = visitMethodList(ctx.methodList())
+            for (v in methods.first) {
+                members[v.name] = v
+            }
+            "{ ${methods.second} }"
+        }
+        popScope()
+        "sealed class ${id}${methodCode};$Wrap${buf}"
     }
-    popScope()
-    return "sealed class ${id}${methodCode};$Wrap${buf}"
 }
 
 internal fun DelegateVisitor.visitConstructorList(ctx: ConstructorListContext): Map<String, Pair<ArrayList<Identifier>, String>> {
     val map = HashMap<String, Pair<ArrayList<Identifier>, String>>()
     for (v in ctx.constructor()) {
-        val (name, fields, code) = visitConstructor(v)
+        val (name, fields) = visitConstructor(v)
         if (map.contains(name)) {
             println("type: '${name}' is redefined")
             throw CompilingCheckException()
         } else {
-            map[name] = fields to code
+            map[name] = fields
         }
     }
     return map
 }
 
-internal fun DelegateVisitor.visitConstructor(ctx: ConstructorContext): Triple<String, ArrayList<Identifier>, String> {
+internal fun DelegateVisitor.visitConstructor(ctx: ConstructorContext): Pair<String, Pair<ArrayList<Identifier>, String>> {
     val id = visitIdentifier(ctx.identifier())
     pushScope()
     val fields = visitFieldList(ctx.fieldList())
     popScope()
-    return Triple(id, fields.first, "class ${id}(${fields.second})")
+    return Pair(id, fields)
 }

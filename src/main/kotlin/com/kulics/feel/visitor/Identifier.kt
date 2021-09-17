@@ -2,7 +2,7 @@ package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser
 
-internal fun DelegateVisitor.visitIdentifier(ctx: FeelParser.IdentifierContext): String {
+internal fun visitIdentifier(ctx: FeelParser.IdentifierContext): String {
     return ctx.Identifier().text
 }
 

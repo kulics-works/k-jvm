@@ -10,20 +10,38 @@ sealed interface Type {
 
 class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type {
     override val name: String =
-        "Func[${
-            parameterTypes.foldIndexed("") { index, acc, type ->
-                if (index == 0) type.name
-                else "${acc}, ${type.name}"
-            }
-        },${returnType.name}]"
+        "Func[${joinTypeName(parameterTypes) { it.name }},${returnType.name}]"
+
+    override fun generateTypeName(): String =
+        "(${joinTypeName(parameterTypes) { it.generateTypeName() }})->${returnType.generateTypeName()}"
+}
+
+class RecordType(
+    override val name: String,
+    val member: MutableMap<String, Identifier>,
+    val backendName: String?
+) : Type {
+    override fun getMember(name: String): Identifier? {
+        return member[name]
+    }
 
     override fun generateTypeName(): String {
-        return "(${
-            parameterTypes.foldIndexed("") { index, acc, type ->
-                if (index == 0) type.generateTypeName()
-                else "${acc}, ${type.generateTypeName()}"
-            }
-        })->${returnType.generateTypeName()}"
+        return backendName ?: name
+    }
+}
+
+class InterfaceType(
+    override val name: String,
+    val member: MutableMap<String, Identifier>,
+    val permits: MutableSet<Type>,
+    val backendName: String?
+) : Type {
+    override fun getMember(name: String): Identifier? {
+        return member[name]
+    }
+
+    override fun generateTypeName(): String {
+        return backendName ?: name
     }
 }
 
@@ -58,31 +76,19 @@ fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
             }.toMutableMap(),
             type.backendName
         )
+        is InterfaceType -> InterfaceType(
+            type.name,
+            type.member.mapValues {
+                Identifier(
+                    it.value.name,
+                    typeSubstitution(it.value.type, typeMap),
+                    it.value.kind
+                )
+            }.toMutableMap(),
+            type.permits,
+            type.backendName
+        )
         else -> type
-    }
-}
-
-class RecordType(
-    override val name: String,
-    val member: MutableMap<String, Identifier>,
-    val backendName: String?
-) : Type {
-    override fun getMember(name: String): Identifier? {
-        return member[name]
-    }
-
-    override fun generateTypeName(): String {
-        return backendName ?: name
-    }
-}
-
-class InterfaceType(
-    override val name: String,
-    private val member: MutableMap<String, Identifier>,
-    val permits: MutableSet<Type>
-) : Type {
-    override fun getMember(name: String): Identifier? {
-        return member[name]
     }
 }
 
@@ -108,9 +114,13 @@ internal fun DelegateVisitor.checkType(typeInfo: Pair<String, List<String>>): Ty
             }
             type.typeConstructor(list)
         }
-        else -> {
-            type
-        }
+        else -> type
+    }
+}
+
+internal inline fun joinTypeName(list: List<Type>, select: (Type) -> String): String {
+    return list.foldIndexed("") { index, acc, type ->
+        if (index == 0) select(type) else "${acc}, ${select(type)}"
     }
 }
 
@@ -119,5 +129,5 @@ internal fun DelegateVisitor.visitType(ctx: TypeContext): Pair<String, List<Stri
 }
 
 internal fun Type.cannotAssignTo(ty: Type): Boolean {
-    return !(this.name == ty.name || (ty is InterfaceType && ty.permits.contains(this)))
+    return !(this.name == ty.name || (ty is InterfaceType && ty.permits.any { it.name == this.name }))
 }
