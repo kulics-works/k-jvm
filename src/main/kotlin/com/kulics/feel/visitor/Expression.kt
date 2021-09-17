@@ -31,22 +31,53 @@ fun DelegateVisitor.visitFunctionCallExpression(
 ): ExpressionNode {
     val expr = visitExpression(exprCtx)
     val callArgs = visitCallSuffix(callCtx)
-    val type = expr.type
-    if (type !is FunctionType) {
-        println("the type of expression is not a function")
-        throw CompilingCheckException()
-    }
-    if (type.parameterTypes.size != callArgs.size) {
-        println("the size of args is ${callArgs.size}, but need ${type.parameterTypes.size}")
-        throw CompilingCheckException()
-    }
-    for ((i, v) in type.parameterTypes.withIndex()) {
-        if (callArgs[i].type.cannotAssignTo(v)) {
-            println("the type of args${i}: '${callArgs[i].type.name}' is not '${v.name}'")
+    return when (val type = expr.type) {
+        is FunctionType -> {
+            if (callArgs.first.isNotEmpty()) {
+                println("the type of expression is not a generics function")
+                throw CompilingCheckException()
+            }
+            if (type.parameterTypes.size != callArgs.second.size) {
+                println("the size of args is ${callArgs.second.size}, but need ${type.parameterTypes.size}")
+                throw CompilingCheckException()
+            }
+            for ((i, v) in type.parameterTypes.withIndex()) {
+                if (callArgs.second[i].type.cannotAssignTo(v)) {
+                    println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
+                    throw CompilingCheckException()
+                }
+            }
+            CallExpressionNode(expr, callArgs.second, type.returnType)
+        }
+        is GenericsType -> {
+            if (type.typeParameter.size != callArgs.first.size) {
+                println("the type args size need '${type.typeParameter.size}', but found '${callArgs.first.size}'")
+                throw CompilingCheckException()
+            }
+            for (v in callArgs.first) {
+                if (v is GenericsType) {
+                    println("the generics type '${v.name}' can not be type args")
+                    throw CompilingCheckException()
+                }
+            }
+            val instanceType = type.typeConstructor(callArgs.first)
+            if (instanceType !is FunctionType) {
+                println("the type of expression is not a generics function")
+                throw CompilingCheckException()
+            }
+            for ((i, v) in instanceType.parameterTypes.withIndex()) {
+                if (callArgs.second[i].type.cannotAssignTo(v)) {
+                    println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
+                    throw CompilingCheckException()
+                }
+            }
+            GenericsCallExpressionNode(expr, callArgs.first, callArgs.second, instanceType.returnType)
+        }
+        else -> {
+            println("the type of expression is not a function")
             throw CompilingCheckException()
         }
     }
-    return CallExpressionNode(expr, callArgs, type.returnType)
 }
 
 fun DelegateVisitor.visitMemberAccessExpression(
@@ -152,8 +183,17 @@ fun checkLogicExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
     }
 }
 
-internal fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): List<ExpressionNode> {
-    return ctx.expression().map { visitExpression(it) }
+internal fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): Pair<List<Type>, List<ExpressionNode>> {
+    return (ctx.type().map {
+        val typeName = visitType(it)
+        val type = getType(typeName)
+        if (type == null) {
+            println("type: '${typeName}' is undefined")
+            throw CompilingCheckException()
+        } else {
+            type
+        }
+    }) to (ctx.expression().map { visitExpression(it) })
 }
 
 internal fun DelegateVisitor.visitMemberAccess(ctx: MemberAccessContext): String {

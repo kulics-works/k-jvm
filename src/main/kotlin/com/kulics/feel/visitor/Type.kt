@@ -33,11 +33,39 @@ class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type 
     }
 }
 
-class KindType(
+class GenericsType(
     override val name: String,
-    val typeConstructor: (List<Type>) -> Type,
-    val typeConstraint: List<Type>
+    val typeParameter: List<Type>,
+    val typeConstructor: (List<Type>) -> Type
 ) : Type
+
+class TypeParameter(override val name: String, val constraint: Type) : Type {
+    override fun getMember(name: String): Identifier? {
+        return constraint.getMember(name)
+    }
+}
+
+fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
+    return when (type) {
+        is TypeParameter -> typeMap.getValue(type.name)
+        is FunctionType ->
+            FunctionType(
+                type.parameterTypes.map { typeSubstitution(it, typeMap) },
+                typeSubstitution(type.returnType, typeMap)
+            )
+        is RecordType -> RecordType(
+            type.name,
+            type.member.mapValues {
+                Identifier(
+                    it.value.name,
+                    typeSubstitution(it.value.type, typeMap),
+                    it.value.kind
+                )
+            }.toMutableMap()
+        )
+        else -> type
+    }
+}
 
 class RecordType(override val name: String, val member: MutableMap<String, Identifier>) : Type {
     override fun getMember(name: String): Identifier? {

@@ -40,6 +40,14 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitParameter(ctx)
     }
 
+    override fun visitTypeParameterList(ctx: TypeParameterListContext): Any {
+        return delegate.visitTypeParameterList(ctx)
+    }
+
+    override fun visitTypeParameter(ctx: TypeParameterContext): TypeParameter {
+        return delegate.visitTypeParameter(ctx)
+    }
+
     override fun visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationContext): String {
         return delegate.visitGlobalRecordDeclaration(ctx)
     }
@@ -120,7 +128,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitExpression(ctx)
     }
 
-    override fun visitCallSuffix(ctx: CallSuffixContext): List<ExpressionNode> {
+    override fun visitCallSuffix(ctx: CallSuffixContext): Pair<List<Type>, List<ExpressionNode>> {
         return delegate.visitCallSuffix(ctx)
     }
 

@@ -113,6 +113,23 @@ class CallExpressionNode(val expr: ExpressionNode, val args: List<ExpressionNode
     }
 }
 
+class GenericsCallExpressionNode(
+    val expr: ExpressionNode,
+    val types: List<Type>,
+    val args: List<ExpressionNode>,
+    type: Type
+) : ExpressionNode(type) {
+    override fun generateCode(): String {
+        return "${expr.generateCode()}<${
+            types.foldIndexed("") { index, acc, it ->
+                if (index == 0) it.generateTypeName() else "${acc}, ${it.generateTypeName()}"
+            }
+        }> (${
+            args.foldIndexed("") { index, acc, it -> if (index == 0) it.generateCode() else "${acc}, ${it.generateCode()}" }
+        })"
+    }
+}
+
 class MemberExpressionNode(val expr: ExpressionNode, val member: Identifier) : ExpressionNode(member.type) {
     override fun generateCode(): String {
         return "${expr.generateCode()}.${member.name}"

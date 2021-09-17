@@ -173,3 +173,10 @@ let literalPattern2() Void = {
         localFunction();
     };
 };
+
+let genericsFunction[T Any](a T) T = {
+    let b T = genericsFunction[T](a);
+    b;
+    a
+};
+let callGenericsFunction() Int = genericsFunction[Int](1);

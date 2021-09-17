@@ -70,9 +70,7 @@ variableDeclaration: Let Mut identifier type? Equal expression;
 constantDeclaration: Let identifier type? Equal expression;
 functionDeclaration: Let identifier parameterList type? Equal expression;
 
-callSuffix: typeArgumentList? LeftParen (expression (Comma expression)*)? RightParen;
-
-typeArgumentList: LeftBrack type (Comma type)* RightBrack;
+callSuffix: (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
 
 memberAccess: Dot identifier;
 
