@@ -52,10 +52,10 @@ class ArrayStack<T> : Collection<T> {
     }
 }
 
-val builtinTypeAny = PrimitiveType("Any", "Any")
-val builtinTypeVoid = PrimitiveType("Void", "Unit")
-val builtinTypeInt = PrimitiveType("Int", "Int")
-val builtinTypeFloat = PrimitiveType("Float", "Double")
-val builtinTypeBool = PrimitiveType("Bool", "Boolean")
+val builtinTypeAny = RecordType("Any", mutableMapOf(), "Any")
+val builtinTypeVoid = RecordType("Void", mutableMapOf(), "Unit")
+val builtinTypeInt = RecordType("Int", mutableMapOf(), "Int")
+val builtinTypeFloat = RecordType("Float", mutableMapOf(), "Double")
+val builtinTypeBool = RecordType("Bool", mutableMapOf(), "Boolean")
 val builtinLiteralTrue = Identifier("true", builtinTypeBool, IdentifierKind.Immutable)
 val builtinLiteralFalse = Identifier("false", builtinTypeBool, IdentifierKind.Immutable)

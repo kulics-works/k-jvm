@@ -185,14 +185,7 @@ fun checkLogicExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
 
 internal fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): Pair<List<Type>, List<ExpressionNode>> {
     return (ctx.type().map {
-        val typeName = visitType(it)
-        val type = getType(typeName)
-        if (type == null) {
-            println("type: '${typeName}' is undefined")
-            throw CompilingCheckException()
-        } else {
-            type
-        }
+        checkType(visitType(it))
     }) to (ctx.expression().map { visitExpression(it) })
 }
 

@@ -25,12 +25,7 @@ internal fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationCo
     val type = if (ctx.type() == null) {
         expr.type
     } else {
-        val typeName = visitType(ctx.type())
-        val type = getType(typeName)
-        if (type == null) {
-            println("type: '${typeName}' is undefined")
-            throw CompilingCheckException()
-        }
+        val type = checkType(visitType(ctx.type()))
         if (expr.type.cannotAssignTo(type)) {
             println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
             throw CompilingCheckException()
@@ -51,12 +46,7 @@ internal fun DelegateVisitor.visitConstantDeclaration(ctx: ConstantDeclarationCo
     val type = if (ctx.type() == null) {
         expr.type
     } else {
-        val typeName = visitType(ctx.type())
-        val type = getType(typeName)
-        if (type == null) {
-            println("type: '${typeName}' is undefined")
-            throw CompilingCheckException()
-        }
+        val type = checkType(visitType(ctx.type()))
         if (expr.type.cannotAssignTo(type)) {
             println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
             throw CompilingCheckException()
@@ -90,12 +80,7 @@ internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationCo
         addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
         "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
     } else {
-        val returnTypeName = visitType(ctx.type())
-        val returnType = getType(returnTypeName)
-        if (returnType == null) {
-            println("type: '${returnTypeName}' is undefined")
-            throw CompilingCheckException()
-        }
+        val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
         val type = FunctionType(params.first.map { it.type }, returnType)
         addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
@@ -109,7 +94,7 @@ internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationCo
         }
         val expr = visitExpression(ctx.expression())
         if (expr.type.cannotAssignTo(returnType)) {
-            println("the return is '${returnTypeName}', but find '${expr.type.name}'")
+            println("the return is '${returnType.name}', but find '${expr.type.name}'")
             throw CompilingCheckException()
         }
         popScope()

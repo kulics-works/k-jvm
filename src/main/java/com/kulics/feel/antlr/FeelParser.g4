@@ -18,7 +18,7 @@ globalDeclaration
 globalVariableDeclaration: Let Mut identifier type Equal expression;
 globalConstantDeclaration: Let identifier type Equal expression;
 globalFunctionDeclaration: Let identifier typeParameterList? parameterList type Equal expression;
-globalRecordDeclaration: Def identifier fieldList methodList?;
+globalRecordDeclaration: Def identifier typeParameterList? fieldList methodList?;
 globalEnumDeclaration: Def identifier Is constructorList methodList?;
 
 typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
@@ -133,7 +133,7 @@ literalExpression
     ;
 
 type
-    : identifier
+    : identifier (LeftBrack type (Comma type)* RightBrack)?
     ;
 
 identifier: Identifier;

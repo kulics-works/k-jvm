@@ -180,3 +180,9 @@ let genericsFunction[T Any](a T) T = {
     a
 };
 let callGenericsFunction() Int = genericsFunction[Int](1);
+
+def Pair[T1 Any, T2 Any](first T1, second T2);
+let genericsRecord() Void = {
+    let a Pair[Int, Int] = Pair[Int, Int](1, 2);
+    a.first + a.second;
+};

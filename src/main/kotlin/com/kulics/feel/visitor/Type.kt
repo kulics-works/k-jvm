@@ -8,12 +8,6 @@ sealed interface Type {
     fun getMember(name: String): Identifier? = null
 }
 
-class PrimitiveType(override val name: String, private val backendName: String? = null) : Type {
-    override fun generateTypeName(): String {
-        return backendName ?: name
-    }
-}
-
 class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type {
     override val name: String =
         "Func[${
@@ -61,15 +55,24 @@ fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
                     typeSubstitution(it.value.type, typeMap),
                     it.value.kind
                 )
-            }.toMutableMap()
+            }.toMutableMap(),
+            type.backendName
         )
         else -> type
     }
 }
 
-class RecordType(override val name: String, val member: MutableMap<String, Identifier>) : Type {
+class RecordType(
+    override val name: String,
+    val member: MutableMap<String, Identifier>,
+    val backendName: String?
+) : Type {
     override fun getMember(name: String): Identifier? {
         return member[name]
+    }
+
+    override fun generateTypeName(): String {
+        return backendName ?: name
     }
 }
 
@@ -83,10 +86,38 @@ class InterfaceType(
     }
 }
 
-internal fun DelegateVisitor.visitType(ctx: TypeContext): String {
-    return visitIdentifier(ctx.identifier())
+internal fun DelegateVisitor.checkType(typeInfo: Pair<String, List<String>>): Type {
+    return when (val type = getType(typeInfo.first)) {
+        null -> {
+            println("type: '${typeInfo.first}' is undefined")
+            throw CompilingCheckException()
+        }
+        is GenericsType -> {
+            if (typeInfo.second.isEmpty()) {
+                println("the type args size need '${type.typeParameter.size}', but found '${typeInfo.second.size}'")
+                throw CompilingCheckException()
+            }
+            val list = mutableListOf<Type>()
+            for (v in typeInfo.second) {
+                val typeArg = getType(v)
+                if (typeArg == null) {
+                    println("type: '${v}' is undefined")
+                    throw CompilingCheckException()
+                }
+                list.add(typeArg)
+            }
+            type.typeConstructor(list)
+        }
+        else -> {
+            type
+        }
+    }
+}
+
+internal fun DelegateVisitor.visitType(ctx: TypeContext): Pair<String, List<String>> {
+    return visitIdentifier(ctx.identifier()) to ctx.type().map { visitType(it).first }
 }
 
 internal fun Type.cannotAssignTo(ty: Type): Boolean {
-    return !(this == ty || (ty is InterfaceType && ty.permits.contains(this)))
+    return !(this.name == ty.name || (ty is InterfaceType && ty.permits.contains(this)))
 }

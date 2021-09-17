@@ -40,12 +40,7 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
-    val typeName = visitType(ctx.type())
-    val type = getType(typeName)
-    if (type == null) {
-        println("type: '${typeName}' is undefined")
-        throw CompilingCheckException()
-    }
+    val type = checkType(visitType(ctx.type()))
     if (expr.type.cannotAssignTo(type)) {
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
@@ -61,12 +56,7 @@ internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantD
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
-    val typeName = visitType(ctx.type())
-    val type = getType(typeName)
-    if (type == null) {
-        println("type: '${typeName}' is undefined")
-        throw CompilingCheckException()
-    }
+    val type = checkType(visitType(ctx.type()))
     if (expr.type.cannotAssignTo(type)) {
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
@@ -88,12 +78,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         for (v in typeParameter.first) {
             addType(v)
         }
-        val returnTypeName = visitType(ctx.type())
-        val returnType = getType(returnTypeName)
-        if (returnType == null) {
-            println("type: '${returnTypeName}' is undefined")
-            throw CompilingCheckException()
-        }
+        val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
         val type = GenericsType(id, typeParameter.first) { li ->
             val typeMap = mutableMapOf<String, Type>()
@@ -121,18 +106,13 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         }
         val expr = visitExpression(ctx.expression())
         if (expr.type.cannotAssignTo(returnType)) {
-            println("the return is '${returnTypeName}', but find '${expr.type.name}'")
+            println("the return is '${returnType.name}', but find '${expr.type.name}'")
             throw CompilingCheckException()
         }
         popScope()
         "fun <${typeParameter.second}> ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
     } else {
-        val returnTypeName = visitType(ctx.type())
-        val returnType = getType(returnTypeName)
-        if (returnType == null) {
-            println("type: '${returnTypeName}' is undefined")
-            throw CompilingCheckException()
-        }
+        val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
         val type = FunctionType(params.first.map { it.type }, returnType)
         addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
@@ -146,7 +126,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         }
         val expr = visitExpression(ctx.expression())
         if (expr.type.cannotAssignTo(returnType)) {
-            println("the return is '${returnTypeName}', but find '${expr.type.name}'")
+            println("the return is '${returnType.name}', but find '${expr.type.name}'")
             throw CompilingCheckException()
         }
         popScope()
@@ -176,12 +156,7 @@ internal fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): Pair
 
 internal fun DelegateVisitor.visitParameter(ctx: ParameterContext): Identifier {
     val id = visitIdentifier(ctx.identifier())
-    val typeName = visitType(ctx.type())
-    val type = getType(typeName)
-    if (type == null) {
-        println("type: '${typeName}' is undefined")
-        throw CompilingCheckException()
-    }
+    val type = checkType(visitType(ctx.type()))
     return Identifier(id, type, IdentifierKind.Immutable)
 }
 
@@ -205,12 +180,7 @@ internal fun DelegateVisitor.visitTypeParameterList(ctx: TypeParameterListContex
 
 internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter {
     val id = visitIdentifier(ctx.identifier())
-    val typeName = visitType(ctx.type())
-    val type = getType(typeName)
-    if (type == null) {
-        println("type: '${typeName}' is undefined")
-        throw CompilingCheckException()
-    }
+    val type = checkType(visitType(ctx.type()))
     return TypeParameter(id, type)
 }
 
@@ -220,26 +190,78 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
-    val fieldList = visitFieldList(ctx.fieldList())
-    val members = mutableMapOf<String, Identifier>()
-    fieldList.first.forEach { members[it.name] = it }
-    val type = RecordType(id, members)
-    addType(type)
-    val constructorType = FunctionType(fieldList.first.map { it.type }, type)
-    addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
-    pushScope()
-    fieldList.first.forEach { addIdentifier(it) }
-    val methodCode = if (ctx.methodList() == null) {
-        ""
-    } else {
-        val methods = visitMethodList(ctx.methodList())
-        for (v in methods.first) {
-            type.member[v.name] = v
+    val typeParameterList = ctx.typeParameterList()
+    return if (typeParameterList != null) {
+        val typeParameter = visitTypeParameterList(typeParameterList)
+        pushScope()
+        for (v in typeParameter.first) {
+            addType(v)
         }
-        " {${methods.second}}"
+        val fieldList = visitFieldList(ctx.fieldList())
+        val members = mutableMapOf<String, Identifier>()
+        fieldList.first.forEach { members[it.name] = it }
+        popScope()
+        val type = GenericsType(id, typeParameter.first) { li ->
+            val typeMap = mutableMapOf<String, Type>()
+            for (i in li.indices) {
+                typeMap[typeParameter.first[i].name] = li[i]
+            }
+            typeSubstitution(RecordType("${id}[${
+                li.foldIndexed("") { index, acc, type ->
+                    if (index == 0) type.name
+                    else "${acc}, ${type.name}"
+                }
+            }]", members, "${id}<${
+                li.foldIndexed("") { index, acc, type ->
+                    if (index == 0) type.generateTypeName()
+                    else "${acc}, ${type.generateTypeName()}"
+                }
+            }>"), typeMap)
+        }
+        addType(type)
+        val constructorType = GenericsType(id, typeParameter.first) { li ->
+            val typeMap = mutableMapOf<String, Type>()
+            for (i in li.indices) {
+                typeMap[typeParameter.first[i].name] = li[i]
+            }
+            typeSubstitution(FunctionType(fieldList.first.map { it.type }, type.typeConstructor(li)), typeMap)
+        }
+        addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
+        pushScope()
+        fieldList.first.forEach { addIdentifier(it) }
+        val methodCode = if (ctx.methodList() == null) {
+            ""
+        } else {
+            val methods = visitMethodList(ctx.methodList())
+            for (v in methods.first) {
+                members[v.name] = v
+            }
+            " {${methods.second}}"
+        }
+        popScope()
+        "class ${id}<${typeParameter.second}>(${fieldList.second})${methodCode};$Wrap"
+    } else {
+        val fieldList = visitFieldList(ctx.fieldList())
+        val members = mutableMapOf<String, Identifier>()
+        fieldList.first.forEach { members[it.name] = it }
+        val type = RecordType(id, members, null)
+        addType(type)
+        val constructorType = FunctionType(fieldList.first.map { it.type }, type)
+        addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
+        pushScope()
+        fieldList.first.forEach { addIdentifier(it) }
+        val methodCode = if (ctx.methodList() == null) {
+            ""
+        } else {
+            val methods = visitMethodList(ctx.methodList())
+            for (v in methods.first) {
+                members[v.name] = v
+            }
+            " {${methods.second}}"
+        }
+        popScope()
+        "class ${id}(${fieldList.second})${methodCode};$Wrap"
     }
-    popScope()
-    return "class ${id}(${fieldList.second})${methodCode};$Wrap"
 }
 
 internal fun DelegateVisitor.visitFieldList(ctx: FieldListContext): Pair<ArrayList<Identifier>, String> {
@@ -267,12 +289,7 @@ internal fun DelegateVisitor.visitFieldList(ctx: FieldListContext): Pair<ArrayLi
 
 internal fun DelegateVisitor.visitField(ctx: FieldContext): Identifier {
     val id = visitIdentifier(ctx.identifier())
-    val typeName = visitType(ctx.type())
-    val type = getType(typeName)
-    if (type == null) {
-        println("type: '${typeName}' is undefined")
-        throw CompilingCheckException()
-    }
+    val type = checkType(visitType(ctx.type()))
     return Identifier(id, type, if (ctx.Mut() == null) IdentifierKind.Immutable else IdentifierKind.Mutable)
 }
 
@@ -293,12 +310,7 @@ internal fun DelegateVisitor.visitMethod(ctx: MethodContext): Pair<Identifier, S
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
-    val returnTypeName = visitType(ctx.type())
-    val returnType = getType(returnTypeName)
-    if (returnType == null) {
-        println("type: '${returnTypeName}' is undefined")
-        throw CompilingCheckException()
-    }
+    val returnType = checkType(visitType(ctx.type()))
     val params = visitParameterList(ctx.parameterList())
     val type = FunctionType(params.first.map { it.type }, returnType)
     val identifier = Identifier(id, type, IdentifierKind.Immutable)
@@ -313,7 +325,7 @@ internal fun DelegateVisitor.visitMethod(ctx: MethodContext): Pair<Identifier, S
     }
     val expr = visitExpression(ctx.expression())
     if (expr.type != returnType) {
-        println("the return is '${returnTypeName}', but find '${expr.type.name}'")
+        println("the return is '${returnType.name}', but find '${expr.type.name}'")
         throw CompilingCheckException()
     }
     popScope()
@@ -340,7 +352,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             constructorMembers[v.name] = v
             constructorInitParamList.add(v.type)
         }
-        val constructorType = RecordType(name, constructorMembers)
+        val constructorType = RecordType(name, constructorMembers, null)
         val constructorInitType = FunctionType(constructorInitParamList, constructorType)
         val constructor = Identifier(name, constructorInitType, IdentifierKind.Immutable)
         addType(constructorType)
