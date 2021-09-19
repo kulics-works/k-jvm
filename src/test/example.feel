@@ -192,3 +192,10 @@ let genericsEnum() Int = {
     let x Option[Int] = Some[Int](123);
     if (x is Some[Int] v) v.value else 0
 };
+
+let array() Void = {
+    let mut a = emptyArray[Int]();
+    a = newArray[Int](5, 5);
+    let b = a.get(2);
+    a.set(2, b);
+};

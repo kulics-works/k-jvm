@@ -57,5 +57,49 @@ val builtinTypeVoid = RecordType("Void", mutableMapOf(), "Unit")
 val builtinTypeInt = RecordType("Int", mutableMapOf(), "Int")
 val builtinTypeFloat = RecordType("Float", mutableMapOf(), "Double")
 val builtinTypeBool = RecordType("Bool", mutableMapOf(), "Boolean")
-val builtinLiteralTrue = Identifier("true", builtinTypeBool, IdentifierKind.Immutable)
-val builtinLiteralFalse = Identifier("false", builtinTypeBool, IdentifierKind.Immutable)
+val builtinTypeArray = run {
+    val typeParameter = TypeParameter("T", builtinTypeAny)
+    val members = mutableMapOf<String, Identifier>()
+    val get = "get"
+    members[get] = Identifier(get, FunctionType(listOf(builtinTypeInt), typeParameter))
+    val set = "set"
+    members[set] = Identifier(set, FunctionType(listOf(builtinTypeInt, typeParameter), builtinTypeVoid))
+    GenericsType("Array", listOf(typeParameter)) { li ->
+        val typeMap = mutableMapOf<String, Type>()
+        for (i in li.indices) {
+            typeMap[typeParameter.name] = li[i]
+        }
+        typeSubstitution(
+            RecordType(
+                "Array[${joinTypeName(li) { it.name }}]",
+                members,
+                "Array<${joinTypeName(li) { it.generateTypeName() }}>"
+            ), typeMap
+        )
+    }
+}
+
+val builtinIdentifierTrue = Identifier("true", builtinTypeBool)
+val builtinIdentifierFalse = Identifier("false", builtinTypeBool)
+val builtinIdentifierNewArray = run {
+    val typeParameter = TypeParameter("T", builtinTypeAny)
+    val funcType = GenericsType("NewArray", listOf(typeParameter)) { li ->
+        val typeMap = mutableMapOf<String, Type>()
+        for (i in li.indices) {
+            typeMap[typeParameter.name] = li[i]
+        }
+        typeSubstitution(FunctionType(listOf(builtinTypeInt, li[0]), builtinTypeArray.typeConstructor(li)), typeMap)
+    }
+    Identifier("newArray", funcType)
+}
+val builtinIdentifierEmptyArray = run {
+    val typeParameter = TypeParameter("T", builtinTypeAny)
+    val funcType = GenericsType("EmptyArray", listOf(typeParameter)) { li ->
+        val typeMap = mutableMapOf<String, Type>()
+        for (i in li.indices) {
+            typeMap[typeParameter.name] = li[i]
+        }
+        typeSubstitution(FunctionType(listOf(), builtinTypeArray.typeConstructor(li)), typeMap)
+    }
+    Identifier("emptyArray", funcType)
+}

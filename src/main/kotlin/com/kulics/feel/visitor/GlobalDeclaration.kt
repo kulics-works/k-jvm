@@ -13,7 +13,9 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
         """
         object BuiltinTool {
             inline fun <reified T> cast(obj: Any): T? = obj as? T
-        };$Wrap
+        };
+        inline fun<reified T> newArray(size: Int, initValue: T): Array<T> = Array(size) { initValue };
+        inline fun<reified T> emptyArray(): Array<T> = arrayOf();$Wrap
     """.trimIndent()
     )
     for (item in ctx.globalDeclaration()) {
@@ -388,7 +390,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
                     typeMap
                 )
             }
-            val constructorInitType = GenericsType(id, typeParameter.first) { li ->
+            val constructorInitType = GenericsType(constructorName, typeParameter.first) { li ->
                 val typeMap = mutableMapOf<String, Type>()
                 for (i in li.indices) {
                     typeMap[typeParameter.first[i].name] = li[i]

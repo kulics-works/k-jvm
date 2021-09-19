@@ -8,8 +8,11 @@ class DelegateVisitor {
             addType(builtinTypeInt)
             addType(builtinTypeFloat)
             addType(builtinTypeBool)
-            addIdentifier(builtinLiteralTrue)
-            addIdentifier(builtinLiteralFalse)
+            addType(builtinTypeArray)
+            addIdentifier(builtinIdentifierTrue)
+            addIdentifier(builtinIdentifierFalse)
+            addIdentifier(builtinIdentifierNewArray)
+            addIdentifier(builtinIdentifierEmptyArray)
         })
     }
 
