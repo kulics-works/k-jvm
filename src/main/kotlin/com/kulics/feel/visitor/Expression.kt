@@ -215,8 +215,10 @@ internal fun DelegateVisitor.visitPrimaryExpression(ctx: PrimaryExpressionContex
 internal fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContext): ExpressionNode {
     return if (ctx.integerExpression() != null) {
         LiteralExpressionNode(ctx.integerExpression().text, builtinTypeInt)
-    } else {
+    } else if (ctx.floatExpression() != null) {
         LiteralExpressionNode(ctx.floatExpression().text, builtinTypeFloat)
+    } else {
+        LiteralExpressionNode(ctx.characterExpression().text, builtinTypeChar)
     }
 }
 

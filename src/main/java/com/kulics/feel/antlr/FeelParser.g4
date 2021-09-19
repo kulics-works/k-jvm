@@ -130,6 +130,7 @@ parenExpression: LeftParen expression RightParen;
 literalExpression
     : integerExpression
     | floatExpression
+    | characterExpression
     ;
 
 type
@@ -137,6 +138,8 @@ type
     ;
 
 identifier: Identifier;
+
+characterExpression: CharLiteral;
 
 floatExpression: FloatLiteral;
 
