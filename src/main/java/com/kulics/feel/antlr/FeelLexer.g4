@@ -62,6 +62,7 @@ fragment Digit: [0-9] | [0-9] [0-9_]* [0-9];   // 单个数字
 fragment Exponent: [eE] [+-]? [0-9]+;
 
 CharLiteral: '\'' ('\\\'' | '\\' [btnfr\\] | .)*? '\''; // 单字符
+StringLiteral: '"' ('\\' [btnfr"\\] | ~('\\' | '"' )+)* '"'; // 字符串
 Identifier: [a-zA-Z] [0-9a-zA-Z_]*; // 标识符
 Discard: '_'; // 匿名变量
 

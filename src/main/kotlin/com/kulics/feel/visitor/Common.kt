@@ -58,6 +58,7 @@ val builtinTypeInt = RecordType("Int", mutableMapOf(), "Int")
 val builtinTypeFloat = RecordType("Float", mutableMapOf(), "Double")
 val builtinTypeBool = RecordType("Bool", mutableMapOf(), "Boolean")
 val builtinTypeChar = RecordType("Char", mutableMapOf(), "Char")
+val builtinTypeString = RecordType("String", mutableMapOf(), "String")
 val builtinTypeArray = run {
     val typeParameter = TypeParameter("T", builtinTypeAny)
     val members = mutableMapOf<String, Identifier>()

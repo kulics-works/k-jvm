@@ -131,6 +131,7 @@ literalExpression
     : integerExpression
     | floatExpression
     | characterExpression
+    | stringExpression
     ;
 
 type
@@ -138,6 +139,8 @@ type
     ;
 
 identifier: Identifier;
+
+stringExpression: StringLiteral;
 
 characterExpression: CharLiteral;
 
