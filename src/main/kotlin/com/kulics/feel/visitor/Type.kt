@@ -32,7 +32,7 @@ class RecordType(
 
 class InterfaceType(
     override val name: String,
-    val member: MutableMap<String, Identifier>,
+    val member: MutableMap<String, VirtualIdentifier>,
     val permits: MutableSet<Type>,
     val backendName: String?
 ) : Type {
@@ -79,10 +79,10 @@ fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
         is InterfaceType -> InterfaceType(
             type.name,
             type.member.mapValues {
-                Identifier(
+                VirtualIdentifier(
                     it.value.name,
                     typeSubstitution(it.value.type, typeMap),
-                    it.value.kind
+                    it.value.hasImplement
                 )
             }.toMutableMap(),
             type.permits,

@@ -209,3 +209,7 @@ def I2 {
     f() Void;
     f2(a Int) Int = a;
 };
+
+def C1() I2 {
+    f() Void = {};
+};

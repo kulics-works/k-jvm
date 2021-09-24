@@ -19,7 +19,7 @@ globalDeclaration
 globalVariableDeclaration: Let Mut identifier type Equal expression;
 globalConstantDeclaration: Let identifier type Equal expression;
 globalFunctionDeclaration: Let identifier typeParameterList? parameterList type Equal expression;
-globalRecordDeclaration: Def identifier typeParameterList? fieldList methodList?;
+globalRecordDeclaration: Def identifier typeParameterList? fieldList type? methodList?;
 globalEnumDeclaration: Def identifier typeParameterList? Is constructorList methodList?;
 globalInterfaceDeclaration: Def identifier typeParameterList? virtualMethodList?;
 

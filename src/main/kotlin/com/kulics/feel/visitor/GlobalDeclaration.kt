@@ -239,6 +239,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             " {${methods.second}}"
         }
         popScope()
+        checkImplementInterface(ctx, members)
         "class ${id}<${typeParameter.second}>(${fieldList.second})${methodCode};$Wrap"
     } else {
         val fieldList = visitFieldList(ctx.fieldList())
@@ -260,7 +261,33 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             " {${methods.second}}"
         }
         popScope()
+        checkImplementInterface(ctx, members)
         "class ${id}(${fieldList.second})${methodCode};$Wrap"
+    }
+}
+
+private fun DelegateVisitor.checkImplementInterface(
+    ctx: GlobalRecordDeclarationContext,
+    members: MutableMap<String, Identifier>
+) {
+    if (ctx.type() != null) {
+        val implInterface = checkType(visitType(ctx.type()))
+        if (implInterface !is InterfaceType) {
+            println("type '${implInterface.name}' is not interface")
+            throw CompilingCheckException()
+        } else {
+            for (v in implInterface.member) {
+                val member = members[v.key]
+                if (member != null && v.value.type.cannotAssignTo(member.type)) {
+                    println("the type of member '${v.key}' is can not to implement '${implInterface.name}'")
+                    throw CompilingCheckException()
+                }
+                if (member == null && !v.value.hasImplement) {
+                    println("the member '${v.key}' of '${implInterface.name}' is not implement ")
+                    throw CompilingCheckException()
+                }
+            }
+        }
     }
 }
 
@@ -338,7 +365,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
-    val members = mutableMapOf<String, Identifier>()
+    val members = mutableMapOf<String, VirtualIdentifier>()
     val permitsTypes = mutableSetOf<Type>()
     val typeParameterList = ctx.typeParameterList()
     return if (typeParameterList != null) {
@@ -415,7 +442,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
         } else {
             val methods = visitMethodList(ctx.methodList())
             for (v in methods.first) {
-                members[v.name] = v
+                members[v.name] = VirtualIdentifier(v.name, v.type, true)
             }
             "{ ${methods.second} }"
         }
@@ -448,7 +475,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
         } else {
             val methods = visitMethodList(ctx.methodList())
             for (v in methods.first) {
-                members[v.name] = v
+                members[v.name] = VirtualIdentifier(v.name, v.type, true)
             }
             "{ ${methods.second} }"
         }
@@ -485,7 +512,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
-    val members = mutableMapOf<String, Identifier>()
+    val members = mutableMapOf<String, VirtualIdentifier>()
     val permitsTypes = mutableSetOf<Type>()
     val typeParameterList = ctx.typeParameterList()
     return if (typeParameterList != null) {
@@ -538,8 +565,8 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
     }
 }
 
-internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): Pair<ArrayList<Identifier>, String> {
-    val list = arrayListOf<Identifier>()
+internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): Pair<ArrayList<VirtualIdentifier>, String> {
+    val list = arrayListOf<VirtualIdentifier>()
     val buf = StringBuilder()
     ctx.virtualMethod().forEach {
         val (id, code) = visitVirtualMethod(it)
@@ -549,7 +576,7 @@ internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContex
     return Pair(list, buf.toString())
 }
 
-internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Pair<Identifier, String> {
+internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Pair<VirtualIdentifier, String> {
     val id = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(id)) {
         println("identifier: '$id' is redefined")
@@ -558,7 +585,7 @@ internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Pair
     val returnType = checkType(visitType(ctx.type()))
     val params = visitParameterList(ctx.parameterList())
     val type = FunctionType(params.first.map { it.type }, returnType)
-    val identifier = Identifier(id, type, IdentifierKind.Immutable)
+    val identifier = VirtualIdentifier(id, type, ctx.expression() != null)
     addIdentifier(identifier)
     for (v in params.first) {
         if (isRedefineIdentifier(v.name)) {
