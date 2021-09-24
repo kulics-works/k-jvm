@@ -12,6 +12,7 @@ globalDeclaration
     | globalFunctionDeclaration
     | globalRecordDeclaration
     | globalEnumDeclaration
+    | globalInterfaceDeclaration
     ) Semi
     ;
 
@@ -20,6 +21,7 @@ globalConstantDeclaration: Let identifier type Equal expression;
 globalFunctionDeclaration: Let identifier typeParameterList? parameterList type Equal expression;
 globalRecordDeclaration: Def identifier typeParameterList? fieldList methodList?;
 globalEnumDeclaration: Def identifier typeParameterList? Is constructorList methodList?;
+globalInterfaceDeclaration: Def identifier typeParameterList? virtualMethodList?;
 
 typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
 
@@ -40,6 +42,10 @@ method: identifier parameterList type Equal expression;
 constructorList: Or? constructor (Or constructor)*;
 
 constructor: identifier fieldList;
+
+virtualMethodList: LeftBrace (virtualMethod Semi)* RightBrace;
+
+virtualMethod: identifier parameterList type (Equal expression)?;
 
 block: LeftBrace (statement Semi)* RightBrace;
 

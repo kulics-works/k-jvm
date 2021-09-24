@@ -31,6 +31,7 @@ internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContex
         is GlobalFunctionDeclarationContext -> visitGlobalFunctionDeclaration(declaration)
         is GlobalRecordDeclarationContext -> visitGlobalRecordDeclaration(declaration)
         is GlobalEnumDeclarationContext -> visitGlobalEnumDeclaration(declaration)
+        is GlobalInterfaceDeclarationContext -> visitGlobalInterfaceDeclaration(declaration)
         else -> throw CompilingCheckException()
     }
 }
@@ -476,4 +477,106 @@ internal fun DelegateVisitor.visitConstructor(ctx: ConstructorContext): Pair<Str
     val fields = visitFieldList(ctx.fieldList())
     popScope()
     return Pair(id, fields)
+}
+
+internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): String {
+    val id = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(id)) {
+        println("identifier: '$id' is redefined")
+        throw CompilingCheckException()
+    }
+    val members = mutableMapOf<String, Identifier>()
+    val permitsTypes = mutableSetOf<Type>()
+    val typeParameterList = ctx.typeParameterList()
+    return if (typeParameterList != null) {
+        val typeParameter = visitTypeParameterList(typeParameterList)
+        val type = GenericsType(id, typeParameter.first) { li ->
+            val typeMap = mutableMapOf<String, Type>()
+            for (i in li.indices) {
+                typeMap[typeParameter.first[i].name] = li[i]
+            }
+            typeSubstitution(
+                InterfaceType(
+                    "${id}[${joinTypeName(li) { it.name }}]",
+                    members,
+                    permitsTypes,
+                    "${id}<${joinTypeName(li) { it.generateTypeName() }}>"
+                ), typeMap
+            )
+        }
+        addType(type)
+        pushScope()
+        for (v in typeParameter.first) {
+            addType(v)
+        }
+        val methodCode = if (ctx.virtualMethodList() == null) {
+            ""
+        } else {
+            val methods = visitVirtualMethodList(ctx.virtualMethodList())
+            for (v in methods.first) {
+                members[v.name] = v
+            }
+            "{ ${methods.second} }"
+        }
+        popScope()
+        "interface ${id}<${typeParameter.second}>${methodCode};$Wrap"
+    } else {
+        val type = InterfaceType(id, members, permitsTypes, null)
+        addType(type)
+        pushScope()
+        val methodCode = if (ctx.virtualMethodList() == null) {
+            ""
+        } else {
+            val methods = visitVirtualMethodList(ctx.virtualMethodList())
+            for (v in methods.first) {
+                members[v.name] = v
+            }
+            "{ ${methods.second} }"
+        }
+        popScope()
+        "interface ${id}${methodCode};$Wrap"
+    }
+}
+
+internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): Pair<ArrayList<Identifier>, String> {
+    val list = arrayListOf<Identifier>()
+    val buf = StringBuilder()
+    ctx.virtualMethod().forEach {
+        val (id, code) = visitVirtualMethod(it)
+        list.add(id)
+        buf.append(code)
+    }
+    return Pair(list, buf.toString())
+}
+
+internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Pair<Identifier, String> {
+    val id = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(id)) {
+        println("identifier: '$id' is redefined")
+        throw CompilingCheckException()
+    }
+    val returnType = checkType(visitType(ctx.type()))
+    val params = visitParameterList(ctx.parameterList())
+    val type = FunctionType(params.first.map { it.type }, returnType)
+    val identifier = Identifier(id, type, IdentifierKind.Immutable)
+    addIdentifier(identifier)
+    for (v in params.first) {
+        if (isRedefineIdentifier(v.name)) {
+            println("identifier: '${v.name}' is redefined")
+            throw CompilingCheckException()
+        }
+        addIdentifier(v)
+    }
+    return if (ctx.expression() != null) {
+        pushScope()
+        val expr = visitExpression(ctx.expression())
+        if (expr.type != returnType) {
+            println("the return is '${returnType.name}', but find '${expr.type.name}'")
+            throw CompilingCheckException()
+        }
+        popScope()
+        identifier to "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+    } else {
+        identifier to "fun ${id}(${params.second}): ${returnType.generateTypeName()}$Wrap"
+    }
 }

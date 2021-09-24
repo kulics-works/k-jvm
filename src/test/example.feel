@@ -203,3 +203,9 @@ let array() Void = {
     let b = a.get(2);
     a.set(2, b);
 };
+
+def I1;
+def I2 {
+    f() Void;
+    f2(a Int) Int = a;
+};
