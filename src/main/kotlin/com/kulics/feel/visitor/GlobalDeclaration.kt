@@ -19,6 +19,7 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
         interface RawObject {
             fun getRawObject(): Any
         }
+        inline fun Any.getRawObject() = this
         inline fun<reified T> newArray(size: Int, initValue: T): Array<T> = Array(size) { initValue };
         inline fun<reified T> emptyArray(): Array<T> = arrayOf();$Wrap
     """.trimIndent()
@@ -60,7 +61,10 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
 internal fun boxToImplementInterface(
     type: Type,
     expr: ExpressionNode
-) = if (type is InterfaceType && expr.type !is InterfaceType) BoxExpressionNode(expr, type).generateCode()
+) = if (type.name != builtinTypeAny.name && type is InterfaceType && expr.type !is InterfaceType) BoxExpressionNode(
+    expr,
+    type
+).generateCode()
 else expr.generateCode()
 
 internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): String {
@@ -181,7 +185,12 @@ internal fun DelegateVisitor.visitTypeParameterList(ctx: TypeParameterListContex
 internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter {
     val id = visitIdentifier(ctx.identifier())
     val type = checkType(visitType(ctx.type()))
-    return TypeParameter(id, type)
+    return if (type is InterfaceType) {
+        TypeParameter(id, type)
+    } else {
+        println("the constraint of '${id}' is not interface")
+        throw CompilingCheckException()
+    }
 }
 
 internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationContext): String {
@@ -428,9 +437,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             addType(constructorType)
             addIdentifier(constructor)
             permitsTypes.add(constructorType)
-            buf.append("class ${constructorName}<${typeParameter.second}>(${code}): ${id}<${
-                joinString(typeParameter.first) { it.name }
-            }>;$Wrap")
+            buf.append("class ${constructorName}<${typeParameter.second}>(${code});$Wrap")
         }
         pushScope()
         for (v in typeParameter.first) {
@@ -446,7 +453,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             "{ ${methods.second} }"
         }
         popScope()
-        "interface ${id}<${typeParameter.second}>${methodCode};$Wrap${buf}"
+        "interface ${id}<${typeParameter.second}>: RawObject${methodCode};$Wrap${buf}"
     } else {
         val type = InterfaceType(id, members, permitsTypes, null)
         addType(type)
@@ -466,7 +473,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             addType(constructorType)
             addIdentifier(constructor)
             permitsTypes.add(constructorType)
-            buf.append("class ${constructorName}(${code}): ${id};$Wrap")
+            buf.append("class ${constructorName}(${code});$Wrap")
         }
         pushScope()
         val methodCode = if (ctx.methodList() == null) {
@@ -479,7 +486,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             "{ ${methods.second} }"
         }
         popScope()
-        "interface ${id}${methodCode};$Wrap${buf}"
+        "interface ${id}: RawObject${methodCode};$Wrap${buf}"
     }
 }
 
@@ -545,7 +552,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             "{ ${methods.second} }"
         }
         popScope()
-        "interface ${id}<${typeParameter.second}>${methodCode};$Wrap"
+        "interface ${id}<${typeParameter.second}>: RawObject${methodCode};$Wrap"
     } else {
         val type = InterfaceType(id, members, permitsTypes, null)
         addType(type)
@@ -560,7 +567,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             "{ ${methods.second} }"
         }
         popScope()
-        "interface ${id}${methodCode};$Wrap"
+        "interface ${id}: RawObject${methodCode};$Wrap"
     }
 }
 

@@ -64,7 +64,7 @@ class GenericsType(
     val typeConstructor: (List<Type>) -> Type
 ) : Type
 
-class TypeParameter(override val name: String, val constraint: Type) : Type {
+class TypeParameter(override val name: String, val constraint: InterfaceType) : Type {
     override fun getMember(name: String): Identifier? {
         return constraint.getMember(name)
     }

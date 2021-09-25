@@ -130,10 +130,14 @@ internal fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
         popScope()
         return when (pattern) {
             is TypePattern -> {
+                if (cond.type !is InterfaceType) {
+                    println("the type of condition is not interface, only interface type can use type pattern")
+                    throw CompilingCheckException()
+                }
                 val matchCode =
                     "val ${pattern.identifier.name} = BuiltinTool.cast<${
                         pattern.type.generateTypeName()
-                    }>(${cond.generateCode()});$Wrap"
+                    }>(${cond.generateCode()}.getRawObject());$Wrap"
                 val condCode = "${pattern.identifier.name} != null"
                 if (ctx.ifStatement() != null) {
                     "$matchCode if (${condCode}) { $thenBranch } else {${visitIfStatement(ctx.ifStatement())}}"

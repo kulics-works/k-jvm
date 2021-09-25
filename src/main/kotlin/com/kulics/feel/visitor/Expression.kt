@@ -48,7 +48,7 @@ fun DelegateVisitor.visitFunctionCallExpression(
                     throw CompilingCheckException()
                 }
                 argList.add(
-                    if (v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
+                    if (v.name != builtinTypeAny.name && v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
                         BoxExpressionNode(callArgs.second[i], v)
                     } else {
                         callArgs.second[i]
@@ -80,7 +80,7 @@ fun DelegateVisitor.visitFunctionCallExpression(
                     throw CompilingCheckException()
                 }
                 argList.add(
-                    if (v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
+                    if (v.name != builtinTypeAny.name && v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
                         BoxExpressionNode(callArgs.second[i], v)
                     } else {
                         callArgs.second[i]
@@ -270,10 +270,14 @@ internal fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): Expres
         }
         return when (pattern) {
             is TypePattern -> {
+                if (cond.type !is InterfaceType) {
+                    println("the type of condition is not interface, only interface type can use type pattern")
+                    throw CompilingCheckException()
+                }
                 val matchCode =
                     "val ${pattern.identifier.name} = BuiltinTool.cast<${
                         pattern.type.generateTypeName()
-                    }>(${cond.generateCode()});$Wrap"
+                    }>(${cond.generateCode()}.getRawObject());$Wrap"
                 val condExpr =
                     ConditionExpressionNode(
                         LiteralExpressionNode("${pattern.identifier.name} != null", builtinTypeBool),
