@@ -132,9 +132,10 @@ internal fun DelegateVisitor.checkType(typeInfo: Pair<String, List<String>>): Ty
 }
 
 internal inline fun <T> joinString(list: List<T>, select: (T) -> String): String {
-    return list.foldIndexed("") { index, acc, type ->
-        if (index == 0) select(type) else "${acc}, ${select(type)}"
-    }
+    return list.foldIndexed(StringBuffer()) { index, acc, type ->
+        if (index == 0) acc.append(select(type))
+        else acc.append(", ").append(select(type))
+    }.toString()
 }
 
 internal fun DelegateVisitor.visitType(ctx: TypeContext): Pair<String, List<String>> {

@@ -20,6 +20,7 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
             fun getRawObject(): Any
         }
         inline fun Any.getRawObject() = this
+        interface AnyConstraintObject<ThisConstraint>
         inline fun<reified T> newArray(size: Int, initValue: T): Array<T> = Array(size) { initValue };
         inline fun<reified T> emptyArray(): Array<T> = arrayOf();$Wrap
     """.trimIndent()
@@ -77,27 +78,29 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
     return if (typeParameterList != null) {
         val typeParameter = visitTypeParameterList(typeParameterList)
         pushScope()
-        for (v in typeParameter.first) {
+        for (v in typeParameter) {
             addType(v)
         }
         val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
-        val type = GenericsType(id, typeParameter.first) { li ->
+        val type = GenericsType(id, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
             for (i in li.indices) {
-                typeMap[typeParameter.first[i].name] = li[i]
+                typeMap[typeParameter[i].name] = li[i]
             }
             typeSubstitution(FunctionType(params.first.map { it.type }, returnType), typeMap)
         }
         popScope()
         addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
         pushScope()
-        for (v in typeParameter.first) {
+        val constraintObject = mutableListOf<Pair<String, String>>()
+        for (v in typeParameter) {
             if (isRedefineType(v.name)) {
                 println("type: '${v.name}' is redefined")
                 throw CompilingCheckException()
             }
             addType(v)
+            constraintObject.add(Pair("constraintObject${v.name}", "${v.constraint.name}ConstraintObject<${v.name}>"))
         }
         for (v in params.first) {
             if (isRedefineIdentifier(v.name)) {
@@ -113,7 +116,17 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         }
         popScope()
         val exprCode = boxToImplementInterface(returnType, expr)
-        "fun <${typeParameter.second}> ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${exprCode});$Wrap}$Wrap"
+        "fun <${
+            joinString(typeParameter) { it.name }
+        }> ${id}(${
+            joinString(constraintObject) { (name, type) ->
+                "$name: $type"
+            }
+        }, ${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${
+            constraintObject.fold(exprCode) { acc, pair ->
+                "with(${pair.first}) { $acc$Wrap }"
+            }
+        });$Wrap}$Wrap"
     } else {
         val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
@@ -164,22 +177,8 @@ internal fun DelegateVisitor.visitParameter(ctx: ParameterContext): Identifier {
     return Identifier(id, type, IdentifierKind.Immutable)
 }
 
-internal fun DelegateVisitor.visitTypeParameterList(ctx: TypeParameterListContext): Pair<ArrayList<TypeParameter>, String> {
-    val params = ctx.typeParameter()
-    val buf = StringBuilder()
-    val ids = ArrayList<TypeParameter>()
-    val first = visitTypeParameter(params[0])
-    fun genParam(id: TypeParameter): String {
-        return "${id.name}: ${id.constraint.generateTypeName()}"
-    }
-    buf.append(genParam(first))
-    ids.add(first)
-    for (i in 1 until params.size) {
-        val id = visitTypeParameter(params[i])
-        ids.add(id)
-        buf.append(", ${genParam(id)}")
-    }
-    return ids to buf.toString()
+internal fun DelegateVisitor.visitTypeParameterList(ctx: TypeParameterListContext): List<TypeParameter> {
+    return ctx.typeParameter().map { visitTypeParameter(it) }
 }
 
 internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter {
@@ -203,17 +202,17 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
     return if (typeParameterList != null) {
         val typeParameter = visitTypeParameterList(typeParameterList)
         pushScope()
-        for (v in typeParameter.first) {
+        for (v in typeParameter) {
             addType(v)
         }
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
         fieldList.first.forEach { members[it.name] = it }
         popScope()
-        val type = GenericsType(id, typeParameter.first) { li ->
+        val type = GenericsType(id, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
             for (i in li.indices) {
-                typeMap[typeParameter.first[i].name] = li[i]
+                typeMap[typeParameter[i].name] = li[i]
             }
             typeSubstitution(
                 RecordType(
@@ -225,10 +224,10 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             )
         }
         addType(type)
-        val constructorType = GenericsType(id, typeParameter.first) { li ->
+        val constructorType = GenericsType(id, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
             for (i in li.indices) {
-                typeMap[typeParameter.first[i].name] = li[i]
+                typeMap[typeParameter[i].name] = li[i]
             }
             typeSubstitution(FunctionType(fieldList.first.map { it.type }, type.typeConstructor(li)), typeMap)
         }
@@ -246,7 +245,11 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         }
         popScope()
         checkImplementInterface(ctx, members, type)
-        "class ${id}<${typeParameter.second}>(${fieldList.second})${methodCode};$Wrap"
+        "class ${id}<${
+            joinString(typeParameter) {
+                "${it.name}: ${it.constraint.generateTypeName()}"
+            }
+        }>(${fieldList.second})${methodCode};$Wrap"
     } else {
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
@@ -378,10 +381,10 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
     val typeParameterList = ctx.typeParameterList()
     return if (typeParameterList != null) {
         val typeParameter = visitTypeParameterList(typeParameterList)
-        val type = GenericsType(id, typeParameter.first) { li ->
+        val type = GenericsType(id, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
             for (i in li.indices) {
-                typeMap[typeParameter.first[i].name] = li[i]
+                typeMap[typeParameter[i].name] = li[i]
             }
             typeSubstitution(
                 InterfaceType(
@@ -398,7 +401,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
         }
         addType(type)
         pushScope()
-        for (v in typeParameter.first) {
+        for (v in typeParameter) {
             addType(v)
         }
         val constructors = visitConstructorList(ctx.constructorList())
@@ -412,10 +415,10 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
                 constructorMembers[v.name] = v
                 constructorInitParamList.add(v.type)
             }
-            val constructorType = GenericsType(constructorName, typeParameter.first) { li ->
+            val constructorType = GenericsType(constructorName, typeParameter) { li ->
                 val typeMap = mutableMapOf<String, Type>()
                 for (i in li.indices) {
-                    typeMap[typeParameter.first[i].name] = li[i]
+                    typeMap[typeParameter[i].name] = li[i]
                 }
                 typeSubstitution(
                     RecordType(
@@ -426,10 +429,10 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
                     typeMap
                 )
             }
-            val constructorInitType = GenericsType(constructorName, typeParameter.first) { li ->
+            val constructorInitType = GenericsType(constructorName, typeParameter) { li ->
                 val typeMap = mutableMapOf<String, Type>()
                 for (i in li.indices) {
-                    typeMap[typeParameter.first[i].name] = li[i]
+                    typeMap[typeParameter[i].name] = li[i]
                 }
                 typeSubstitution(FunctionType(constructorInitParamList, constructorType.typeConstructor(li)), typeMap)
             }
@@ -437,10 +440,16 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             addType(constructorType)
             addIdentifier(constructor)
             permitsTypes.add(constructorType)
-            buf.append("class ${constructorName}<${typeParameter.second}>(${code});$Wrap")
+            buf.append(
+                "class ${constructorName}<${
+                    joinString(typeParameter) {
+                        "${it.name}: ${it.constraint.generateTypeName()}"
+                    }
+                }>(${code});$Wrap"
+            )
         }
         pushScope()
-        for (v in typeParameter.first) {
+        for (v in typeParameter) {
             addType(v)
         }
         val methodCode = if (ctx.methodList() == null) {
@@ -453,7 +462,11 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             "{ ${methods.second} }"
         }
         popScope()
-        "interface ${id}<${typeParameter.second}>: RawObject${methodCode};$Wrap${buf}"
+        "interface ${id}<${
+            joinString(typeParameter) {
+                "${it.name}: ${it.constraint.generateTypeName()}"
+            }
+        }>: RawObject${methodCode};$Wrap${buf}"
     } else {
         val type = InterfaceType(id, members, permitsTypes, null)
         addType(type)
@@ -523,10 +536,10 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
     val typeParameterList = ctx.typeParameterList()
     return if (typeParameterList != null) {
         val typeParameter = visitTypeParameterList(typeParameterList)
-        val type = GenericsType(id, typeParameter.first) { li ->
+        val type = GenericsType(id, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
             for (i in li.indices) {
-                typeMap[typeParameter.first[i].name] = li[i]
+                typeMap[typeParameter[i].name] = li[i]
             }
             typeSubstitution(
                 InterfaceType(
@@ -539,47 +552,85 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
         }
         addType(type)
         pushScope()
-        for (v in typeParameter.first) {
+        for (v in typeParameter) {
             addType(v)
         }
-        val methodCode = if (ctx.virtualMethodList() == null) {
-            ""
-        } else {
-            val methods = visitVirtualMethodList(ctx.virtualMethodList())
-            for (v in methods.first) {
-                members[v.name] = v
+        val methods = ctx.virtualMethodList()?.let {
+            visitVirtualMethodList(it).apply {
+                for (v in first) {
+                    members[v.name] = v
+                }
             }
-            "{ ${methods.second} }"
         }
+        val methodCode = methods?.let {
+            "{ ${
+                it.second.fold(StringBuilder()) { acc, s ->
+                    acc.append("fun $s")
+                }
+            } }"
+        } ?: ""
+        val constraintMethodCode = methods?.let {
+            "{ ${
+                it.second.fold(StringBuilder()) { acc, s ->
+                    acc.append("fun ThisConstraint.$s")
+                }
+            } }"
+        } ?: ""
         popScope()
-        "interface ${id}<${typeParameter.second}>: RawObject${methodCode};$Wrap"
+        """
+            interface ${id}<${
+            joinString(typeParameter) {
+                "${it.name}: ${it.constraint.generateTypeName()}"
+            }
+        }>: RawObject${methodCode};
+            interface ${id}ConstraintObject<ThisConstraint, ${
+            joinString(typeParameter) {
+                "${it.name}: ${it.constraint.generateTypeName()}"
+            }
+        }>${constraintMethodCode};
+        """.trimIndent()
     } else {
         val type = InterfaceType(id, members, permitsTypes, null)
         addType(type)
         pushScope()
-        val methodCode = if (ctx.virtualMethodList() == null) {
-            ""
-        } else {
-            val methods = visitVirtualMethodList(ctx.virtualMethodList())
-            for (v in methods.first) {
-                members[v.name] = v
+        val methods = ctx.virtualMethodList()?.let {
+            visitVirtualMethodList(it).apply {
+                for (v in first) {
+                    members[v.name] = v
+                }
             }
-            "{ ${methods.second} }"
         }
+        val methodCode = methods?.let {
+            "{ ${
+                it.second.fold(StringBuilder()) { acc, s ->
+                    acc.append("fun $s")
+                }
+            } }"
+        } ?: ""
+        val constraintMethodCode = methods?.let {
+            "{ ${
+                it.second.fold(StringBuilder()) { acc, s ->
+                    acc.append("fun ThisConstraint.$s")
+                }
+            } }"
+        } ?: ""
         popScope()
-        "interface ${id}: RawObject${methodCode};$Wrap"
+        """
+            interface ${id}: RawObject${methodCode};
+            interface ${id}ConstraintObject<ThisConstraint>${constraintMethodCode};
+        """.trimIndent()
     }
 }
 
-internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): Pair<ArrayList<VirtualIdentifier>, String> {
+internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): Pair<List<VirtualIdentifier>, List<String>> {
     val list = arrayListOf<VirtualIdentifier>()
-    val buf = StringBuilder()
+    val codeList = arrayListOf<String>()
     ctx.virtualMethod().forEach {
         val (id, code) = visitVirtualMethod(it)
         list.add(id)
-        buf.append(code)
+        codeList.add(code)
     }
-    return Pair(list, buf.toString())
+    return Pair(list, codeList)
 }
 
 internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Pair<VirtualIdentifier, String> {
@@ -608,8 +659,8 @@ internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Pair
             throw CompilingCheckException()
         }
         popScope()
-        identifier to "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+        identifier to "${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
     } else {
-        identifier to "fun ${id}(${params.second}): ${returnType.generateTypeName()}$Wrap"
+        identifier to "${id}(${params.second}): ${returnType.generateTypeName()}$Wrap"
     }
 }

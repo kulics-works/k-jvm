@@ -80,7 +80,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitGlobalInterfaceDeclaration(ctx)
     }
 
-    override fun visitVirtualMethodList(ctx: VirtualMethodListContext): Pair<ArrayList<VirtualIdentifier>, String> {
+    override fun visitVirtualMethodList(ctx: VirtualMethodListContext): Pair<List<VirtualIdentifier>, List<String>> {
         return delegate.visitVirtualMethodList(ctx)
     }
 

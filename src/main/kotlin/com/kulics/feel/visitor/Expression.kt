@@ -101,14 +101,14 @@ fun DelegateVisitor.visitMemberAccessExpression(
     memberCtx: MemberAccessContext
 ): ExpressionNode {
     val expr = visitExpression(exprCtx)
+    val type = expr.type
     val memberIdentifier = visitMemberAccess(memberCtx)
-    val member = expr.type.getMember(memberIdentifier)
-    if (member != null) {
-        return MemberExpressionNode(expr, member)
-    } else {
+    val member = type.getMember(memberIdentifier)
+    if (member == null) {
         println("the type '${expr.type.name}' have not member '${memberIdentifier}'")
         throw CompilingCheckException()
     }
+    return MemberExpressionNode(expr, member)
 }
 
 fun DelegateVisitor.visitBinaryExpression(
