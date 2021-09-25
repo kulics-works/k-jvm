@@ -73,9 +73,9 @@ val builtinTypeArray = run {
         }
         typeSubstitution(
             RecordType(
-                "Array[${joinTypeName(li) { it.name }}]",
+                "Array[${joinString(li) { it.name }}]",
                 members,
-                "Array<${joinTypeName(li) { it.generateTypeName() }}>"
+                "Array<${joinString(li) { it.generateTypeName() }}>"
             ), typeMap
         )
     }

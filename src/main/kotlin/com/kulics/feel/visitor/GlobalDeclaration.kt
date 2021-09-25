@@ -14,6 +14,9 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
         object BuiltinTool {
             inline fun <reified T> cast(obj: Any): T? = obj as? T
         };
+        interface RawObject {
+            fun getRawObject(): Any
+        }
         inline fun<reified T> newArray(size: Int, initValue: T): Array<T> = Array(size) { initValue };
         inline fun<reified T> emptyArray(): Array<T> = arrayOf();$Wrap
     """.trimIndent()
@@ -48,7 +51,30 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
         throw CompilingCheckException()
     }
     addIdentifier(Identifier(id, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable))
-    return "var $id: ${type.generateTypeName()} = (${expr.generateCode()});$Wrap"
+    val exprCode = if (type is InterfaceType && expr.type !is InterfaceType) {
+        val members = type.member.asSequence().fold(StringBuilder()) { acc, entry ->
+            val member = expr.type.getMember(entry.key)
+            if (member != null) {
+                val funcSig = (member.type as FunctionType).generateFunctionSignature()
+                acc.append(
+                    """
+                    override fun ${member.name}${funcSig.second} {
+                        rawValue.${member.name}(${joinString(funcSig.first) { it }});
+                    }
+                """.trimIndent()
+                )
+            }
+            acc
+        }
+        """object: ${type.generateTypeName()}, RawObject { 
+            val rawValue = ${expr.generateCode()};
+            ${members}
+            override fun getRawObject(): Any {
+                return rawValue;
+            }
+        }""".trimMargin()
+    } else expr.generateCode()
+    return "var $id: ${type.generateTypeName()} = (${exprCode});$Wrap"
 }
 
 internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): String {
@@ -194,9 +220,9 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             }
             typeSubstitution(
                 RecordType(
-                    "${id}[${joinTypeName(li) { it.name }}]",
+                    "${id}[${joinString(li) { it.name }}]",
                     members,
-                    "${id}<${joinTypeName(li) { it.name }}>"
+                    "${id}<${joinString(li) { it.name }}>"
                 ),
                 typeMap
             )
@@ -360,14 +386,14 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             }
             typeSubstitution(
                 InterfaceType(
-                    "${id}[${joinTypeName(li) { it.name }}]",
+                    "${id}[${joinString(li) { it.name }}]",
                     members,
                     permitsTypes.fold(mutableSetOf()) { acc, it ->
                         val typeInstance = (it as GenericsType).typeConstructor(li)
                         acc.add(typeSubstitution(typeInstance, typeMap))
                         acc
                     },
-                    "${id}<${joinTypeName(li) { it.generateTypeName() }}>"
+                    "${id}<${joinString(li) { it.generateTypeName() }}>"
                 ), typeMap
             )
         }
@@ -394,9 +420,9 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
                 }
                 typeSubstitution(
                     RecordType(
-                        "${constructorName}[${joinTypeName(li) { it.name }}]",
+                        "${constructorName}[${joinString(li) { it.name }}]",
                         constructorMembers,
-                        "${constructorName}<${joinTypeName(li) { it.name }}>"
+                        "${constructorName}<${joinString(li) { it.name }}>"
                     ),
                     typeMap
                 )
@@ -413,8 +439,8 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             addIdentifier(constructor)
             permitsTypes.add(constructorType)
             buf.append("class ${constructorName}<${typeParameter.second}>(${code}): ${id}<${
-                joinTypeName(typeParameter.first) { it.name }
-            }>();$Wrap")
+                joinString(typeParameter.first) { it.name }
+            }>;$Wrap")
         }
         pushScope()
         for (v in typeParameter.first) {
@@ -430,7 +456,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             "{ ${methods.second} }"
         }
         popScope()
-        "sealed class ${id}<${typeParameter.second}>${methodCode};$Wrap${buf}"
+        "interface ${id}<${typeParameter.second}>${methodCode};$Wrap${buf}"
     } else {
         val type = InterfaceType(id, members, permitsTypes, null)
         addType(type)
@@ -450,7 +476,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             addType(constructorType)
             addIdentifier(constructor)
             permitsTypes.add(constructorType)
-            buf.append("class ${constructorName}(${code}): ${id}();$Wrap")
+            buf.append("class ${constructorName}(${code}): ${id};$Wrap")
         }
         pushScope()
         val methodCode = if (ctx.methodList() == null) {
@@ -463,7 +489,7 @@ internal fun DelegateVisitor.visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarati
             "{ ${methods.second} }"
         }
         popScope()
-        "sealed class ${id}${methodCode};$Wrap${buf}"
+        "interface ${id}${methodCode};$Wrap${buf}"
     }
 }
 
@@ -507,10 +533,10 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             }
             typeSubstitution(
                 InterfaceType(
-                    "${id}[${joinTypeName(li) { it.name }}]",
+                    "${id}[${joinString(li) { it.name }}]",
                     members,
                     permitsTypes,
-                    "${id}<${joinTypeName(li) { it.generateTypeName() }}>"
+                    "${id}<${joinString(li) { it.generateTypeName() }}>"
                 ), typeMap
             )
         }

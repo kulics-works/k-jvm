@@ -10,10 +10,23 @@ sealed interface Type {
 
 class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type {
     override val name: String =
-        "Func[${joinTypeName(parameterTypes) { it.name }},${returnType.name}]"
+        "Func[${joinString(parameterTypes) { it.name }},${returnType.name}]"
 
     override fun generateTypeName(): String =
-        "(${joinTypeName(parameterTypes) { it.generateTypeName() }})->${returnType.generateTypeName()}"
+        "(${joinString(parameterTypes) { it.generateTypeName() }})->${returnType.generateTypeName()}"
+
+    fun generateFunctionSignature(): Pair<List<String>, String> {
+        var startName = 'a'
+        val ParamList = mutableListOf<String>()
+        return ParamList to "(${
+            joinString(parameterTypes) {
+                val paramName = startName
+                startName = startName.inc()
+                ParamList.add(paramName.toString())
+                "${paramName}: ${it.generateTypeName()}"
+            }
+        }): ${returnType.generateTypeName()}"
+    }
 }
 
 class RecordType(
@@ -118,7 +131,7 @@ internal fun DelegateVisitor.checkType(typeInfo: Pair<String, List<String>>): Ty
     }
 }
 
-internal inline fun joinTypeName(list: List<Type>, select: (Type) -> String): String {
+internal inline fun <T> joinString(list: List<T>, select: (T) -> String): String {
     return list.foldIndexed("") { index, acc, type ->
         if (index == 0) select(type) else "${acc}, ${select(type)}"
     }
@@ -129,5 +142,28 @@ internal fun DelegateVisitor.visitType(ctx: TypeContext): Pair<String, List<Stri
 }
 
 internal fun Type.cannotAssignTo(ty: Type): Boolean {
-    return !(this.name == ty.name || (ty is InterfaceType && ty.permits.any { it.name == this.name }))
+    return !this.canAssignTo(ty)
+}
+
+internal fun Type.canAssignTo(ty: Type): Boolean {
+    if (this.name == ty.name) {
+        return true
+    }
+    if (ty is InterfaceType) {
+        if (ty.permits.any { it.name == this.name }) {
+            return true
+        }
+        for (v in ty.member) {
+            val member = this.getMember(v.key)
+            if (member == null) {
+                if (!v.value.hasImplement) {
+                    return false
+                }
+            } else if (member.type.name != v.value.type.name) {
+                return false
+            }
+        }
+        return true
+    }
+    return false
 }
