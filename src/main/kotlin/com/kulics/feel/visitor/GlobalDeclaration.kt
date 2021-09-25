@@ -1,6 +1,8 @@
 package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser.*
+import com.kulics.feel.node.BoxExpressionNode
+import com.kulics.feel.node.ExpressionNode
 
 internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContext): String {
     return "package ${visitIdentifier(ctx.identifier())}$Wrap"
@@ -46,36 +48,20 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
     }
     val expr = visitExpression(ctx.expression())
     val type = checkType(visitType(ctx.type()))
-    if (expr.type.cannotAssignTo(type)) {
+    if (cannotAssign(expr.type, type)) {
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
     }
     addIdentifier(Identifier(id, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable))
-    val exprCode = if (type is InterfaceType && expr.type !is InterfaceType) {
-        val members = type.member.asSequence().fold(StringBuilder()) { acc, entry ->
-            val member = expr.type.getMember(entry.key)
-            if (member != null) {
-                val funcSig = (member.type as FunctionType).generateFunctionSignature()
-                acc.append(
-                    """
-                    override fun ${member.name}${funcSig.second} {
-                        rawValue.${member.name}(${joinString(funcSig.first) { it }});
-                    }
-                """.trimIndent()
-                )
-            }
-            acc
-        }
-        """object: ${type.generateTypeName()}, RawObject { 
-            val rawValue = ${expr.generateCode()};
-            ${members}
-            override fun getRawObject(): Any {
-                return rawValue;
-            }
-        }""".trimMargin()
-    } else expr.generateCode()
+    val exprCode = boxToImplementInterface(type, expr)
     return "var $id: ${type.generateTypeName()} = (${exprCode});$Wrap"
 }
+
+internal fun boxToImplementInterface(
+    type: Type,
+    expr: ExpressionNode
+) = if (type is InterfaceType && expr.type !is InterfaceType) BoxExpressionNode(expr, type).generateCode()
+else expr.generateCode()
 
 internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): String {
     val id = visitIdentifier(ctx.identifier())
@@ -117,12 +103,13 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             addIdentifier(v)
         }
         val expr = visitExpression(ctx.expression())
-        if (expr.type.cannotAssignTo(returnType)) {
+        if (cannotAssign(expr.type, returnType)) {
             println("the return is '${returnType.name}', but find '${expr.type.name}'")
             throw CompilingCheckException()
         }
         popScope()
-        "fun <${typeParameter.second}> ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+        val exprCode = boxToImplementInterface(returnType, expr)
+        "fun <${typeParameter.second}> ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${exprCode});$Wrap}$Wrap"
     } else {
         val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
@@ -137,12 +124,13 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             addIdentifier(v)
         }
         val expr = visitExpression(ctx.expression())
-        if (expr.type.cannotAssignTo(returnType)) {
+        if (cannotAssign(expr.type, returnType)) {
             println("the return is '${returnType.name}', but find '${expr.type.name}'")
             throw CompilingCheckException()
         }
         popScope()
-        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+        val exprCode = boxToImplementInterface(returnType, expr)
+        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${exprCode});$Wrap}$Wrap"
     }
 }
 
@@ -248,7 +236,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             " {${methods.second}}"
         }
         popScope()
-        checkImplementInterface(ctx, members)
+        checkImplementInterface(ctx, members, type)
         "class ${id}<${typeParameter.second}>(${fieldList.second})${methodCode};$Wrap"
     } else {
         val fieldList = visitFieldList(ctx.fieldList())
@@ -270,14 +258,15 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             " {${methods.second}}"
         }
         popScope()
-        checkImplementInterface(ctx, members)
+        checkImplementInterface(ctx, members, type)
         "class ${id}(${fieldList.second})${methodCode};$Wrap"
     }
 }
 
 private fun DelegateVisitor.checkImplementInterface(
     ctx: GlobalRecordDeclarationContext,
-    members: MutableMap<String, Identifier>
+    members: MutableMap<String, Identifier>,
+    type: Type
 ) {
     if (ctx.type() != null) {
         val implInterface = checkType(visitType(ctx.type()))
@@ -287,7 +276,7 @@ private fun DelegateVisitor.checkImplementInterface(
         } else {
             for (v in implInterface.member) {
                 val member = members[v.key]
-                if (member != null && v.value.type.cannotAssignTo(member.type)) {
+                if (member != null && cannotAssign(v.value.type, member.type)) {
                     println("the type of member '${v.key}' is can not to implement '${implInterface.name}'")
                     throw CompilingCheckException()
                 }
@@ -297,6 +286,7 @@ private fun DelegateVisitor.checkImplementInterface(
                 }
             }
         }
+        addImplementType(type, implInterface)
     }
 }
 

@@ -141,29 +141,19 @@ internal fun DelegateVisitor.visitType(ctx: TypeContext): Pair<String, List<Stri
     return visitIdentifier(ctx.identifier()) to ctx.type().map { visitType(it).first }
 }
 
-internal fun Type.cannotAssignTo(ty: Type): Boolean {
-    return !this.canAssignTo(ty)
+internal fun DelegateVisitor.cannotAssign(rightValue: Type, leftValue: Type): Boolean {
+    return !canAssignTo(rightValue, leftValue)
 }
 
-internal fun Type.canAssignTo(ty: Type): Boolean {
-    if (this.name == ty.name) {
+internal fun DelegateVisitor.canAssignTo(rightValue: Type, leftValue: Type): Boolean {
+    if (rightValue.name == leftValue.name) {
         return true
     }
-    if (ty is InterfaceType) {
-        if (ty.permits.any { it.name == this.name }) {
+    if (leftValue is InterfaceType) {
+        if (leftValue.permits.any { it.name == rightValue.name }) {
             return true
         }
-        for (v in ty.member) {
-            val member = this.getMember(v.key)
-            if (member == null) {
-                if (!v.value.hasImplement) {
-                    return false
-                }
-            } else if (member.type.name != v.value.type.name) {
-                return false
-            }
-        }
-        return true
+        return checkSubtype(rightValue, leftValue)
     }
     return false
 }

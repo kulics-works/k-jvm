@@ -41,13 +41,21 @@ fun DelegateVisitor.visitFunctionCallExpression(
                 println("the size of args is ${callArgs.second.size}, but need ${type.parameterTypes.size}")
                 throw CompilingCheckException()
             }
+            val argList = mutableListOf<ExpressionNode>()
             for ((i, v) in type.parameterTypes.withIndex()) {
-                if (callArgs.second[i].type.cannotAssignTo(v)) {
+                if (cannotAssign(callArgs.second[i].type, v)) {
                     println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
                     throw CompilingCheckException()
                 }
+                argList.add(
+                    if (v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
+                        BoxExpressionNode(callArgs.second[i], v)
+                    } else {
+                        callArgs.second[i]
+                    }
+                )
             }
-            CallExpressionNode(expr, callArgs.second, type.returnType)
+            CallExpressionNode(expr, argList, type.returnType)
         }
         is GenericsType -> {
             if (type.typeParameter.size != callArgs.first.size) {
@@ -65,13 +73,21 @@ fun DelegateVisitor.visitFunctionCallExpression(
                 println("the type of expression is not a generics function")
                 throw CompilingCheckException()
             }
+            val argList = mutableListOf<ExpressionNode>()
             for ((i, v) in instanceType.parameterTypes.withIndex()) {
-                if (callArgs.second[i].type.cannotAssignTo(v)) {
+                if (cannotAssign(callArgs.second[i].type, v)) {
                     println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
                     throw CompilingCheckException()
                 }
+                argList.add(
+                    if (v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
+                        BoxExpressionNode(callArgs.second[i], v)
+                    } else {
+                        callArgs.second[i]
+                    }
+                )
             }
-            GenericsCallExpressionNode(expr, callArgs.first, callArgs.second, instanceType.returnType)
+            GenericsCallExpressionNode(expr, callArgs.first, argList, instanceType.returnType)
         }
         else -> {
             println("the type of expression is not a function")

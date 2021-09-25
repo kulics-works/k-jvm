@@ -146,3 +146,29 @@ class ConditionExpressionNode(
         return "if (${condExpr.generateCode()}) { ${thenExpr.generateCode()} } else { ${elseExpr.generateCode()} }"
     }
 }
+
+class BoxExpressionNode(val expr: ExpressionNode, ty: InterfaceType) : ExpressionNode(ty) {
+    override fun generateCode(): String {
+        val members = (type as InterfaceType).member.asSequence().fold(StringBuilder()) { acc, entry ->
+            val member = expr.type.getMember(entry.key)
+            if (member != null) {
+                val funcSig = (member.type as FunctionType).generateFunctionSignature()
+                acc.append(
+                    """
+                    override fun ${member.name}${funcSig.second} {
+                        rawValue.${member.name}(${joinString(funcSig.first) { it }});
+                    }
+                """.trimIndent()
+                )
+            }
+            acc
+        }
+        return """object: ${type.generateTypeName()}, RawObject { 
+            val rawValue = ${expr.generateCode()};
+            $members
+            override fun getRawObject(): Any {
+                return rawValue;
+            }
+        }""".trimMargin()
+    }
+}

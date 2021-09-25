@@ -214,4 +214,10 @@ def C1() I2 {
     f() Void = {};
 };
 
-let interfaceInstance I2 = C1();
+let interfaceInstance() I2 = {
+    let i I2 = C1();
+    let f(x I2) = 123;
+    f(C1());
+    C1()
+};
+

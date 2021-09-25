@@ -25,14 +25,15 @@ internal fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationCo
         expr.type
     } else {
         val type = checkType(visitType(ctx.type()))
-        if (expr.type.cannotAssignTo(type)) {
+        if (cannotAssign(expr.type, type)) {
             println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
             throw CompilingCheckException()
         }
         type
     }
     addIdentifier(Identifier(id, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable))
-    return "var $id: ${type.generateTypeName()} = ${expr.generateCode()}"
+    val exprCode = boxToImplementInterface(type, expr)
+    return "var $id: ${type.generateTypeName()} = ${exprCode}"
 }
 
 internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): String {
@@ -56,7 +57,8 @@ internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationCo
         popScope()
         val type = FunctionType(params.first.map { it.type }, returnType)
         addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+        val exprCode = boxToImplementInterface(returnType, expr)
+        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${exprCode});$Wrap}$Wrap"
     } else {
         val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
@@ -71,12 +73,13 @@ internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationCo
             addIdentifier(v)
         }
         val expr = visitExpression(ctx.expression())
-        if (expr.type.cannotAssignTo(returnType)) {
+        if (cannotAssign(expr.type, returnType)) {
             println("the return is '${returnType.name}', but find '${expr.type.name}'")
             throw CompilingCheckException()
         }
         popScope()
-        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+        val exprCode = boxToImplementInterface(returnType, expr)
+        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${exprCode});$Wrap}$Wrap"
     }
 }
 
@@ -92,11 +95,13 @@ internal fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
-    if (expr.type.cannotAssignTo(id.type)) {
+    val type = id.type
+    if (cannotAssign(expr.type, id.type)) {
         println("the type of assign value '${expr.type.name}' is not confirm '${id.type.name}'")
         throw CompilingCheckException()
     }
-    return "${id.name} = ${expr.generateCode()}"
+    val exprCode = boxToImplementInterface(type, expr)
+    return "${id.name} = $exprCode"
 }
 
 internal fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {

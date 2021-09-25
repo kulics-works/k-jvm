@@ -18,6 +18,8 @@ class DelegateVisitor {
         })
     }
 
+    private val implementMap = mutableMapOf<Type, MutableList<Type>>()
+
     internal fun hasIdentifier(id: String): Boolean {
         return scopes.any { it.hasIdentifier(id) }
     }
@@ -48,6 +50,23 @@ class DelegateVisitor {
 
     internal fun isRedefineType(ty: String): Boolean {
         return scopes.peek().hasType(ty)
+    }
+
+    internal fun addImplementType(subtype: Type, type: Type) {
+        val implements = implementMap[subtype]
+        if (implements != null) {
+            implements.add(type)
+        } else {
+            implementMap[subtype] = mutableListOf(type)
+        }
+    }
+
+    internal fun checkSubtype(subtype: Type, type: Type): Boolean {
+        val implements = implementMap[subtype]
+        if (implements != null) {
+            return implements.contains(type)
+        }
+        return false
     }
 
     internal fun pushScope() {
