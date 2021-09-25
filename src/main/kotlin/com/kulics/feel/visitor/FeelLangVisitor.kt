@@ -24,10 +24,6 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitGlobalVariableDeclaration(ctx)
     }
 
-    override fun visitGlobalConstantDeclaration(ctx: GlobalConstantDeclarationContext): String {
-        return delegate.visitGlobalConstantDeclaration(ctx)
-    }
-
     override fun visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): String {
         return delegate.visitGlobalFunctionDeclaration(ctx)
     }
@@ -110,10 +106,6 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
 
     override fun visitVariableDeclaration(ctx: VariableDeclarationContext): String {
         return delegate.visitVariableDeclaration(ctx)
-    }
-
-    override fun visitConstantDeclaration(ctx: ConstantDeclarationContext): String {
-        return delegate.visitConstantDeclaration(ctx)
     }
 
     override fun visitFunctionDeclaration(ctx: FunctionDeclarationContext): String {

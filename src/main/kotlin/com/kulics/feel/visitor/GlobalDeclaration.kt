@@ -27,7 +27,6 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
 internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {
     return when (val declaration = ctx.getChild(0)) {
         is GlobalVariableDeclarationContext -> visitGlobalVariableDeclaration(declaration)
-        is GlobalConstantDeclarationContext -> visitGlobalConstantDeclaration(declaration)
         is GlobalFunctionDeclarationContext -> visitGlobalFunctionDeclaration(declaration)
         is GlobalRecordDeclarationContext -> visitGlobalRecordDeclaration(declaration)
         is GlobalEnumDeclarationContext -> visitGlobalEnumDeclaration(declaration)
@@ -48,24 +47,8 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
     }
-    addIdentifier(Identifier(id, type, IdentifierKind.Mutable))
+    addIdentifier(Identifier(id, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable))
     return "var $id: ${type.generateTypeName()} = (${expr.generateCode()});$Wrap"
-}
-
-internal fun DelegateVisitor.visitGlobalConstantDeclaration(ctx: GlobalConstantDeclarationContext): String {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
-        throw CompilingCheckException()
-    }
-    val expr = visitExpression(ctx.expression())
-    val type = checkType(visitType(ctx.type()))
-    if (expr.type.cannotAssignTo(type)) {
-        println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
-        throw CompilingCheckException()
-    }
-    addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-    return "val $id: ${type.generateTypeName()} = (${expr.generateCode()});$Wrap"
 }
 
 internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): String {

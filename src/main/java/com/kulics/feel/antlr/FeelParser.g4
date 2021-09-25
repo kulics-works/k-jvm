@@ -8,7 +8,6 @@ moduleDeclaration: Module identifier Semi;
 
 globalDeclaration
     : (globalVariableDeclaration
-    | globalConstantDeclaration
     | globalFunctionDeclaration
     | globalRecordDeclaration
     | globalEnumDeclaration
@@ -16,8 +15,7 @@ globalDeclaration
     ) Semi
     ;
 
-globalVariableDeclaration: Let Mut identifier type Equal expression;
-globalConstantDeclaration: Let identifier type Equal expression;
+globalVariableDeclaration: Let Mut? identifier type Equal expression;
 globalFunctionDeclaration: Let identifier typeParameterList? parameterList type Equal expression;
 globalRecordDeclaration: Def identifier typeParameterList? fieldList type? methodList?;
 globalEnumDeclaration: Def identifier typeParameterList? Is constructorList methodList?;
@@ -51,7 +49,6 @@ block: LeftBrace (statement Semi)* RightBrace;
 
 statement
     : variableDeclaration
-    | constantDeclaration
     | functionDeclaration
     | assignment
     | ifStatement
@@ -72,8 +69,7 @@ expression
     | expression logicOperator expression
     ;
 
-variableDeclaration: Let Mut identifier type? Equal expression;
-constantDeclaration: Let identifier type? Equal expression;
+variableDeclaration: Let Mut? identifier type? Equal expression;
 functionDeclaration: Let identifier parameterList type? Equal expression;
 
 callSuffix: (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;

@@ -5,7 +5,6 @@ import com.kulics.feel.grammar.FeelParser.*
 internal fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
     return when (val stat = ctx.getChild(0)) {
         is VariableDeclarationContext -> visitVariableDeclaration(stat)
-        is ConstantDeclarationContext -> visitConstantDeclaration(stat)
         is FunctionDeclarationContext -> visitFunctionDeclaration(stat)
         is AssignmentContext -> visitAssignment(stat)
         is IfStatementContext -> visitIfStatement(stat)
@@ -32,29 +31,8 @@ internal fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationCo
         }
         type
     }
-    addIdentifier(Identifier(id, type, IdentifierKind.Mutable))
+    addIdentifier(Identifier(id, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable))
     return "var $id: ${type.generateTypeName()} = ${expr.generateCode()}"
-}
-
-internal fun DelegateVisitor.visitConstantDeclaration(ctx: ConstantDeclarationContext): String {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
-        throw CompilingCheckException()
-    }
-    val expr = visitExpression(ctx.expression())
-    val type = if (ctx.type() == null) {
-        expr.type
-    } else {
-        val type = checkType(visitType(ctx.type()))
-        if (expr.type.cannotAssignTo(type)) {
-            println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
-            throw CompilingCheckException()
-        }
-        type
-    }
-    addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-    return "val $id: ${type.generateTypeName()} = ${expr.generateCode()}"
 }
 
 internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): String {
