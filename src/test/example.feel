@@ -191,7 +191,9 @@ let genericsRecord() Void = {
     a.first + a.second;
 };
 
-def Option[T Any] is Some(value T) | None();
+def Option[T Any];
+def Some[T Any](value T) Option[T];
+def None[T Any]() Option[T];
 let genericsEnum() Int = {
     let x Option[Int] = Some[Int](123);
     if (x is Some[Int] v) v.value else 0

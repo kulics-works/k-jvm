@@ -94,7 +94,14 @@ fun DelegateVisitor.visitFunctionCallExpression(
                     }
                 )
             }
-            if (!hasType(type.name)) {
+            if (hasType(type.name)) {
+                getImplementType(type)?.forEach {
+                    addImplementType(
+                        instanceType.returnType,
+                        if (it is GenericsType) it.typeConstructor(callArgs.first) else it
+                    )
+                }
+            } else {
                 argList.addAll(0, constraintList)
             }
             GenericsCallExpressionNode(expr, callArgs.first, argList, instanceType.returnType)

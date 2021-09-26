@@ -233,6 +233,9 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         }
         addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
         pushScope()
+        for (v in typeParameter) {
+            addType(v)
+        }
         fieldList.first.forEach { addIdentifier(it) }
         val methodCode = if (ctx.methodList() == null) {
             ""
@@ -243,8 +246,8 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             }
             " {${methods.second}}"
         }
-        popScope()
         checkImplementInterface(ctx, members, type)
+        popScope()
         "class ${id}<${
             joinString(typeParameter) {
                 "${it.name}: ${it.constraint.generateTypeName()}"
@@ -269,8 +272,8 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             }
             " {${methods.second}}"
         }
-        popScope()
         checkImplementInterface(ctx, members, type)
+        popScope()
         "class ${id}(${fieldList.second})${methodCode};$Wrap"
     }
 }
@@ -281,6 +284,7 @@ private fun DelegateVisitor.checkImplementInterface(
     type: Type
 ) {
     if (ctx.type() != null) {
+        val implType = getType(visitType(ctx.type()).first)
         val implInterface = checkType(visitType(ctx.type()))
         if (implInterface !is InterfaceType) {
             println("type '${implInterface.name}' is not interface")
@@ -298,7 +302,7 @@ private fun DelegateVisitor.checkImplementInterface(
                 }
             }
         }
-        addImplementType(type, implInterface)
+        addImplementType(type, implType!!)
     }
 }
 

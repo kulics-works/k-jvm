@@ -125,7 +125,11 @@ internal fun DelegateVisitor.checkType(typeInfo: Pair<String, List<String>>): Ty
                 }
                 list.add(typeArg)
             }
-            type.typeConstructor(list)
+            val instanceType = type.typeConstructor(list)
+            getImplementType(type)?.forEach {
+                addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
+            }
+            instanceType
         }
         else -> type
     }
