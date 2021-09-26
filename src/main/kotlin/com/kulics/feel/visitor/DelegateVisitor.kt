@@ -1,6 +1,8 @@
 package com.kulics.feel.visitor
 
 class DelegateVisitor {
+    private val implementMap = mutableMapOf<Type, MutableList<Type>>()
+
     private val scopes = ArrayStack<Scope>().apply {
         push(Scope().apply {
             addType(builtinTypeAny)
@@ -15,10 +17,15 @@ class DelegateVisitor {
             addIdentifier(builtinIdentifierFalse)
             addIdentifier(builtinIdentifierNewArray)
             addIdentifier(builtinIdentifierEmptyArray)
+            addImplementType(builtinTypeVoid, builtinTypeAny)
+            addImplementType(builtinTypeInt, builtinTypeAny)
+            addImplementType(builtinTypeFloat, builtinTypeAny)
+            addImplementType(builtinTypeBool, builtinTypeAny)
+            addImplementType(builtinTypeChar, builtinTypeAny)
+            addImplementType(builtinTypeString, builtinTypeAny)
+            addImplementType(builtinTypeArray, builtinTypeAny)
         })
     }
-
-    private val implementMap = mutableMapOf<Type, MutableList<Type>>()
 
     internal fun hasIdentifier(id: String): Boolean {
         return scopes.any { it.hasIdentifier(id) }

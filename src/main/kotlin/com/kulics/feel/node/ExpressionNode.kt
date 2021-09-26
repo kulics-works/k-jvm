@@ -156,7 +156,7 @@ class BoxExpressionNode(val expr: ExpressionNode, ty: InterfaceType) : Expressio
                 acc.append(
                     """
                     override fun ${member.name}${funcSig.second} {
-                        rawValue.${member.name}(${joinString(funcSig.first) { it }});
+                        return rawValue.${member.name}(${joinString(funcSig.first) { it }});
                     }
                 """.trimIndent()
                 )
@@ -170,5 +170,29 @@ class BoxExpressionNode(val expr: ExpressionNode, ty: InterfaceType) : Expressio
                 return rawValue;
             }
         }""".trimMargin()
+    }
+}
+
+class ConstraintObjectNode(val argType: Type, interfaceType: InterfaceType): ExpressionNode(interfaceType) {
+    override fun generateCode(): String {
+        val members = (type as InterfaceType).member.asSequence().fold(StringBuilder()) { acc, entry ->
+            val member = argType.getMember(entry.key)
+            if (member != null) {
+                val funcSig = (member.type as FunctionType).generateFunctionSignature()
+                acc.append(
+                    """
+                    override fun ${argType.generateTypeName()}.${member.name}${funcSig.second} {
+                        return ${member.name}(${joinString(funcSig.first) { it }});
+                    }
+                """.trimIndent()
+                )
+            }
+            acc
+        }
+        return """
+            object: ${type.name}ConstraintObject<${argType.generateTypeName()}> {
+                $members
+            }
+        """.trimIndent()
     }
 }

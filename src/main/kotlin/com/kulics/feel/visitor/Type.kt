@@ -60,7 +60,7 @@ class InterfaceType(
 
 class GenericsType(
     override val name: String,
-    val typeParameter: List<Type>,
+    val typeParameter: List<TypeParameter>,
     val typeConstructor: (List<Type>) -> Type
 ) : Type
 
@@ -152,6 +152,9 @@ internal fun DelegateVisitor.canAssignTo(rightValue: Type, leftValue: Type): Boo
     }
     if (leftValue is InterfaceType) {
         if (leftValue.permits.any { it.name == rightValue.name }) {
+            return true
+        }
+        if (rightValue is TypeParameter && rightValue.constraint.name == leftValue.name) {
             return true
         }
         return checkSubtype(rightValue, leftValue)

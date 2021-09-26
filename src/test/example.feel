@@ -226,3 +226,7 @@ let interfaceConstraint[T I2](v T) Void = {
     // let i I2 = v;
 };
 
+let instanceConstraint() Void = {
+    interfaceConstraint[C1](C1());
+};
+

@@ -21,8 +21,8 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
         }
         inline fun Any.getRawObject() = this
         interface AnyConstraintObject<ThisConstraint>
-        inline fun<reified T> newArray(size: Int, initValue: T): Array<T> = Array(size) { initValue };
-        inline fun<reified T> emptyArray(): Array<T> = arrayOf();$Wrap
+        inline fun<reified T> newArray(constraintObjectT: AnyConstraintObject<Int>, size: Int, initValue: T): Array<T> = Array(size) { initValue };
+        inline fun<reified T> emptyArray(constraintObjectT: AnyConstraintObject<Int>): Array<T> = arrayOf();$Wrap
     """.trimIndent()
     )
     for (item in ctx.globalDeclaration()) {

@@ -62,11 +62,18 @@ fun DelegateVisitor.visitFunctionCallExpression(
                 println("the type args size need '${type.typeParameter.size}', but found '${callArgs.first.size}'")
                 throw CompilingCheckException()
             }
-            for (v in callArgs.first) {
+            val constraintList = mutableListOf<ExpressionNode>()
+            for ((i, v) in callArgs.first.withIndex()) {
                 if (v is GenericsType) {
                     println("the generics type '${v.name}' can not be type args")
                     throw CompilingCheckException()
                 }
+                val typeParam = type.typeParameter[i]
+                if (cannotAssign(v, typeParam.constraint)) {
+                    println("the type '${v.name}' can not confirm the type parameter '${typeParam.constraint.name}'")
+                    throw CompilingCheckException()
+                }
+                constraintList.add(ConstraintObjectNode(v, typeParam.constraint))
             }
             val instanceType = type.typeConstructor(callArgs.first)
             if (instanceType !is FunctionType) {
@@ -86,6 +93,9 @@ fun DelegateVisitor.visitFunctionCallExpression(
                         callArgs.second[i]
                     }
                 )
+            }
+            if (!hasType(type.name)) {
+                argList.addAll(0, constraintList)
             }
             GenericsCallExpressionNode(expr, callArgs.first, argList, instanceType.returnType)
         }
