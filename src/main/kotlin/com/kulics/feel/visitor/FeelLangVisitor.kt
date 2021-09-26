@@ -64,18 +64,6 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitMethod(ctx)
     }
 
-    override fun visitGlobalEnumDeclaration(ctx: GlobalEnumDeclarationContext): String {
-        return delegate.visitGlobalEnumDeclaration(ctx)
-    }
-
-    override fun visitConstructorList(ctx: ConstructorListContext): Map<String, Pair<ArrayList<Identifier>, String>> {
-        return delegate.visitConstructorList(ctx)
-    }
-
-    override fun visitConstructor(ctx: ConstructorContext): Pair<String, Pair<ArrayList<Identifier>, String>> {
-        return delegate.visitConstructor(ctx)
-    }
-
     override fun visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): String {
         return delegate.visitGlobalInterfaceDeclaration(ctx)
     }

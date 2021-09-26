@@ -95,12 +95,19 @@ def Point(x Int, y Int) {
 let somePoint Point = Point(1, 2);
 let memberAccess(a Point, b Point) Point = Point(a.x+b.x, a.y+b.y).copy();
 
-def Color is Red() | Green() | Blue();
+def Color;
+def Red() Color;
+def Green() Color;
+def Blue() Color;
+
 let red Color = Red();
 
-def IntList is Nil() | Cons(head Int, tail IntList) {
+def IntList {
     sum() Int = 0;
 };
+def Nil() IntList;
+def Cons(head Int, tail IntList) IntList;
+
 let makeIntList() IntList = {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
     li.sum();
@@ -194,6 +201,7 @@ let genericsRecord() Void = {
 def Option[T Any];
 def Some[T Any](value T) Option[T];
 def None[T Any]() Option[T];
+
 let genericsEnum() Int = {
     let x Option[Int] = Some[Int](123);
     if (x is Some[Int] v) v.value else 0

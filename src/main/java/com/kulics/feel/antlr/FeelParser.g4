@@ -10,7 +10,6 @@ globalDeclaration
     : (globalVariableDeclaration
     | globalFunctionDeclaration
     | globalRecordDeclaration
-    | globalEnumDeclaration
     | globalInterfaceDeclaration
     ) Semi
     ;
@@ -18,7 +17,6 @@ globalDeclaration
 globalVariableDeclaration: Let Mut? identifier type Equal expression;
 globalFunctionDeclaration: Let identifier typeParameterList? parameterList type Equal expression;
 globalRecordDeclaration: Def identifier typeParameterList? fieldList type? methodList?;
-globalEnumDeclaration: Def identifier typeParameterList? Is constructorList methodList?;
 globalInterfaceDeclaration: Def identifier typeParameterList? virtualMethodList?;
 
 typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
@@ -36,10 +34,6 @@ field: Mut? identifier type;
 methodList: LeftBrace (method Semi)* RightBrace;
 
 method: identifier parameterList type Equal expression;
-
-constructorList: Or? constructor (Or constructor)*;
-
-constructor: identifier fieldList;
 
 virtualMethodList: LeftBrace (virtualMethod Semi)* RightBrace;
 
