@@ -24,39 +24,23 @@ class LiteralExpressionNode(private val text: String, ty: Type) : ExpressionNode
     }
 }
 
-enum class AdditiveOperator {
-    Add, Sub
-}
-
-class AdditiveExpressionNode(
-    private val lhs: ExpressionNode,
-    private val rhs: ExpressionNode,
-    private val op: AdditiveOperator,
-    ty: Type
-) : ExpressionNode(ty) {
-    override fun generateCode(): String {
-        return when (op) {
-            AdditiveOperator.Add -> "(${lhs.generateCode()} + ${rhs.generateCode()})"
-            AdditiveOperator.Sub -> "(${lhs.generateCode()} - ${rhs.generateCode()})"
-        }
-    }
-}
-
-enum class MultiplicativeOperator {
-    Mul, Div, Mod
+enum class CalculativeOperator {
+    Add, Sub, Mul, Div, Mod
 }
 
 class MultiplicativeExpressionNode(
     private val lhs: ExpressionNode,
     private val rhs: ExpressionNode,
-    private val op: MultiplicativeOperator,
+    private val op: CalculativeOperator,
     ty: Type
 ) : ExpressionNode(ty) {
     override fun generateCode(): String {
         return when (op) {
-            MultiplicativeOperator.Mul -> "(${lhs.generateCode()} * ${rhs.generateCode()})"
-            MultiplicativeOperator.Div -> "(${lhs.generateCode()} / ${rhs.generateCode()})"
-            MultiplicativeOperator.Mod -> "(${lhs.generateCode()} % ${rhs.generateCode()})"
+            CalculativeOperator.Add -> "(${lhs.generateCode()} + ${rhs.generateCode()})"
+            CalculativeOperator.Sub -> "(${lhs.generateCode()} - ${rhs.generateCode()})"
+            CalculativeOperator.Mul -> "(${lhs.generateCode()} * ${rhs.generateCode()})"
+            CalculativeOperator.Div -> "(${lhs.generateCode()} / ${rhs.generateCode()})"
+            CalculativeOperator.Mod -> "(${lhs.generateCode()} % ${rhs.generateCode()})"
         }
     }
 }
@@ -173,7 +157,7 @@ class BoxExpressionNode(val expr: ExpressionNode, ty: InterfaceType) : Expressio
     }
 }
 
-class ConstraintObjectNode(val argType: Type, interfaceType: InterfaceType): ExpressionNode(interfaceType) {
+class ConstraintObjectNode(val argType: Type, interfaceType: InterfaceType) : ExpressionNode(interfaceType) {
     override fun generateCode(): String {
         val members = (type as InterfaceType).member.asSequence().fold(StringBuilder()) { acc, entry ->
             val member = argType.getMember(entry.key)
