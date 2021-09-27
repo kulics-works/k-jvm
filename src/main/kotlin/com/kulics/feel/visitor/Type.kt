@@ -76,16 +76,20 @@ class InterfaceType(
 class GenericsType(
     override val name: String,
     val typeParameter: List<TypeParameter>,
+    partialTypeArgument: List<Type>? = null,
     val typeConstructor: (List<Type>) -> Type
 ) : Type() {
     override val uniqueName: String =
-        "${name}[${joinString(typeParameter) { "ForAll.${it.uniqueName}" }}]"
+        if (partialTypeArgument == null) "${name}[${joinString(typeParameter) { it.uniqueName }}]"
+        else "${name}[${joinString(partialTypeArgument) { it.uniqueName }}]"
 }
 
 class TypeParameter(override val name: String, val constraint: InterfaceType) : Type() {
     override fun getMember(name: String): Identifier? {
         return constraint.getMember(name)
     }
+
+    override val uniqueName: String = "ForAll.${name}"
 }
 
 fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
@@ -123,14 +127,14 @@ fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
 }
 
 internal fun DelegateVisitor.checkType(typeInfo: Pair<String, List<String>>): Type {
-    return when (val type = getType(typeInfo.first)) {
+    return when (val targetType = getType(typeInfo.first)) {
         null -> {
             println("type: '${typeInfo.first}' is undefined")
             throw CompilingCheckException()
         }
         is GenericsType -> {
-            if (typeInfo.second.isEmpty()) {
-                println("the type args size need '${type.typeParameter.size}', but found '${typeInfo.second.size}'")
+            if (typeInfo.second.isEmpty() || targetType.typeParameter.size != typeInfo.second.size) {
+                println("the type args size need '${targetType.typeParameter.size}', but found '${typeInfo.second.size}'")
                 throw CompilingCheckException()
             }
             val list = mutableListOf<Type>()
@@ -142,13 +146,13 @@ internal fun DelegateVisitor.checkType(typeInfo: Pair<String, List<String>>): Ty
                 }
                 list.add(typeArg)
             }
-            val instanceType = type.typeConstructor(list)
-            getImplementType(type)?.forEach {
+            val instanceType = targetType.typeConstructor(list)
+            getImplementType(targetType)?.forEach {
                 addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
             }
             instanceType
         }
-        else -> type
+        else -> targetType
     }
 }
 

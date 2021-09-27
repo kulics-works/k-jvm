@@ -208,6 +208,13 @@ let genericsEnum() Int = {
     if (x is Some[Int] v) v.value else 0
 };
 
+def GenericsInterface[T1 Any, T2 Any];
+def ImplementType[T Any]() GenericsInterface[T, Int];
+
+let genericsSubtyping() Void = {
+    let i GenericsInterface[Int, Int] = ImplementType[Int]();
+};
+
 let array() Void = {
     let mut a = emptyArray[Int]();
     a = newArray[Int](5, 5);

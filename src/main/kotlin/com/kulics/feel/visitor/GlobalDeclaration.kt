@@ -283,8 +283,45 @@ private fun DelegateVisitor.checkImplementInterface(
     type: Type
 ) {
     if (ctx.type() != null) {
-        val implType = getType(visitType(ctx.type()).first)
-        val implInterface = checkType(visitType(ctx.type()))
+        val typeInfo = visitType(ctx.type())
+        val (implInterface, mapInterface) = when (val targetType = getType(typeInfo.first)) {
+            null -> {
+                println("type: '${typeInfo.first}' is undefined")
+                throw CompilingCheckException()
+            }
+            is GenericsType -> {
+                if (typeInfo.second.isEmpty() || targetType.typeParameter.size != typeInfo.second.size) {
+                    println("the type args size need '${targetType.typeParameter.size}', but found '${typeInfo.second.size}'")
+                    throw CompilingCheckException()
+                }
+                val list = mutableListOf<Type>()
+                val typeParameter = mutableListOf<TypeParameter>()
+                for (v in typeInfo.second) {
+                    val typeArg = getType(v)
+                    if (typeArg == null) {
+                        println("type: '${v}' is undefined")
+                        throw CompilingCheckException()
+                    }
+                    list.add(typeArg)
+                    if (typeArg is TypeParameter) {
+                        typeParameter.add(typeArg)
+                    }
+                }
+                val instanceType = targetType.typeConstructor(list)
+                val mapType = GenericsType(targetType.name, typeParameter, list) { li ->
+                    val typeMap = mutableMapOf<String, Type>()
+                    for (i in li.indices) {
+                        typeMap[typeParameter[i].name] = li[i]
+                    }
+                    targetType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
+                }
+                getImplementType(targetType)?.forEach {
+                    addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
+                }
+                Pair(instanceType, mapType)
+            }
+            else -> Pair(targetType, targetType)
+        }
         if (implInterface !is InterfaceType) {
             println("type '${implInterface.name}' is not interface")
             throw CompilingCheckException()
@@ -301,7 +338,7 @@ private fun DelegateVisitor.checkImplementInterface(
                 }
             }
         }
-        addImplementType(type, implType!!)
+        addImplementType(type, mapInterface)
     }
 }
 
