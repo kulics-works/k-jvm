@@ -210,9 +210,11 @@ let genericsEnum() Int = {
 
 def GenericsInterface[T1 Any, T2 Any];
 def ImplementType[T Any]() GenericsInterface[T, Int];
+def ImplementType2[T Any, R Any]() GenericsInterface[R, T];
 
 let genericsSubtyping() Void = {
     let i GenericsInterface[Int, Int] = ImplementType[Int]();
+    let j GenericsInterface[Int, Float] = ImplementType2[Float, Int]();
 };
 
 let array() Void = {

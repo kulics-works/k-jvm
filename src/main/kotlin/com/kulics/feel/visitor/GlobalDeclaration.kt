@@ -295,7 +295,6 @@ private fun DelegateVisitor.checkImplementInterface(
                     throw CompilingCheckException()
                 }
                 val list = mutableListOf<Type>()
-                val typeParameter = mutableListOf<TypeParameter>()
                 for (v in typeInfo.second) {
                     val typeArg = getType(v)
                     if (typeArg == null) {
@@ -303,17 +302,19 @@ private fun DelegateVisitor.checkImplementInterface(
                         throw CompilingCheckException()
                     }
                     list.add(typeArg)
-                    if (typeArg is TypeParameter) {
-                        typeParameter.add(typeArg)
-                    }
                 }
                 val instanceType = targetType.typeConstructor(list)
-                val mapType = GenericsType(targetType.name, typeParameter, list) { li ->
-                    val typeMap = mutableMapOf<String, Type>()
-                    for (i in li.indices) {
-                        typeMap[typeParameter[i].name] = li[i]
+                val mapType = if (type is GenericsType) {
+                    val typeParameter = type.typeParameter
+                    GenericsType(targetType.name, typeParameter, list) { li ->
+                        val typeMap = mutableMapOf<String, Type>()
+                        for (i in li.indices) {
+                            typeMap[typeParameter[i].name] = li[i]
+                        }
+                        targetType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
                     }
-                    targetType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
+                } else {
+                    instanceType
                 }
                 getImplementType(targetType)?.forEach {
                     addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
