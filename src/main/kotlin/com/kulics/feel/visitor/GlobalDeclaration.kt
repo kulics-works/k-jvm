@@ -393,7 +393,6 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
                 InterfaceType(
                     "${id}[${joinString(li) { it.name }}]",
                     members,
-                    permitsTypes,
                     "${id}<${joinString(li) { it.generateTypeName() }}>"
                 ), typeMap
             )
@@ -438,7 +437,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
         }>${constraintMethodCode};
         """.trimIndent()
     } else {
-        val type = InterfaceType(id, members, permitsTypes, null)
+        val type = InterfaceType(id, members, null)
         addType(type)
         pushScope()
         val methods = ctx.virtualMethodList()?.let {

@@ -52,7 +52,7 @@ class ArrayStack<T> : Collection<T> {
     }
 }
 
-val builtinTypeAny = InterfaceType("Any", mutableMapOf(), mutableSetOf(), "Any")
+val builtinTypeAny = InterfaceType("Any", mutableMapOf(), "Any")
 val builtinTypeVoid = RecordType("Void", mutableMapOf(), "Unit")
 val builtinTypeInt = RecordType("Int", mutableMapOf(), "Int")
 val builtinTypeFloat = RecordType("Float", mutableMapOf(), "Double")

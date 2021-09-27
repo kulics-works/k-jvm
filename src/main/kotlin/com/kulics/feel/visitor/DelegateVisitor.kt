@@ -1,7 +1,7 @@
 package com.kulics.feel.visitor
 
 class DelegateVisitor {
-    private val implementMap = mutableMapOf<String, MutableList<Type>>()
+    private val implementMap = mutableMapOf<Type, MutableSet<Type>>()
 
     private val scopes = ArrayStack<Scope>().apply {
         push(Scope().apply {
@@ -60,16 +60,16 @@ class DelegateVisitor {
     }
 
     internal fun addImplementType(subtype: Type, type: Type) {
-        val implements = implementMap[subtype.name]
+        val implements = implementMap[subtype]
         if (implements != null) {
             implements.add(type)
         } else {
-            implementMap[subtype.name] = mutableListOf(type)
+            implementMap[subtype] = mutableSetOf(type)
         }
     }
 
     internal fun checkSubtype(subtype: Type, type: Type): Boolean {
-        val implements = implementMap[subtype.name]
+        val implements = implementMap[subtype]
         if (implements != null) {
             for (v in implements) {
                 if (v.name == type.name) {
@@ -80,8 +80,8 @@ class DelegateVisitor {
         return false
     }
 
-    internal fun getImplementType(subtype: Type): List<Type>? {
-        return implementMap[subtype.name]
+    internal fun getImplementType(subtype: Type): Set<Type>? {
+        return implementMap[subtype]
     }
 
     internal fun pushScope() {

@@ -2,13 +2,26 @@ package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser.*
 
-sealed interface Type {
-    val name: String
-    fun generateTypeName(): String = name
-    fun getMember(name: String): Identifier? = null
+sealed class Type {
+    abstract val name: String
+    open fun generateTypeName(): String = name
+    open fun getMember(name: String): Identifier? = null
+    open val uniqueName: String
+        get() = name
+
+    override fun hashCode(): Int {
+        return uniqueName.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is Type) return false
+        if (uniqueName != other.uniqueName) return false
+        return true
+    }
 }
 
-class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type {
+class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type() {
     override val name: String =
         "Func[${joinString(parameterTypes) { it.name }},${returnType.name}]"
 
@@ -27,13 +40,16 @@ class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type 
             }
         }): ${returnType.generateTypeName()}"
     }
+
+    override val uniqueName: String =
+        "Func[${joinString(parameterTypes) { it.uniqueName }},${returnType.uniqueName}]"
 }
 
 class RecordType(
     override val name: String,
     val member: MutableMap<String, Identifier>,
     val backendName: String?
-) : Type {
+) : Type() {
     override fun getMember(name: String): Identifier? {
         return member[name]
     }
@@ -46,9 +62,8 @@ class RecordType(
 class InterfaceType(
     override val name: String,
     val member: MutableMap<String, VirtualIdentifier>,
-    val permits: MutableSet<Type>,
     val backendName: String?
-) : Type {
+) : Type() {
     override fun getMember(name: String): Identifier? {
         return member[name]
     }
@@ -62,9 +77,12 @@ class GenericsType(
     override val name: String,
     val typeParameter: List<TypeParameter>,
     val typeConstructor: (List<Type>) -> Type
-) : Type
+) : Type() {
+    override val uniqueName: String =
+        "${name}[${joinString(typeParameter) { "ForAll.${it.uniqueName}" }}]"
+}
 
-class TypeParameter(override val name: String, val constraint: InterfaceType) : Type {
+class TypeParameter(override val name: String, val constraint: InterfaceType) : Type() {
     override fun getMember(name: String): Identifier? {
         return constraint.getMember(name)
     }
@@ -98,7 +116,6 @@ fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
                     it.value.hasImplement
                 )
             }.toMutableMap(),
-            type.permits,
             type.backendName
         )
         else -> type
@@ -151,14 +168,11 @@ internal fun DelegateVisitor.cannotAssign(rightValue: Type, leftValue: Type): Bo
 }
 
 internal fun DelegateVisitor.canAssignTo(rightValue: Type, leftValue: Type): Boolean {
-    if (rightValue.name == leftValue.name) {
+    if (rightValue == leftValue) {
         return true
     }
     if (leftValue is InterfaceType) {
-        if (leftValue.permits.any { it.name == rightValue.name }) {
-            return true
-        }
-        if (rightValue is TypeParameter && rightValue.constraint.name == leftValue.name) {
+        if (rightValue is TypeParameter && rightValue.constraint == leftValue) {
             return true
         }
         return checkSubtype(rightValue, leftValue)

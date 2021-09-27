@@ -204,6 +204,7 @@ def None[T Any]() Option[T];
 
 let genericsEnum() Int = {
     let x Option[Int] = Some[Int](123);
+    let y Option[Int] = Some[Int](123);
     if (x is Some[Int] v) v.value else 0
 };
 
