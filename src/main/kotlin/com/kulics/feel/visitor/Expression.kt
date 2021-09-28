@@ -6,7 +6,9 @@ import org.antlr.v4.runtime.tree.ParseTree
 
 internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): ExpressionNode = when (ctx.childCount) {
     1 -> visitSingleExpression(ctx.getChild(0))
-    2 -> if (ctx.callSuffix() != null) {
+    2 -> if (ctx.memberAccessCallSuffix() != null) {
+        visitMemberAccessFunctionCallExpression(ctx.expression(0), ctx.memberAccessCallSuffix())
+    } else if (ctx.callSuffix() != null) {
         visitFunctionCallExpression(ctx.expression(0), ctx.callSuffix())
     } else {
         visitMemberAccessExpression(ctx.expression(0), ctx.memberAccess())
@@ -22,6 +24,32 @@ fun DelegateVisitor.visitSingleExpression(expr: ParseTree): ExpressionNode {
         is BlockExpressionContext -> visitBlockExpression(expr)
         is IfExpressionContext -> visitIfExpression(expr)
         else -> throw CompilingCheckException()
+    }
+}
+
+fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
+    exprCtx: ExpressionContext,
+    callCtx: MemberAccessCallSuffixContext
+): ExpressionNode {
+    val expr = visitExpression(exprCtx)
+    val (memberIdentifier, typeArgs, args) = visitMemberAccessCallSuffix(callCtx)
+    return if (expr.type is TypeParameter) {
+        throw CompilingCheckException()
+    } else {
+        val member = expr.type.getMember(memberIdentifier)
+        if (member == null) {
+            println("the type '${expr.type.name}' have not member '${memberIdentifier}'")
+            throw CompilingCheckException()
+        }
+        val memberAccessExpr = MemberExpressionNode(expr, member)
+        when (val type = memberAccessExpr.type) {
+            is FunctionType -> processFunctionCall(memberAccessExpr, typeArgs to args, type)
+            is GenericsType -> processGenericsFunctionCall(memberAccessExpr, typeArgs to args, type)
+            else -> {
+                println("the type of expression is not a function")
+                throw CompilingCheckException()
+            }
+        }
     }
 }
 
@@ -227,6 +255,18 @@ fun checkLogicExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
         }
     }
 }
+
+internal fun DelegateVisitor.visitMemberAccessCallSuffix(ctx: MemberAccessCallSuffixContext): MemberAccessCallSuffix {
+    return MemberAccessCallSuffix(
+        visitIdentifier(ctx.identifier()),
+        ctx.type().map {
+            checkType(visitType(it))
+        },
+        ctx.expression().map { visitExpression(it) }
+    )
+}
+
+data class MemberAccessCallSuffix(val memberName: String, val typeArgs: List<Type>, val args: List<ExpressionNode>)
 
 internal fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): Pair<List<Type>, List<ExpressionNode>> {
     return (ctx.type().map {

@@ -55,6 +55,7 @@ expression
     | parenExpression
     | blockExpression
     | ifExpression
+    | expression memberAccessCallSuffix
     | expression callSuffix
     | expression memberAccess
     | expression multiplicativeOperator expression
@@ -65,6 +66,8 @@ expression
 
 variableDeclaration: Let Mut? identifier type? Equal expression;
 functionDeclaration: Let identifier parameterList type? Equal expression;
+
+memberAccessCallSuffix: Dot identifier (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
 
 callSuffix: (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
 
