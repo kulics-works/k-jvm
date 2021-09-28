@@ -32,85 +32,97 @@ fun DelegateVisitor.visitFunctionCallExpression(
     val expr = visitExpression(exprCtx)
     val callArgs = visitCallSuffix(callCtx)
     return when (val type = expr.type) {
-        is FunctionType -> {
-            if (callArgs.first.isNotEmpty()) {
-                println("the type of expression is not a generics function")
-                throw CompilingCheckException()
-            }
-            if (type.parameterTypes.size != callArgs.second.size) {
-                println("the size of args is ${callArgs.second.size}, but need ${type.parameterTypes.size}")
-                throw CompilingCheckException()
-            }
-            val argList = mutableListOf<ExpressionNode>()
-            for ((i, v) in type.parameterTypes.withIndex()) {
-                if (cannotAssign(callArgs.second[i].type, v)) {
-                    println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
-                    throw CompilingCheckException()
-                }
-                argList.add(
-                    if (v.name != builtinTypeAny.name && v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
-                        BoxExpressionNode(callArgs.second[i], v)
-                    } else {
-                        callArgs.second[i]
-                    }
-                )
-            }
-            CallExpressionNode(expr, argList, type.returnType)
-        }
-        is GenericsType -> {
-            if (type.typeParameter.size != callArgs.first.size) {
-                println("the type args size need '${type.typeParameter.size}', but found '${callArgs.first.size}'")
-                throw CompilingCheckException()
-            }
-            val constraintList = mutableListOf<ExpressionNode>()
-            for ((i, v) in callArgs.first.withIndex()) {
-                if (v is GenericsType) {
-                    println("the generics type '${v.name}' can not be type args")
-                    throw CompilingCheckException()
-                }
-                val typeParam = type.typeParameter[i]
-                if (cannotAssign(v, typeParam.constraint)) {
-                    println("the type '${v.name}' can not confirm the type parameter '${typeParam.constraint.name}'")
-                    throw CompilingCheckException()
-                }
-                constraintList.add(ConstraintObjectNode(v, typeParam.constraint))
-            }
-            val instanceType = type.typeConstructor(callArgs.first)
-            if (instanceType !is FunctionType) {
-                println("the type of expression is not a generics function")
-                throw CompilingCheckException()
-            }
-            val argList = mutableListOf<ExpressionNode>()
-            for ((i, v) in instanceType.parameterTypes.withIndex()) {
-                if (cannotAssign(callArgs.second[i].type, v)) {
-                    println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
-                    throw CompilingCheckException()
-                }
-                argList.add(
-                    if (v.name != builtinTypeAny.name && v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
-                        BoxExpressionNode(callArgs.second[i], v)
-                    } else {
-                        callArgs.second[i]
-                    }
-                )
-            }
-            if (hasType(type.name)) {
-                getImplementType(type)?.forEach {
-                    addImplementType(
-                        instanceType.returnType,
-                        if (it is GenericsType) it.typeConstructor(callArgs.first) else it
-                    )
-                }
-            } else {
-                argList.addAll(0, constraintList)
-            }
-            GenericsCallExpressionNode(expr, callArgs.first, argList, instanceType.returnType)
-        }
+        is FunctionType -> processFunctionCall(expr, callArgs, type)
+        is GenericsType -> processGenericsFunctionCall(expr, callArgs, type)
         else -> {
             println("the type of expression is not a function")
             throw CompilingCheckException()
         }
     }
+}
+
+private fun DelegateVisitor.processFunctionCall(
+    expr: ExpressionNode,
+    callArgs: Pair<List<Type>, List<ExpressionNode>>,
+    type: FunctionType
+): CallExpressionNode {
+    if (callArgs.first.isNotEmpty()) {
+        println("the type of expression is not a generics function")
+        throw CompilingCheckException()
+    }
+    if (type.parameterTypes.size != callArgs.second.size) {
+        println("the size of args is ${callArgs.second.size}, but need ${type.parameterTypes.size}")
+        throw CompilingCheckException()
+    }
+    val argList = mutableListOf<ExpressionNode>()
+    for ((i, v) in type.parameterTypes.withIndex()) {
+        if (cannotAssign(callArgs.second[i].type, v)) {
+            println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
+            throw CompilingCheckException()
+        }
+        argList.add(
+            if (v.name != builtinTypeAny.name && v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
+                BoxExpressionNode(callArgs.second[i], v)
+            } else {
+                callArgs.second[i]
+            }
+        )
+    }
+    return CallExpressionNode(expr, argList, type.returnType)
+}
+
+private fun DelegateVisitor.processGenericsFunctionCall(
+    expr: ExpressionNode,
+    callArgs: Pair<List<Type>, List<ExpressionNode>>,
+    type: GenericsType
+): GenericsCallExpressionNode {
+    if (type.typeParameter.size != callArgs.first.size) {
+        println("the type args size need '${type.typeParameter.size}', but found '${callArgs.first.size}'")
+        throw CompilingCheckException()
+    }
+    val constraintList = mutableListOf<ExpressionNode>()
+    for ((i, v) in callArgs.first.withIndex()) {
+        if (v is GenericsType) {
+            println("the generics type '${v.name}' can not be type args")
+            throw CompilingCheckException()
+        }
+        val typeParam = type.typeParameter[i]
+        if (cannotAssign(v, typeParam.constraint)) {
+            println("the type '${v.name}' can not confirm the type parameter '${typeParam.constraint.name}'")
+            throw CompilingCheckException()
+        }
+        constraintList.add(ConstraintObjectNode(v, typeParam.constraint))
+    }
+    val instanceType = type.typeConstructor(callArgs.first)
+    if (instanceType !is FunctionType) {
+        println("the type of expression is not a generics function")
+        throw CompilingCheckException()
+    }
+    val argList = mutableListOf<ExpressionNode>()
+    for ((i, v) in instanceType.parameterTypes.withIndex()) {
+        if (cannotAssign(callArgs.second[i].type, v)) {
+            println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
+            throw CompilingCheckException()
+        }
+        argList.add(
+            if (v.name != builtinTypeAny.name && v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
+                BoxExpressionNode(callArgs.second[i], v)
+            } else {
+                callArgs.second[i]
+            }
+        )
+    }
+    if (hasType(type.name)) {
+        getImplementType(type)?.forEach {
+            addImplementType(
+                instanceType.returnType,
+                if (it is GenericsType) it.typeConstructor(callArgs.first) else it
+            )
+        }
+    } else {
+        argList.addAll(0, constraintList)
+    }
+    return GenericsCallExpressionNode(expr, callArgs.first, argList, instanceType.returnType)
 }
 
 fun DelegateVisitor.visitMemberAccessExpression(
@@ -260,66 +272,80 @@ internal fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContex
 internal fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): ExpressionNode {
     val cond = visitExpression(ctx.expression(0))
     return if (ctx.pattern() == null) {
-        if (cond.type != builtinTypeBool) {
-            println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
-            throw CompilingCheckException()
-        }
-        val thenBranch = visitExpression(ctx.expression(1))
-        val elseBranch = visitExpression(ctx.expression(2))
-        if (thenBranch.type != elseBranch.type) {
-            println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
-            throw CompilingCheckException()
-        }
-        ConditionExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
+        processIf(ctx, cond)
     } else {
-        pushScope()
-        val pattern = visitPattern(ctx.pattern())
-        if (pattern is IdentifierPattern) {
-            val identifier = Identifier(pattern.identifier, cond.type)
-            addIdentifier(identifier)
-        }
-        val thenBranch = visitExpression(ctx.expression(1))
-        popScope()
-        val elseBranch = visitExpression(ctx.expression(2))
-        if (thenBranch.type != elseBranch.type) {
-            println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
-            throw CompilingCheckException()
-        }
-        return when (pattern) {
-            is TypePattern -> {
-                if (cond.type !is InterfaceType) {
-                    println("the type of condition is not interface, only interface type can use type pattern")
-                    throw CompilingCheckException()
-                }
-                val matchCode =
-                    "val ${pattern.identifier.name} = BuiltinTool.cast<${
-                        pattern.type.generateTypeName()
-                    }>(${cond.generateCode()}.getRawObject());$Wrap"
-                val condExpr =
-                    ConditionExpressionNode(
-                        LiteralExpressionNode("${pattern.identifier.name} != null", builtinTypeBool),
-                        thenBranch,
-                        elseBranch,
-                        thenBranch.type
-                    )
-                BlockExpressionNode(matchCode, condExpr)
+        processIfPattern(ctx, cond)
+    }
+}
+
+private fun DelegateVisitor.processIf(
+    ctx: IfExpressionContext,
+    cond: ExpressionNode
+): ConditionExpressionNode {
+    if (cond.type != builtinTypeBool) {
+        println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
+        throw CompilingCheckException()
+    }
+    val thenBranch = visitExpression(ctx.expression(1))
+    val elseBranch = visitExpression(ctx.expression(2))
+    if (thenBranch.type != elseBranch.type) {
+        println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
+        throw CompilingCheckException()
+    }
+    return ConditionExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
+}
+
+private fun DelegateVisitor.processIfPattern(
+    ctx: IfExpressionContext,
+    cond: ExpressionNode
+): ExpressionNode {
+    pushScope()
+    val pattern = visitPattern(ctx.pattern())
+    if (pattern is IdentifierPattern) {
+        val identifier = Identifier(pattern.identifier, cond.type)
+        addIdentifier(identifier)
+    }
+    val thenBranch = visitExpression(ctx.expression(1))
+    popScope()
+    val elseBranch = visitExpression(ctx.expression(2))
+    if (thenBranch.type != elseBranch.type) {
+        println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
+        throw CompilingCheckException()
+    }
+    return when (pattern) {
+        is TypePattern -> {
+            if (cond.type !is InterfaceType) {
+                println("the type of condition is not interface, only interface type can use type pattern")
+                throw CompilingCheckException()
             }
-            is IdentifierPattern -> {
-                val matchCode = "val ${pattern.identifier} = ${cond.generateCode()};$Wrap"
-                BlockExpressionNode(matchCode, thenBranch)
-            }
-            is LiteralPattern -> {
-                checkCompareExpressionType(cond, pattern.expr)
+            val matchCode =
+                "val ${pattern.identifier.name} = BuiltinTool.cast<${
+                    pattern.type.generateTypeName()
+                }>(${cond.generateCode()}.getRawObject());$Wrap"
+            val condExpr =
                 ConditionExpressionNode(
-                    LiteralExpressionNode("${cond.generateCode()} == ${pattern.expr.generateCode()}", builtinTypeBool),
+                    LiteralExpressionNode("${pattern.identifier.name} != null", builtinTypeBool),
                     thenBranch,
                     elseBranch,
                     thenBranch.type
                 )
-            }
-            is WildcardPattern -> {
-                BlockExpressionNode("${cond.generateCode()};$Wrap", thenBranch)
-            }
+            BlockExpressionNode(matchCode, condExpr)
+        }
+        is IdentifierPattern -> {
+            val matchCode = "val ${pattern.identifier} = ${cond.generateCode()};$Wrap"
+            BlockExpressionNode(matchCode, thenBranch)
+        }
+        is LiteralPattern -> {
+            checkCompareExpressionType(cond, pattern.expr)
+            ConditionExpressionNode(
+                LiteralExpressionNode("${cond.generateCode()} == ${pattern.expr.generateCode()}", builtinTypeBool),
+                thenBranch,
+                elseBranch,
+                thenBranch.type
+            )
+        }
+        is WildcardPattern -> {
+            BlockExpressionNode("${cond.generateCode()};$Wrap", thenBranch)
         }
     }
 }
