@@ -116,7 +116,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         popScope()
         val exprCode = boxToImplementInterface(returnType, expr)
         "fun <${
-            joinString(typeParameter) { it.name }
+            joinString(typeParameter) { "${it.name}: Any" }
         }> ${id}(${
             joinString(constraintObject) { (name, type) ->
                 "$name: $type"

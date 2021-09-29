@@ -217,6 +217,10 @@ let genericsSubtyping() Void = {
     let j GenericsInterface[Int, Float] = ImplementType2[Float, Int]();
 };
 
+let genericsSubtyping2[E Any]() Void = {
+    let i GenericsInterface[E, E] = ImplementType2[E, E]();
+};
+
 let array() Void = {
     let mut a = emptyArray[Int]();
     a = newArray[Int](5, 5);
@@ -243,7 +247,7 @@ let interfaceInstance() I2 = {
 
 let interfaceConstraint[T I2](v T) Void = {
     // v.f();
-    // let i I2 = v;
+    let i I2 = v;
 };
 
 let instanceConstraint() Void = {
