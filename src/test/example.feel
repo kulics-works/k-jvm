@@ -246,7 +246,7 @@ let interfaceInstance() I2 = {
 };
 
 let interfaceConstraint[T I2](v T) Void = {
-    // v.f();
+    v.f();
     let i I2 = v;
 };
 

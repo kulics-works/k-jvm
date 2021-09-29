@@ -122,9 +122,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
                 "$name: $type"
             }
         }, ${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${
-            constraintObject.fold(exprCode) { acc, pair ->
-                "with(${pair.first}) { $acc$Wrap }"
-            }
+            exprCode
         });$Wrap}$Wrap"
     } else {
         val returnType = checkType(visitType(ctx.type()))
@@ -518,7 +516,7 @@ internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContex
     return Pair(list, codeList)
 }
 
-internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Pair<VirtualIdentifier, String> {
+internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): VirtualMethod {
     val id = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(id)) {
         println("identifier: '$id' is redefined")
@@ -544,8 +542,13 @@ internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Pair
             throw CompilingCheckException()
         }
         popScope()
-        identifier to "${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+        VirtualMethod(
+            identifier,
+            "${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+        )
     } else {
-        identifier to "${id}(${params.second}): ${returnType.generateTypeName()}$Wrap"
+        VirtualMethod(identifier, "${params.second}): ${returnType.generateTypeName()}$Wrap")
     }
 }
+
+data class VirtualMethod(val id: VirtualIdentifier, val code: String)

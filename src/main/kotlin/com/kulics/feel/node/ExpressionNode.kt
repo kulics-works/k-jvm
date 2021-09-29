@@ -89,10 +89,24 @@ class BlockExpressionNode(val code: String, val expr: ExpressionNode?) : Express
     }
 }
 
+class ConstraintCallExpressionNode(
+    val constraint: TypeParameter,
+    val expr: ExpressionNode,
+    val member: Identifier,
+    val args: List<ExpressionNode>,
+    type: Type
+) : ExpressionNode(type) {
+    override fun generateCode(): String {
+        return "constraintObject${constraint.name}.${member.name}(${expr.generateCode()} ${
+            if (args.isEmpty()) "" else ", ${joinString(args) { it.generateCode() }}"
+        })"
+    }
+}
+
 class CallExpressionNode(val expr: ExpressionNode, val args: List<ExpressionNode>, type: Type) : ExpressionNode(type) {
     override fun generateCode(): String {
         return "${expr.generateCode()}(${
-            args.foldIndexed("") { index, acc, it -> if (index == 0) it.generateCode() else "${acc}, ${it.generateCode()}" }
+            joinString(args) { it.generateCode() }
         })"
     }
 }

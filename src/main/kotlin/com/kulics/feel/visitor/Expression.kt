@@ -32,24 +32,31 @@ fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
     callCtx: MemberAccessCallSuffixContext
 ): ExpressionNode {
     val expr = visitExpression(exprCtx)
+    val type = expr.type
     val (memberIdentifier, typeArgs, args) = visitMemberAccessCallSuffix(callCtx)
-    return if (expr.type is TypeParameter) {
+    val member = type.getMember(memberIdentifier)
+    if (member == null) {
+        println("the type '${type.name}' have not member '${memberIdentifier}'")
         throw CompilingCheckException()
-    } else {
-        val member = expr.type.getMember(memberIdentifier)
-        if (member == null) {
-            println("the type '${expr.type.name}' have not member '${memberIdentifier}'")
+    }
+    val memberAccessExpr = MemberExpressionNode(expr, member)
+    val callExprNode = when (val memberType = memberAccessExpr.type) {
+        is FunctionType -> processFunctionCall(memberAccessExpr, typeArgs to args, memberType)
+        is GenericsType -> processGenericsFunctionCall(memberAccessExpr, typeArgs to args, memberType)
+        else -> {
+            println("the type of expression is not a function")
             throw CompilingCheckException()
         }
-        val memberAccessExpr = MemberExpressionNode(expr, member)
-        when (val type = memberAccessExpr.type) {
-            is FunctionType -> processFunctionCall(memberAccessExpr, typeArgs to args, type)
-            is GenericsType -> processGenericsFunctionCall(memberAccessExpr, typeArgs to args, type)
-            else -> {
-                println("the type of expression is not a function")
-                throw CompilingCheckException()
-            }
-        }
+    }
+    return if (type !is TypeParameter) {
+        callExprNode
+    } else {
+        ConstraintCallExpressionNode(
+            type, expr, member,
+            if (callExprNode is CallExpressionNode) {
+                callExprNode.args
+            } else throw CompilingCheckException(), callExprNode.type
+        )
     }
 }
 
