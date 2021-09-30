@@ -37,7 +37,7 @@ method: identifier parameterList type Equal expression;
 
 virtualMethodList: LeftBrace (virtualMethod Semi)* RightBrace;
 
-virtualMethod: identifier parameterList type (Equal expression)?;
+virtualMethod: identifier parameterList type;
 
 block: LeftBrace (statement Semi)* RightBrace;
 

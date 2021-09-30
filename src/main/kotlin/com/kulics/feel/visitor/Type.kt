@@ -28,19 +28,6 @@ class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type(
     override fun generateTypeName(): String =
         "(${joinString(parameterTypes) { it.generateTypeName() }})->${returnType.generateTypeName()}"
 
-    fun generateFunctionSignature(): Pair<List<String>, String> {
-        var startName = 'a'
-        val ParamList = mutableListOf<String>()
-        return ParamList to "(${
-            joinString(parameterTypes) {
-                val paramName = startName
-                startName = startName.inc()
-                ParamList.add(paramName.toString())
-                "${paramName}: ${it.generateTypeName()}"
-            }
-        }): ${returnType.generateTypeName()}"
-    }
-
     override val uniqueName: String =
         "Func[${joinString(parameterTypes) { it.uniqueName }},${returnType.uniqueName}]"
 }
@@ -61,7 +48,7 @@ class RecordType(
 
 class InterfaceType(
     override val name: String,
-    val member: MutableMap<String, VirtualIdentifier>,
+    val member: MutableMap<String, Identifier>,
     val backendName: String?
 ) : Type() {
     override fun getMember(name: String): Identifier? {
@@ -114,10 +101,10 @@ fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
         is InterfaceType -> InterfaceType(
             type.name,
             type.member.mapValues {
-                VirtualIdentifier(
+                Identifier(
                     it.value.name,
                     typeSubstitution(it.value.type, typeMap),
-                    it.value.hasImplement
+                    it.value.kind
                 )
             }.toMutableMap(),
             type.backendName

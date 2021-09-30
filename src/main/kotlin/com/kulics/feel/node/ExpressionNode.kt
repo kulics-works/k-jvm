@@ -147,13 +147,19 @@ class ConditionExpressionNode(
 
 class BoxExpressionNode(val expr: ExpressionNode, ty: InterfaceType) : ExpressionNode(ty) {
     override fun generateCode(): String {
+        val exprType = expr.type
         val members = (type as InterfaceType).member.asSequence().fold(StringBuilder()) { acc, entry ->
             val member = expr.type.getMember(entry.key)
             if (member != null) {
-                val funcSig = (member.type as FunctionType).generateFunctionSignature()
+                val funcSig = generateFunctionSignature(member.type as FunctionType)
                 acc.append(
-                    """
-                    override fun ${member.name}${funcSig.second} {
+                    if (exprType is TypeParameter) """
+                    override fun ${member.name}(${funcSig.second} {
+                        return constraintObject${exprType.name}.${member.name}(rawValue, ${joinString(funcSig.first) { it }});
+                    }
+                """.trimIndent()
+                    else """
+                    override fun ${member.name}(${funcSig.second} {
                         return rawValue.${member.name}(${joinString(funcSig.first) { it }});
                     }
                 """.trimIndent()
@@ -176,11 +182,11 @@ class ConstraintObjectNode(val argType: Type, interfaceType: InterfaceType) : Ex
         val members = (type as InterfaceType).member.asSequence().fold(StringBuilder()) { acc, entry ->
             val member = argType.getMember(entry.key)
             if (member != null) {
-                val funcSig = (member.type as FunctionType).generateFunctionSignature()
+                val funcSig = generateFunctionSignature(member.type as FunctionType)
                 acc.append(
                     """
-                    override fun ${argType.generateTypeName()}.${member.name}${funcSig.second} {
-                        return ${member.name}(${joinString(funcSig.first) { it }});
+                    override fun ${member.name}(thisConstraint: ${argType.generateTypeName()}, ${funcSig.second} {
+                        return thisConstraint.${member.name}(${joinString(funcSig.first) { it }});
                     }
                 """.trimIndent()
                 )
@@ -193,4 +199,17 @@ class ConstraintObjectNode(val argType: Type, interfaceType: InterfaceType) : Ex
             }
         """.trimIndent()
     }
+}
+
+fun generateFunctionSignature(type: FunctionType): Pair<List<String>, String> {
+    var startName = 'a'
+    val paramList = mutableListOf<String>()
+    return paramList to "${
+        joinString(type.parameterTypes) {
+            val paramName = startName
+            startName = startName.inc()
+            paramList.add(paramName.toString())
+            "${paramName}: ${it.generateTypeName()}"
+        }
+    }): ${type.returnType.generateTypeName()}"
 }

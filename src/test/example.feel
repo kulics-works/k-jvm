@@ -103,10 +103,14 @@ def Blue() Color;
 let red Color = Red();
 
 def IntList {
+    sum() Int;
+};
+def Nil() IntList {
     sum() Int = 0;
 };
-def Nil() IntList;
-def Cons(head Int, tail IntList) IntList;
+def Cons(head Int, tail IntList) IntList {
+    sum() Int = 0;
+};
 
 let makeIntList() IntList = {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
@@ -231,11 +235,12 @@ let array() Void = {
 def I1;
 def I2 {
     f() Void;
-    f2(a Int) Int = a;
+    f2(a Int) Int;
 };
 
 def C1() I2 {
     f() Void = {};
+    f2(a Int) Int = a;
 };
 
 let interfaceInstance() I2 = {

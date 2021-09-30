@@ -327,12 +327,11 @@ private fun DelegateVisitor.checkImplementInterface(
         } else {
             for (v in implInterface.member) {
                 val member = members[v.key]
-                if (member != null && cannotAssign(v.value.type, member.type)) {
-                    println("the type of member '${v.key}' is can not to implement '${implInterface.name}'")
-                    throw CompilingCheckException()
-                }
-                if (member == null && !v.value.hasImplement) {
+                if (member == null) {
                     println("the member '${v.key}' of '${implInterface.name}' is not implement ")
+                    throw CompilingCheckException()
+                } else if (cannotAssign(v.value.type, member.type)) {
+                    println("the type of member '${v.key}' is can not to implement '${implInterface.name}'")
                     throw CompilingCheckException()
                 }
             }
@@ -415,8 +414,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
         println("identifier: '$id' is redefined")
         throw CompilingCheckException()
     }
-    val members = mutableMapOf<String, VirtualIdentifier>()
-    val permitsTypes = mutableSetOf<Type>()
+    val members = mutableMapOf<String, Identifier>()
     val typeParameterList = ctx.typeParameterList()
     return if (typeParameterList != null) {
         val typeParameter = visitTypeParameterList(typeParameterList)
@@ -440,22 +438,32 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
         }
         val methods = ctx.virtualMethodList()?.let {
             visitVirtualMethodList(it).apply {
-                for (v in first) {
-                    members[v.name] = v
+                for (v in this) {
+                    members[v.id.name] = v.id
                 }
             }
         }
-        val methodCode = methods?.let {
+        val methodCode = methods?.let { list ->
             "{ ${
-                it.second.fold(StringBuilder()) { acc, s ->
-                    acc.append("fun $s")
+                list.fold(StringBuilder()) { acc, s ->
+                    acc.append(
+                        "fun ${s.id.name}(${
+                            joinString(s.params) {
+                                "${it.name}: ${it.type.generateTypeName()}"
+                            }
+                        }): ${s.returnType.generateTypeName()}$Wrap"
+                    )
                 }
             } }"
         } ?: ""
-        val constraintMethodCode = methods?.let {
+        val constraintMethodCode = methods?.let { list ->
             "{ ${
-                it.second.fold(StringBuilder()) { acc, s ->
-                    acc.append("fun ThisConstraint.$s")
+                list.fold(StringBuilder()) { acc, s ->
+                    acc.append("fun ${s.id.name}(thisConstraint: ThisConstraint, ${
+                        joinString(s.params) {
+                            "${it.name}: ${it.type.generateTypeName()}"
+                        }
+                    }): ${s.returnType.generateTypeName()}$Wrap")
                 }
             } }"
         } ?: ""
@@ -470,50 +478,51 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             joinString(typeParameter) {
                 "${it.name}: ${it.constraint.generateTypeName()}"
             }
-        }>${constraintMethodCode};
+        }>${constraintMethodCode};$Wrap
         """.trimIndent()
     } else {
         val type = InterfaceType(id, members, null)
         addType(type)
         pushScope()
-        val methods = ctx.virtualMethodList()?.let {
-            visitVirtualMethodList(it).apply {
-                for (v in first) {
-                    members[v.name] = v
-                }
+        val methods = ctx.virtualMethodList()?.let { virtualMethodListContext ->
+            visitVirtualMethodList(virtualMethodListContext).onEach {
+                members[it.id.name] = it.id
             }
         }
-        val methodCode = methods?.let {
+        val methodCode = methods?.let { list ->
             "{ ${
-                it.second.fold(StringBuilder()) { acc, s ->
-                    acc.append("fun $s")
+                list.fold(StringBuilder()) { acc, s ->
+                    acc.append("fun ${s.id.name}(${
+                        joinString(s.params) {
+                            "${it.name}: ${it.type.generateTypeName()}"
+                        }
+                    }): ${s.returnType.generateTypeName()}$Wrap")
                 }
             } }"
         } ?: ""
-        val constraintMethodCode = methods?.let {
+        val constraintMethodCode = methods?.let { list ->
             "{ ${
-                it.second.fold(StringBuilder()) { acc, s ->
-                    acc.append("fun ThisConstraint.$s")
+                list.fold(StringBuilder()) { acc, s ->
+                    acc.append("fun ${s.id.name}(thisConstraint: ThisConstraint, ${
+                        joinString(s.params) {
+                            "${it.name}: ${it.type.generateTypeName()}"
+                        }
+                    }): ${s.returnType.generateTypeName()}$Wrap")
                 }
             } }"
         } ?: ""
         popScope()
         """
             interface ${id}: RawObject${methodCode};
-            interface ${id}ConstraintObject<ThisConstraint>${constraintMethodCode};
+            interface ${id}ConstraintObject<ThisConstraint>${constraintMethodCode};$Wrap
         """.trimIndent()
     }
 }
 
-internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): Pair<List<VirtualIdentifier>, List<String>> {
-    val list = arrayListOf<VirtualIdentifier>()
-    val codeList = arrayListOf<String>()
-    ctx.virtualMethod().forEach {
-        val (id, code) = visitVirtualMethod(it)
-        list.add(id)
-        codeList.add(code)
+internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): List<VirtualMethod> {
+    return ctx.virtualMethod().map {
+        visitVirtualMethod(it)
     }
-    return Pair(list, codeList)
 }
 
 internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): VirtualMethod {
@@ -525,7 +534,7 @@ internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Virt
     val returnType = checkType(visitType(ctx.type()))
     val params = visitParameterList(ctx.parameterList())
     val type = FunctionType(params.first.map { it.type }, returnType)
-    val identifier = VirtualIdentifier(id, type, ctx.expression() != null)
+    val identifier = Identifier(id, type, IdentifierKind.Immutable)
     addIdentifier(identifier)
     for (v in params.first) {
         if (isRedefineIdentifier(v.name)) {
@@ -534,21 +543,7 @@ internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Virt
         }
         addIdentifier(v)
     }
-    return if (ctx.expression() != null) {
-        pushScope()
-        val expr = visitExpression(ctx.expression())
-        if (expr.type != returnType) {
-            println("the return is '${returnType.name}', but find '${expr.type.name}'")
-            throw CompilingCheckException()
-        }
-        popScope()
-        VirtualMethod(
-            identifier,
-            "${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
-        )
-    } else {
-        VirtualMethod(identifier, "${params.second}): ${returnType.generateTypeName()}$Wrap")
-    }
+    return VirtualMethod(identifier, params.first, returnType)
 }
 
-data class VirtualMethod(val id: VirtualIdentifier, val code: String)
+data class VirtualMethod(val id: Identifier, val params: ArrayList<Identifier>, val returnType: Type)
