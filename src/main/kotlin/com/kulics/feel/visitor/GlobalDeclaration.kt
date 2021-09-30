@@ -99,7 +99,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
                 throw CompilingCheckException()
             }
             addType(v)
-            constraintObject.add(Pair("constraintObject${v.name}", "${v.constraint.name}ConstraintObject<${v.name}>"))
+            constraintObject.add(Pair("constraintObject_${v.name}_${v.uniqueName}", "${v.constraint.name}ConstraintObject<${v.name}>"))
         }
         for (v in params.first) {
             if (isRedefineIdentifier(v.name)) {

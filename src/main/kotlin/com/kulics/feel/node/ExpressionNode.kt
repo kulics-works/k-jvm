@@ -97,7 +97,7 @@ class ConstraintCallExpressionNode(
     type: Type
 ) : ExpressionNode(type) {
     override fun generateCode(): String {
-        return "constraintObject${constraint.name}.${member.name}(${expr.generateCode()} ${
+        return "constraintObject_${constraint.name}_${constraint.uniqueName}.${member.name}(${expr.generateCode()} ${
             if (args.isEmpty()) "" else ", ${joinString(args) { it.generateCode() }}"
         })"
     }
@@ -155,7 +155,7 @@ class BoxExpressionNode(val expr: ExpressionNode, ty: InterfaceType) : Expressio
                 acc.append(
                     if (exprType is TypeParameter) """
                     override fun ${member.name}(${funcSig.second} {
-                        return constraintObject${exprType.name}.${member.name}(rawValue, ${joinString(funcSig.first) { it }});
+                        return constraintObject_${exprType.name}_${exprType.uniqueName}.${member.name}(rawValue, ${joinString(funcSig.first) { it }});
                     }
                 """.trimIndent()
                     else """

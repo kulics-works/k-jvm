@@ -29,7 +29,7 @@ class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type(
         "(${joinString(parameterTypes) { it.generateTypeName() }})->${returnType.generateTypeName()}"
 
     override val uniqueName: String =
-        "Func[${joinString(parameterTypes) { it.uniqueName }},${returnType.uniqueName}]"
+        "Func_OP_${joinString(parameterTypes, "_") { it.uniqueName }}_${returnType.uniqueName}_ED"
 }
 
 class RecordType(
@@ -68,7 +68,7 @@ class GenericsType(
 ) : Type() {
     override val uniqueName: String =
         if (partialTypeArgument == null) "${name}[${joinString(typeParameter) { it.uniqueName }}]"
-        else "${name}[${joinString(partialTypeArgument) { it.uniqueName }}]"
+        else "${name}_OP_${joinString(partialTypeArgument, "_") { it.uniqueName }}_ED"
 }
 
 class TypeParameter(override val name: String, val constraint: InterfaceType) : Type() {
@@ -76,7 +76,7 @@ class TypeParameter(override val name: String, val constraint: InterfaceType) : 
         return constraint.getMember(name)
     }
 
-    override val uniqueName: String = "ForAll.${name}"
+    override val uniqueName: String = "For_All_${name}"
 }
 
 fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
@@ -143,10 +143,10 @@ internal fun DelegateVisitor.checkType(typeInfo: Pair<String, List<String>>): Ty
     }
 }
 
-internal inline fun <T> joinString(list: List<T>, select: (T) -> String): String {
+internal inline fun <T> joinString(list: List<T>, splitSymbol: String = ", ", select: (T) -> String): String {
     return list.foldIndexed(StringBuffer()) { index, acc, type ->
         if (index == 0) acc.append(select(type))
-        else acc.append(", ").append(select(type))
+        else acc.append(splitSymbol).append(select(type))
     }.toString()
 }
 
