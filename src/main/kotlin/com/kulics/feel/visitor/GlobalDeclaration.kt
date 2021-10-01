@@ -84,7 +84,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             for (i in li.indices) {
                 typeMap[typeParameter[i].name] = li[i]
             }
-            typeSubstitution(FunctionType(params.first.map { it.type }, returnType), typeMap)
+            typeSubstitution(FunctionType(params.first.map { it.type }, returnType, true), typeMap)
         }
         popScope()
         addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
@@ -249,7 +249,8 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
                     "${id}[${joinString(li) { it.name }}]",
                     members,
                     "${id}<${joinString(li) { it.name }}>",
-                    generateGenericsUniqueName(id, li)
+                    generateGenericsUniqueName(id, li),
+                    true,
                 ),
                 typeMap
             )
@@ -516,7 +517,8 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
                     "${id}[${joinString(li) { it.name }}]",
                     members,
                     "${id}<${joinString(li) { it.generateTypeName() }}>",
-                    generateGenericsUniqueName(id, typeParameter)
+                    generateGenericsUniqueName(id, typeParameter),
+                    true,
                 ), typeMap
             )
         }

@@ -72,7 +72,7 @@ class DelegateVisitor {
         val implements = implementMap[subtype]
         if (implements != null) {
             for (v in implements) {
-                if (v.name == type.name) {
+                if (v.uniqueName == type.uniqueName) {
                     return true
                 }
             }

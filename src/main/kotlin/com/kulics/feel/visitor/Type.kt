@@ -20,7 +20,7 @@ sealed class Type {
     }
 }
 
-class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type() {
+class FunctionType(val parameterTypes: List<Type>, val returnType: Type, val isGenericType: Boolean = false) : Type() {
     override val name: String =
         "Func[${joinString(parameterTypes) { it.name }},${returnType.name}]"
 
@@ -35,7 +35,8 @@ class RecordType(
     override val name: String,
     val member: MutableMap<String, Identifier>,
     val backendName: String?,
-    override val uniqueName: String = name
+    override val uniqueName: String = name,
+    val isGenericType: Boolean = false
 ) : Type() {
     override fun getMember(name: String): Identifier? {
         return member[name]
@@ -50,7 +51,8 @@ class InterfaceType(
     override val name: String,
     val member: MutableMap<String, Identifier>,
     val backendName: String?,
-    override val uniqueName: String = name
+    override val uniqueName: String = name,
+    val isGenericType: Boolean = false
 ) : Type() {
     override fun getMember(name: String): Identifier? {
         return member[name]
@@ -68,8 +70,7 @@ class GenericsType(
     val typeConstructor: (List<Type>) -> Type
 ) : Type() {
     override val uniqueName: String =
-        if (partialTypeArgument == null) "${name}[${joinString(typeParameter) { it.uniqueName }}]"
-        else generateGenericsUniqueName(name, partialTypeArgument)
+        generateGenericsUniqueName(name, partialTypeArgument ?: typeParameter)
 }
 
 fun generateGenericsUniqueName(name: String, typeArgs: List<Type>): String {
@@ -87,37 +88,44 @@ class TypeParameter(override val name: String, var constraint: InterfaceType) : 
 }
 
 fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
+    return typeSubstitutionImplement(type, typeMap)
+}
+
+fun typeSubstitutionImplement(type: Type, typeMap: Map<String, Type>): Type {
     return when (type) {
         is TypeParameter -> typeMap.getValue(type.name)
-        is FunctionType ->
-            FunctionType(
-                type.parameterTypes.map { typeSubstitution(it, typeMap) },
-                typeSubstitution(type.returnType, typeMap)
+        is FunctionType -> FunctionType(
+            type.parameterTypes.map { typeSubstitutionImplement(it, typeMap) },
+            typeSubstitutionImplement(type.returnType, typeMap)
+        )
+        is RecordType ->
+            if (type.isGenericType) RecordType(
+                type.name,
+                type.member.mapValues {
+                    Identifier(
+                        it.value.name,
+                        typeSubstitutionImplement(it.value.type, typeMap),
+                        it.value.kind
+                    )
+                }.toMutableMap(),
+                type.backendName,
+                type.uniqueName
             )
-        is RecordType -> RecordType(
-            type.name,
-            type.member.mapValues {
-                Identifier(
-                    it.value.name,
-                    typeSubstitution(it.value.type, typeMap),
-                    it.value.kind
-                )
-            }.toMutableMap(),
-            type.backendName,
-            type.uniqueName
-        )
-        is InterfaceType -> InterfaceType(
-            type.name,
-            type.member.mapValues {
-                Identifier(
-                    it.value.name,
-                    typeSubstitution(it.value.type, typeMap),
-                    it.value.kind
-                )
-            }.toMutableMap(),
-            type.backendName,
-            type.uniqueName
-        )
+            else type
+        is InterfaceType ->
+            if (type.isGenericType) InterfaceType(
+                type.name,
+                type.member.mapValues {
+                    Identifier(
+                        it.value.name,
+                        typeSubstitutionImplement(it.value.type, typeMap),
+                        it.value.kind
+                    )
+                }.toMutableMap(),
+                type.backendName,
+                type.uniqueName
+            )
+            else type
         else -> type
     }
 }
