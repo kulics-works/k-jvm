@@ -82,6 +82,8 @@ class TypeParameter(override val name: String, var constraint: InterfaceType) : 
     }
 
     override val uniqueName: String = "For_All_${name}"
+
+    var constraintObjectTypeName: String = ""
 }
 
 fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
@@ -101,7 +103,8 @@ fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
                     it.value.kind
                 )
             }.toMutableMap(),
-            type.backendName
+            type.backendName,
+            type.uniqueName
         )
         is InterfaceType -> InterfaceType(
             type.name,
@@ -112,7 +115,8 @@ fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {
                     it.value.kind
                 )
             }.toMutableMap(),
-            type.backendName
+            type.backendName,
+            type.uniqueName
         )
         else -> type
     }

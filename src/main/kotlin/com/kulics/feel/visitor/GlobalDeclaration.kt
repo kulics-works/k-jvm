@@ -99,7 +99,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             constraintObject.add(
                 Pair(
                     "constraintObject_${v.name}_${v.uniqueName}",
-                    "${v.constraint.uniqueName}ConstraintObject<${v.name}>"
+                    v.constraintObjectTypeName
                 )
             )
         }
@@ -184,9 +184,40 @@ internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): Type
     val id = visitIdentifier(ctx.identifier())
     val typeParameter = TypeParameter(id, builtinTypeAny)
     addType(typeParameter)
-    val type = checkType(visitType(ctx.type()))
+    val typeInfo = visitType(ctx.type())
+    val (type, constraintTypeName) = when (val targetType = getType(typeInfo.first)) {
+        null -> {
+            println("type: '${typeInfo.first}' is undefined")
+            throw CompilingCheckException()
+        }
+        is GenericsType -> {
+            if (typeInfo.second.isEmpty() || targetType.typeParameter.size != typeInfo.second.size) {
+                println("the type args size need '${targetType.typeParameter.size}', but found '${typeInfo.second.size}'")
+                throw CompilingCheckException()
+            }
+            val list = mutableListOf<Type>()
+            for (v in typeInfo.second) {
+                val typeArg = getType(v)
+                if (typeArg == null) {
+                    println("type: '${v}' is undefined")
+                    throw CompilingCheckException()
+                }
+                list.add(typeArg)
+            }
+            val instanceType = targetType.typeConstructor(list)
+            getImplementType(targetType)?.forEach {
+                addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
+            }
+            instanceType to "${targetType.name}ConstraintObject<${
+                if (list.isEmpty()) id
+                else joinString(listOf(id).plus(list.map { it.generateTypeName() })) { it }
+            }>"
+        }
+        else -> targetType to "${targetType.name}ConstraintObject<${id}>"
+    }
     return if (type is InterfaceType) {
         typeParameter.constraint = type
+        typeParameter.constraintObjectTypeName = constraintTypeName
         typeParameter
     } else {
         println("the constraint of '${id}' is not interface")
@@ -217,7 +248,8 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
                 RecordType(
                     "${id}[${joinString(li) { it.name }}]",
                     members,
-                    "${id}<${joinString(li) { it.name }}>"
+                    "${id}<${joinString(li) { it.name }}>",
+                    generateGenericsUniqueName(id, li)
                 ),
                 typeMap
             )
@@ -242,7 +274,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             constraintObject.add(
                 Pair(
                     "constraintObject_${v.name}_${v.uniqueName}",
-                    "${v.constraint.uniqueName}ConstraintObject<${v.name}>"
+                    v.constraintObjectTypeName
                 )
             )
         }
@@ -458,7 +490,7 @@ fun generateGenericsMethod(
         joinString(constraintObject) { (name, type) ->
             "$name: $type"
         }
-    } },${
+    },${
         joinString(params) { "${it.name}: ${it.type.generateTypeName()}" }
     }): ${returnType.generateTypeName()} { return run{ ${body.generateCode()} } }"
 }
@@ -532,7 +564,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
                 "${it.name}: ${it.constraint.generateTypeName()}"
             }
         }>: RawObject${methodCode};
-            interface ${id}ConstraintObject<ThisConstraint, ${
+            interface ${id}ConstraintObject<ThisConstraint: ${builtinTypeAny.generateTypeName()}, ${
             joinString(typeParameter) {
                 "${it.name}: ${it.constraint.generateTypeName()}"
             }
