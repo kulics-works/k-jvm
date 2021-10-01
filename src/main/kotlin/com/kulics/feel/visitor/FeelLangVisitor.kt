@@ -56,11 +56,11 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitField(ctx)
     }
 
-    override fun visitMethodList(ctx: MethodListContext): Pair<ArrayList<Identifier>, String> {
+    override fun visitMethodList(ctx: MethodListContext): List<Method> {
         return delegate.visitMethodList(ctx)
     }
 
-    override fun visitMethod(ctx: MethodContext): Pair<Identifier, String> {
+    override fun visitMethod(ctx: MethodContext): Method {
         return delegate.visitMethod(ctx)
     }
 

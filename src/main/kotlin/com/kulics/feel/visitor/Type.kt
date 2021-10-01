@@ -6,8 +6,7 @@ sealed class Type {
     abstract val name: String
     open fun generateTypeName(): String = name
     open fun getMember(name: String): Identifier? = null
-    open val uniqueName: String
-        get() = name
+    abstract val uniqueName: String
 
     override fun hashCode(): Int {
         return uniqueName.hashCode()
@@ -29,13 +28,14 @@ class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type(
         "(${joinString(parameterTypes) { it.generateTypeName() }})->${returnType.generateTypeName()}"
 
     override val uniqueName: String =
-        "Func_OP_${joinString(parameterTypes, "_") { it.uniqueName }}_${returnType.uniqueName}_ED"
+        generateGenericsUniqueName("Func", parameterTypes.plus(returnType))
 }
 
 class RecordType(
     override val name: String,
     val member: MutableMap<String, Identifier>,
-    val backendName: String?
+    val backendName: String?,
+    override val uniqueName: String = name
 ) : Type() {
     override fun getMember(name: String): Identifier? {
         return member[name]
@@ -49,7 +49,8 @@ class RecordType(
 class InterfaceType(
     override val name: String,
     val member: MutableMap<String, Identifier>,
-    val backendName: String?
+    val backendName: String?,
+    override val uniqueName: String = name
 ) : Type() {
     override fun getMember(name: String): Identifier? {
         return member[name]
@@ -68,7 +69,11 @@ class GenericsType(
 ) : Type() {
     override val uniqueName: String =
         if (partialTypeArgument == null) "${name}[${joinString(typeParameter) { it.uniqueName }}]"
-        else "${name}_OP_${joinString(partialTypeArgument, "_") { it.uniqueName }}_ED"
+        else generateGenericsUniqueName(name, partialTypeArgument)
+}
+
+fun generateGenericsUniqueName(name: String, typeArgs: List<Type>): String {
+    return "${name}_OP_${joinString(typeArgs, "_") { it.uniqueName }}_ED"
 }
 
 class TypeParameter(override val name: String, var constraint: InterfaceType) : Type() {

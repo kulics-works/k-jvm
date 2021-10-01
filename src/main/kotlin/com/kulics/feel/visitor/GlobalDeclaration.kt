@@ -99,7 +99,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             constraintObject.add(
                 Pair(
                     "constraintObject_${v.name}_${v.uniqueName}",
-                    "${v.constraint.name}ConstraintObject<${v.name}>"
+                    "${v.constraint.uniqueName}ConstraintObject<${v.name}>"
                 )
             )
         }
@@ -232,26 +232,51 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         }
         addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
         pushScope()
+        val constraintObject = mutableListOf<Pair<String, String>>()
         for (v in typeParameter) {
+            if (isRedefineType(v.name)) {
+                println("type: '${v.name}' is redefined")
+                throw CompilingCheckException()
+            }
             addType(v)
+            constraintObject.add(
+                Pair(
+                    "constraintObject_${v.name}_${v.uniqueName}",
+                    "${v.constraint.uniqueName}ConstraintObject<${v.name}>"
+                )
+            )
         }
         fieldList.first.forEach { addIdentifier(it) }
+        val typeParameterCode = joinString(typeParameter) {
+            "${it.name}: ${builtinTypeAny.generateTypeName()}"
+        }
+        val typeArgumentCode = joinString(typeParameter) { p -> p.name }
         val methodCode = if (ctx.methodList() == null) {
             ""
         } else {
             val methods = visitMethodList(ctx.methodList())
-            for (v in methods.first) {
-                members[v.name] = v
+            for (v in methods) {
+                members[v.id.name] = v.id
             }
-            " {${methods.second}}"
+            joinString(methods, Wrap) {
+                "fun <${
+                    typeParameterCode
+                }> ${id}<${typeArgumentCode}>.${
+                    generateGenericsMethod(
+                        it.id,
+                        constraintObject,
+                        it.params,
+                        it.returnType,
+                        it.body
+                    )
+                }"
+            }
         }
         checkImplementInterface(ctx, members, type)
         popScope()
         "class ${id}<${
-            joinString(typeParameter) {
-                "${it.name}: ${builtinTypeAny.generateTypeName()}"
-            }
-        }>(${fieldList.second})${methodCode};$Wrap"
+            typeParameterCode
+        }>(${fieldList.second})$Wrap${methodCode}"
     } else {
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
@@ -269,18 +294,16 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             for (v in methods) {
                 members[v.id.name] = v.id
             }
-            " { ${
-                joinString(methods, Wrap) {
-                    "fun ${
-                        generateMethod(
-                            it.id,
-                            it.params,
-                            it.returnType,
-                            it.body
-                        )
-                    }"
-                }
-            } }"
+            joinString(methods, Wrap) {
+                "fun ${id}.${
+                    generateMethod(
+                        it.id,
+                        it.params,
+                        it.returnType,
+                        it.body
+                    )
+                }"
+            }
         }
         checkImplementInterface(ctx, members, type)
         popScope()
@@ -413,13 +436,29 @@ internal fun DelegateVisitor.visitMethod(ctx: MethodContext): Method {
         throw CompilingCheckException()
     }
     popScope()
-    return Method(identifier, params.first, type, expr)
+    return Method(identifier, params.first, returnType, expr)
 }
 
 class Method(val id: Identifier, val params: List<Identifier>, val returnType: Type, val body: ExpressionNode)
 
 fun generateMethod(id: Identifier, params: List<Identifier>, returnType: Type, body: ExpressionNode): String {
     return "${id.name}(${
+        joinString(params) { "${it.name}: ${it.type.generateTypeName()}" }
+    }): ${returnType.generateTypeName()} { return run{ ${body.generateCode()} } }"
+}
+
+fun generateGenericsMethod(
+    id: Identifier,
+    constraintObject: List<Pair<String, String>>,
+    params: List<Identifier>,
+    returnType: Type,
+    body: ExpressionNode
+): String {
+    return "${id.name}(${
+        joinString(constraintObject) { (name, type) ->
+            "$name: $type"
+        }
+    } },${
         joinString(params) { "${it.name}: ${it.type.generateTypeName()}" }
     }): ${returnType.generateTypeName()} { return run{ ${body.generateCode()} } }"
 }
@@ -444,7 +483,8 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
                 InterfaceType(
                     "${id}[${joinString(li) { it.name }}]",
                     members,
-                    "${id}<${joinString(li) { it.generateTypeName() }}>"
+                    "${id}<${joinString(li) { it.generateTypeName() }}>",
+                    generateGenericsUniqueName(id, typeParameter)
                 ), typeMap
             )
         }
