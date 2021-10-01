@@ -252,10 +252,21 @@ let interfaceInstance() I2 = {
 
 let interfaceConstraint[T I2](v T) Void = {
     v.f();
+    let x = v.f2(1);
     let i I2 = v;
 };
 
 let instanceConstraint() Void = {
     interfaceConstraint[C1](C1());
+};
+
+def Eq[T Any] {
+    eq(other T) Bool;
+};
+
+def EqPair[T1 Eq[T1], T2 Eq[T2]](first T1, second T2) {
+    eq(other EqPair[T1, T2]) Bool =
+        if (first.eq(other.first) && second.eq(other.second)) true
+        else false;
 };
 

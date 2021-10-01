@@ -71,7 +71,7 @@ class GenericsType(
         else "${name}_OP_${joinString(partialTypeArgument, "_") { it.uniqueName }}_ED"
 }
 
-class TypeParameter(override val name: String, val constraint: InterfaceType) : Type() {
+class TypeParameter(override val name: String, var constraint: InterfaceType) : Type() {
     override fun getMember(name: String): Identifier? {
         return constraint.getMember(name)
     }

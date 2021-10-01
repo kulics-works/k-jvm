@@ -75,11 +75,8 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
     }
     val typeParameterList = ctx.typeParameterList()
     return if (typeParameterList != null) {
-        val typeParameter = visitTypeParameterList(typeParameterList)
         pushScope()
-        for (v in typeParameter) {
-            addType(v)
-        }
+        val typeParameter = visitTypeParameterList(typeParameterList)
         val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
         val type = GenericsType(id, typeParameter) { li ->
@@ -99,7 +96,12 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
                 throw CompilingCheckException()
             }
             addType(v)
-            constraintObject.add(Pair("constraintObject_${v.name}_${v.uniqueName}", "${v.constraint.name}ConstraintObject<${v.name}>"))
+            constraintObject.add(
+                Pair(
+                    "constraintObject_${v.name}_${v.uniqueName}",
+                    "${v.constraint.name}ConstraintObject<${v.name}>"
+                )
+            )
         }
         for (v in params.first) {
             if (isRedefineIdentifier(v.name)) {
@@ -180,9 +182,12 @@ internal fun DelegateVisitor.visitTypeParameterList(ctx: TypeParameterListContex
 
 internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter {
     val id = visitIdentifier(ctx.identifier())
+    val typeParameter = TypeParameter(id, builtinTypeAny)
+    addType(typeParameter)
     val type = checkType(visitType(ctx.type()))
     return if (type is InterfaceType) {
-        TypeParameter(id, type)
+        typeParameter.constraint = type
+        typeParameter
     } else {
         println("the constraint of '${id}' is not interface")
         throw CompilingCheckException()
@@ -197,11 +202,8 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
     }
     val typeParameterList = ctx.typeParameterList()
     return if (typeParameterList != null) {
-        val typeParameter = visitTypeParameterList(typeParameterList)
         pushScope()
-        for (v in typeParameter) {
-            addType(v)
-        }
+        val typeParameter = visitTypeParameterList(typeParameterList)
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
         fieldList.first.forEach { members[it.name] = it }
@@ -247,7 +249,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         popScope()
         "class ${id}<${
             joinString(typeParameter) {
-                "${it.name}: ${it.constraint.generateTypeName()}"
+                "${it.name}: ${builtinTypeAny.generateTypeName()}"
             }
         }>(${fieldList.second})${methodCode};$Wrap"
     } else {
@@ -264,10 +266,21 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             ""
         } else {
             val methods = visitMethodList(ctx.methodList())
-            for (v in methods.first) {
-                members[v.name] = v
+            for (v in methods) {
+                members[v.id.name] = v.id
             }
-            " {${methods.second}}"
+            " { ${
+                joinString(methods, Wrap) {
+                    "fun ${
+                        generateMethod(
+                            it.id,
+                            it.params,
+                            it.returnType,
+                            it.body
+                        )
+                    }"
+                }
+            } }"
         }
         checkImplementInterface(ctx, members, type)
         popScope()
@@ -369,18 +382,13 @@ internal fun DelegateVisitor.visitField(ctx: FieldContext): Identifier {
     return Identifier(id, type, if (ctx.Mut() == null) IdentifierKind.Immutable else IdentifierKind.Mutable)
 }
 
-internal fun DelegateVisitor.visitMethodList(ctx: MethodListContext): Pair<ArrayList<Identifier>, String> {
-    val list = arrayListOf<Identifier>()
-    val buf = StringBuilder()
-    ctx.method().forEach {
-        val (id, code) = visitMethod(it)
-        list.add(id)
-        buf.append(code)
+internal fun DelegateVisitor.visitMethodList(ctx: MethodListContext): List<Method> {
+    return ctx.method().map {
+        visitMethod(it)
     }
-    return Pair(list, buf.toString())
 }
 
-internal fun DelegateVisitor.visitMethod(ctx: MethodContext): Pair<Identifier, String> {
+internal fun DelegateVisitor.visitMethod(ctx: MethodContext): Method {
     val id = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(id)) {
         println("identifier: '$id' is redefined")
@@ -405,7 +413,15 @@ internal fun DelegateVisitor.visitMethod(ctx: MethodContext): Pair<Identifier, S
         throw CompilingCheckException()
     }
     popScope()
-    return identifier to "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+    return Method(identifier, params.first, type, expr)
+}
+
+class Method(val id: Identifier, val params: List<Identifier>, val returnType: Type, val body: ExpressionNode)
+
+fun generateMethod(id: Identifier, params: List<Identifier>, returnType: Type, body: ExpressionNode): String {
+    return "${id.name}(${
+        joinString(params) { "${it.name}: ${it.type.generateTypeName()}" }
+    }): ${returnType.generateTypeName()} { return run{ ${body.generateCode()} } }"
 }
 
 internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): String {
@@ -417,6 +433,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
     val members = mutableMapOf<String, Identifier>()
     val typeParameterList = ctx.typeParameterList()
     return if (typeParameterList != null) {
+        pushScope()
         val typeParameter = visitTypeParameterList(typeParameterList)
         val type = GenericsType(id, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
@@ -431,6 +448,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
                 ), typeMap
             )
         }
+        popScope()
         addType(type)
         pushScope()
         for (v in typeParameter) {
