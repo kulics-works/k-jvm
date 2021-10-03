@@ -101,13 +101,7 @@ private fun DelegateVisitor.processFunctionCall(
             println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
             throw CompilingCheckException()
         }
-        argList.add(
-            if (v.name != builtinTypeAny.name && v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
-                BoxExpressionNode(callArgs.second[i], v)
-            } else {
-                callArgs.second[i]
-            }
-        )
+        argList.add(callArgs.second[i])
     }
     return CallExpressionNode(expr, argList, type.returnType)
 }
@@ -121,7 +115,6 @@ private fun DelegateVisitor.processGenericsFunctionCall(
         println("the type args size need '${type.typeParameter.size}', but found '${callArgs.first.size}'")
         throw CompilingCheckException()
     }
-    val constraintList = mutableListOf<ExpressionNode>()
     for ((i, v) in callArgs.first.withIndex()) {
         if (v is GenericsType) {
             println("the generics type '${v.name}' can not be type args")
@@ -136,7 +129,6 @@ private fun DelegateVisitor.processGenericsFunctionCall(
             println("the type '${v.name}' can not confirm the type parameter '${constraintType.name}'")
             throw CompilingCheckException()
         }
-        constraintList.add(ConstraintObjectNode(v, typeParam.constraint))
     }
     val instanceType = type.typeConstructor(callArgs.first)
     if (instanceType !is FunctionType) {
@@ -149,13 +141,7 @@ private fun DelegateVisitor.processGenericsFunctionCall(
             println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
             throw CompilingCheckException()
         }
-        argList.add(
-            if (v.name != builtinTypeAny.name && v is InterfaceType && callArgs.second[i].type !is InterfaceType) {
-                BoxExpressionNode(callArgs.second[i], v)
-            } else {
-                callArgs.second[i]
-            }
-        )
+        argList.add(callArgs.second[i])
     }
     if (hasType(type.name)) {
         getImplementType(type)?.forEach {
@@ -164,8 +150,6 @@ private fun DelegateVisitor.processGenericsFunctionCall(
                 if (it is GenericsType) it.typeConstructor(callArgs.first) else it
             )
         }
-    } else {
-        argList.addAll(0, constraintList)
     }
     return GenericsCallExpressionNode(expr, callArgs.first, argList, instanceType.returnType)
 }
@@ -378,7 +362,7 @@ private fun DelegateVisitor.processIfPattern(
             val matchCode =
                 "val ${pattern.identifier.name} = BuiltinTool.cast<${
                     pattern.type.generateTypeName()
-                }>(${cond.generateCode()}.getRawObject());$Wrap"
+                }>(${cond.generateCode()});$Wrap"
             val condExpr =
                 ConditionExpressionNode(
                     LiteralExpressionNode("${pattern.identifier.name} != null", builtinTypeBool),

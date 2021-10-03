@@ -15,9 +15,9 @@ internal fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
 }
 
 internal fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationContext): String {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
+    val idName = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(idName)) {
+        println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
@@ -31,9 +31,9 @@ internal fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationCo
         }
         type
     }
-    addIdentifier(Identifier(id, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable))
-    val exprCode = boxToImplementInterface(type, expr)
-    return "var $id: ${type.generateTypeName()} = ${exprCode}"
+    val id = Identifier(idName, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable)
+    addIdentifier(id)
+    return "var $idName: ${type.generateTypeName()} = ${expr.generateCode()}"
 }
 
 internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): String {
@@ -57,8 +57,7 @@ internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationCo
         popScope()
         val type = FunctionType(params.first.map { it.type }, returnType)
         addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-        val exprCode = boxToImplementInterface(returnType, expr)
-        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${exprCode});$Wrap}$Wrap"
+        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
     } else {
         val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
@@ -78,8 +77,7 @@ internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationCo
             throw CompilingCheckException()
         }
         popScope()
-        val exprCode = boxToImplementInterface(returnType, expr)
-        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${exprCode});$Wrap}$Wrap"
+        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
     }
 }
 
@@ -100,8 +98,7 @@ internal fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {
         println("the type of assign value '${expr.type.name}' is not confirm '${id.type.name}'")
         throw CompilingCheckException()
     }
-    val exprCode = boxToImplementInterface(type, expr)
-    return "${id.name} = $exprCode"
+    return "${id.name} = ${expr.generateCode()}"
 }
 
 internal fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
@@ -137,7 +134,7 @@ internal fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
                 val matchCode =
                     "val ${pattern.identifier.name} = BuiltinTool.cast<${
                         pattern.type.generateTypeName()
-                    }>(${cond.generateCode()}.getRawObject());$Wrap"
+                    }>(${cond.generateCode()});$Wrap"
                 val condCode = "${pattern.identifier.name} != null"
                 if (ctx.ifStatement() != null) {
                     "$matchCode if (${condCode}) { $thenBranch } else {${visitIfStatement(ctx.ifStatement())}}"

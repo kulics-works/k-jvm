@@ -2,10 +2,7 @@ package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser.*
 import com.kulics.feel.grammar.FeelParserBaseVisitor
-import com.kulics.feel.node.BlockExpressionNode
-import com.kulics.feel.node.ExpressionNode
-import com.kulics.feel.node.GlobalFunctionStatementNode
-import com.kulics.feel.node.GlobalVariableStatementNode
+import com.kulics.feel.node.*
 
 class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
     private val delegate = DelegateVisitor()

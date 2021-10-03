@@ -25,7 +25,15 @@ let g() Int = 1 + 2 + 3 + b;
 let add(a Int, b Int) Int = a + b;
 
 let double(x Int) Int = add(x, x) + x + 1;
-/*
+
+let id[T Any](id T) T = id;
+
+let call_id() Void = {
+    let a = id[Int](1);
+    let b = id[Float](1.0);
+};
+
+
 let blockExpr1 Int = {
     let a = 0;
     let b = 0;
@@ -195,7 +203,7 @@ let genericsFunction[T Any](a T) T = {
     a
 };
 let callGenericsFunction() Int = genericsFunction[Int](1);
-
+/*
 def Pair[T1 Any, T2 Any](first T1, second T2);
 let genericsRecord() Void = {
     let a Pair[Int, Int] = Pair[Int, Int](1, 2);

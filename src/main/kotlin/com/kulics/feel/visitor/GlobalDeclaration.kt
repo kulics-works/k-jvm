@@ -15,13 +15,8 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
         object BuiltinTool {
             inline fun <reified T> cast(obj: Any): T? = obj as? T
         };
-        interface RawObject {
-            fun getRawObject(): Any
-        }
-        inline fun Any.getRawObject() = this
-        interface AnyConstraintObject<ThisConstraint>
-        inline fun<reified T> newArray(constraintObjectT: AnyConstraintObject<Int>, size: Int, initValue: T): Array<T> = Array(size) { initValue };
-        inline fun<reified T> emptyArray(constraintObjectT: AnyConstraintObject<Int>): Array<T> = arrayOf();$Wrap
+        inline fun<reified T> newArray(size: Int, initValue: T): Array<T> = Array(size) { initValue };
+        inline fun<reified T> emptyArray(): Array<T> = arrayOf();$Wrap
     """.trimIndent()
     )
     for (item in ctx.globalDeclaration()) {
@@ -54,21 +49,7 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
     }
     val id = Identifier(idName, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable)
     addIdentifier(id)
-    return GlobalVariableStatementNode(id, boxToImplementInterface(type, expr))
-}
-
-fun boxToImplementInterface(
-    type: Type,
-    expr: ExpressionNode
-): ExpressionNode {
-    return if (type.name != builtinTypeAny.name && type is InterfaceType && expr.type !is InterfaceType) {
-        BoxExpressionNode(
-            expr,
-            type
-        )
-    } else {
-        expr
-    }
+    return GlobalVariableStatementNode(id, expr)
 }
 
 internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): GlobalFunctionStatementNode {
@@ -121,21 +102,12 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             throw CompilingCheckException()
         }
         popScope()
-        val exprCode = boxToImplementInterface(returnType, expr)
-        "fun <${
-            joinString(typeParameter) { "${it.name}: Any" }
-        }> ${idName}(${
-            joinString(constraintObject) { (name, type) ->
-                "$name: $type"
-            }
-        }, ${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${
-            exprCode
-        });$Wrap}$Wrap"
-        GlobalFunctionStatementNode(
+        GlobalGenericsFunctionStatementNode(
             id,
+            typeParameter,
             params.first.map { ParameterNode(it, it.type) },
             returnType,
-            boxToImplementInterface(returnType, expr)
+            expr
         )
     } else {
         val returnType = checkType(visitType(ctx.type()))
@@ -161,7 +133,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             id,
             params.first.map { ParameterNode(it, it.type) },
             returnType,
-            boxToImplementInterface(returnType, expr)
+            expr
         )
     }
 }
@@ -297,7 +269,6 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         val typeParameterCode = joinString(typeParameter) {
             "${it.name}: ${builtinTypeAny.generateTypeName()}"
         }
-        val typeArgumentCode = joinString(typeParameter) { p -> p.name }
         val methodCode = if (ctx.methodList() == null) {
             ""
         } else {
@@ -306,9 +277,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
                 members[v.id.name] = v.id
             }
             joinString(methods, Wrap) {
-                "fun <${
-                    typeParameterCode
-                }> ${id}<${typeArgumentCode}>.${
+                "fun ${
                     generateGenericsMethod(
                         it.id,
                         constraintObjects,
@@ -319,11 +288,13 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
                 }"
             }
         }
-        val generateWrapperCode = checkImplementInterface(ctx.type(), members, type, constraintObjects)
+        val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), members, type)
         popScope()
         "class ${id}<${
             typeParameterCode
-        }>(${fieldList.second})$Wrap${methodCode}$Wrap${generateWrapperCode?.invoke(id, typeParameterCode)}$Wrap"
+        }>(${fieldList.second}) ${
+            if (interfaceType != null) ": ${interfaceType.generateTypeName()}" else ""
+        } {$Wrap${methodCode} }$Wrap"
     } else {
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
@@ -334,15 +305,26 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
         pushScope()
         fieldList.first.forEach { addIdentifier(it) }
-        val methodCode = if (ctx.methodList() == null) {
-            ""
-        } else {
+        val methods = if (ctx.methodList() != null) {
             val methods = visitMethodList(ctx.methodList())
             for (v in methods) {
                 members[v.id.name] = v.id
             }
+            methods
+        } else listOf()
+        val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), members, type)
+        popScope()
+        "class ${id}(${fieldList.second}) ${
+            if (interfaceType != null) ": ${interfaceType.generateTypeName()}" else ""
+        } { $Wrap${
             joinString(methods, Wrap) {
-                "fun ${id}.${
+                "${
+                    if (overrideMembers.contains(it.id.name)) {
+                        "override "
+                    } else {
+                        ""
+                    }
+                }fun ${
                     generateMethod(
                         it.id,
                         it.params,
@@ -351,21 +333,17 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
                     )
                 }"
             }
-        }
-        val generateWrapperCode = checkImplementInterface(ctx.type(), members, type, listOf())
-        popScope()
-        "class ${id}(${fieldList.second})${methodCode};$Wrap${generateWrapperCode?.invoke(id, null)}$Wrap"
+        }$Wrap }$Wrap"
     }
 }
 
 private fun DelegateVisitor.checkImplementInterface(
     interfaceType: TypeContext?,
     members: MutableMap<String, Identifier>,
-    implementType: Type,
-    constraintObjects: List<Pair<String, String>>
-): ((String, String?) -> String)? {
+    implementType: Type
+): Pair<Type?, MutableMap<String, Identifier>> {
     if (interfaceType == null) {
-        return null
+        return null to mutableMapOf()
     }
     val typeNode = visitType(interfaceType)
     return when (val targetInterfaceType = getType(typeNode.id)) {
@@ -385,7 +363,7 @@ private fun DelegateVisitor.checkImplementInterface(
                 list.add(checkType(v))
             }
             val instanceType = targetInterfaceType.typeConstructor(list)
-            val (mapType, ThisType) = if (implementType is GenericsType) {
+            val mapType = if (implementType is GenericsType) {
                 val typeParameter = implementType.typeParameter
                 GenericsType(targetInterfaceType.name, typeParameter, list) { li ->
                     val typeMap = mutableMapOf<String, Type>()
@@ -393,33 +371,21 @@ private fun DelegateVisitor.checkImplementInterface(
                         typeMap[typeParameter[i].name] = li[i]
                     }
                     targetInterfaceType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
-                } to implementType.typeConstructor(typeParameter)
+                }
             } else {
-                instanceType to implementType
+                instanceType
             }
             getImplementType(targetInterfaceType)?.forEach {
                 addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
             }
-            checkMemberImplement(instanceType, members)
+            val overrideMember = checkMemberImplement(instanceType, members)
             addImplementType(implementType, mapType)
-            generateImplementConstraintCode(
-                ThisType,
-                targetInterfaceType.name,
-                instanceType as InterfaceType,
-                joinString(list) { it.generateTypeName() },
-                constraintObjects
-            )
+            instanceType to overrideMember
         }
         else -> {
-            checkMemberImplement(targetInterfaceType, members)
+            val overrideMember = checkMemberImplement(targetInterfaceType, members)
             addImplementType(implementType, targetInterfaceType)
-            generateImplementConstraintCode(
-                implementType,
-                targetInterfaceType.name,
-                targetInterfaceType as InterfaceType,
-                "",
-                constraintObjects
-            )
+            targetInterfaceType to overrideMember
         }
     }
 }
@@ -427,11 +393,12 @@ private fun DelegateVisitor.checkImplementInterface(
 private fun DelegateVisitor.checkMemberImplement(
     implInterface: Type,
     members: MutableMap<String, Identifier>
-) {
-    if (implInterface !is InterfaceType) {
+): MutableMap<String, Identifier> {
+    return if (implInterface !is InterfaceType) {
         println("type '${implInterface.name}' is not interface")
         throw CompilingCheckException()
     } else {
+        val overrideMember = mutableMapOf<String, Identifier>()
         for (v in implInterface.member) {
             val member = members[v.key]
             if (member == null) {
@@ -441,42 +408,9 @@ private fun DelegateVisitor.checkMemberImplement(
                 println("the type of member '${v.key}' is can not to implement '${implInterface.name}'")
                 throw CompilingCheckException()
             }
+            overrideMember[v.key] = member
         }
-    }
-}
-
-fun generateImplementConstraintCode(
-    targetType: Type,
-    interfaceName: String,
-    interfaceType: InterfaceType,
-    interfaceTypeArgs: String,
-    constraintObjects: List<Pair<String, String>>
-): (String, String?) -> String {
-    return { id, typeParameterCode ->
-        val constraintTypeName =
-            "${interfaceName}ConstraintObject<${targetType.generateTypeName()}, ${interfaceTypeArgs}>"
-        val members = interfaceType.member.asSequence().fold(StringBuilder()) { acc, entry ->
-            val member = targetType.getMember(entry.key)
-            if (member != null) {
-                val funcSig = generateFunctionSignature(member.type as FunctionType)
-                acc.append(
-                    """
-                    override fun ${member.name}(thisConstraint: ${targetType.generateTypeName()}, ${funcSig.second} {
-                        return thisConstraint.${member.name}(${joinString(funcSig.first) { it }});
-                    }
-                """.trimIndent()
-                )
-            }
-            acc
-        }
-        """
-            class ${interfaceName}ConstraintObjectFor${id}${
-            if (typeParameterCode == null) ""
-            else "<${typeParameterCode}>"
-        }(${joinString(constraintObjects) { "val ${it.first}: ${it.second}" }}): $constraintTypeName {
-                $members
-            }
-        """.trimIndent()
+        overrideMember
     }
 }
 
@@ -543,7 +477,13 @@ internal fun DelegateVisitor.visitMethod(ctx: MethodContext): Method {
     return Method(identifier, params.first, returnType, expr)
 }
 
-class Method(val id: Identifier, val params: List<Identifier>, val returnType: Type, val body: ExpressionNode)
+class Method(
+    val id: Identifier,
+    val params: List<Identifier>,
+    val returnType: Type,
+    val body: ExpressionNode,
+    var isOverride: Boolean = false
+)
 
 fun generateMethod(id: Identifier, params: List<Identifier>, returnType: Type, body: ExpressionNode): String {
     return "${id.name}(${
@@ -619,17 +559,6 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
                 }
             } }"
         } ?: ""
-        val constraintMethodCode = methods?.let { list ->
-            "{ ${
-                list.fold(StringBuilder()) { acc, s ->
-                    acc.append("fun ${s.id.name}(thisConstraint: ThisConstraint, ${
-                        joinString(s.params) {
-                            "${it.name}: ${it.type.generateTypeName()}"
-                        }
-                    }): ${s.returnType.generateTypeName()}$Wrap")
-                }
-            } }"
-        } ?: ""
         popScope()
         fun generateConstraintTypeName(p: TypeParameter): String {
             return when (val constraintType = p.constraint) {
@@ -645,12 +574,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             joinString(typeParameter) {
                 generateConstraintTypeName(it)
             }
-        }>: RawObject${methodCode};
-            interface ${id}ConstraintObject<ThisConstraint: ${builtinTypeAny.generateTypeName()}, ${
-            joinString(typeParameter) {
-                generateConstraintTypeName(it)
-            }
-        }>${constraintMethodCode};$Wrap
+        }> ${methodCode};
         """.trimIndent()
     } else {
         val type = InterfaceType(id, members, null)
@@ -672,21 +596,9 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
                 }
             } }"
         } ?: ""
-        val constraintMethodCode = methods?.let { list ->
-            "{ ${
-                list.fold(StringBuilder()) { acc, s ->
-                    acc.append("fun ${s.id.name}(thisConstraint: ThisConstraint, ${
-                        joinString(s.params) {
-                            "${it.name}: ${it.type.generateTypeName()}"
-                        }
-                    }): ${s.returnType.generateTypeName()}$Wrap")
-                }
-            } }"
-        } ?: ""
         popScope()
         """
-            interface ${id}: RawObject${methodCode};
-            interface ${id}ConstraintObject<ThisConstraint>${constraintMethodCode};$Wrap
+            interface ${id} ${methodCode}$Wrap
         """.trimIndent()
     }
 }

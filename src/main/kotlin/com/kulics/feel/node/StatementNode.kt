@@ -5,7 +5,7 @@ import com.kulics.feel.visitor.joinString
 
 sealed class StatementNode : Node()
 
-class GlobalFunctionStatementNode(
+open class GlobalFunctionStatementNode(
     val id: Identifier,
     val parameterTypes: List<ParameterNode>,
     val returnType: Type,
@@ -13,6 +13,31 @@ class GlobalFunctionStatementNode(
 ) : StatementNode() {
     override fun generateCode(): String {
         return "fun ${id.name}(${
+            joinString(parameterTypes) {
+                it.generateCode()
+            }
+        }): ${returnType.generateTypeName()} {${Wrap}return (${body.generateCode()});$Wrap}$Wrap"
+    }
+}
+
+class GlobalGenericsFunctionStatementNode(
+    id: Identifier,
+    val typeParameter: List<TypeParameter>,
+    parameterTypes: List<ParameterNode>,
+    returnType: Type,
+    body: ExpressionNode
+) : GlobalFunctionStatementNode(id, parameterTypes, returnType, body) {
+    override fun generateCode(): String {
+        return "fun <${
+            joinString(typeParameter) {
+                "${it.name}: ${
+                    when (val constraintType = it.constraint) {
+                        is GenericsType -> constraintType.generateTypeName()
+                        is InterfaceType -> constraintType.generateTypeName()
+                    }
+                }"
+            }
+        }> ${id.name}(${
             joinString(parameterTypes) {
                 it.generateCode()
             }
@@ -33,5 +58,22 @@ class GlobalVariableStatementNode(val id: Identifier, val initValue: ExpressionN
         } else {
             "var ${id.name}: ${id.type.generateTypeName()} = ${initValue.generateCode()}$Wrap"
         }
+    }
+}
+
+fun <T : StatementNode> genericsSubstitution(node: T, typeMap: Map<String, Type>): T {
+    return when (node) {
+        is GlobalVariableStatementNode -> node
+        is GlobalFunctionStatementNode -> {
+            GlobalFunctionStatementNode(
+                node.id,
+                node.parameterTypes.map {
+                    ParameterNode(it.id, typeSubstitution(it.paramType, typeMap))
+                },
+                typeSubstitution(node.returnType, typeMap),
+                node.body
+            ) as T
+        }
+        else -> throw CompilingCheckException()
     }
 }
