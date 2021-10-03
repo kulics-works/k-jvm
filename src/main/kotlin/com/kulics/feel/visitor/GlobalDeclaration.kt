@@ -3,6 +3,7 @@ package com.kulics.feel.visitor
 import com.kulics.feel.grammar.FeelParser.*
 import com.kulics.feel.node.BoxExpressionNode
 import com.kulics.feel.node.ExpressionNode
+import com.kulics.feel.node.generateFunctionSignature
 
 internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContext): String {
     return "package ${visitIdentifier(ctx.identifier())}$Wrap"
@@ -184,38 +185,36 @@ internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): Type
     val id = visitIdentifier(ctx.identifier())
     val typeParameter = TypeParameter(id, builtinTypeAny)
     addType(typeParameter)
-    val typeInfo = visitType(ctx.type())
-    val (type, constraintTypeName) = when (val targetType = getType(typeInfo.first)) {
+    val typeNode = visitType(ctx.type())
+    val (type, constraintTypeName) = when (val targetType = getType(typeNode.id)) {
         null -> {
-            println("type: '${typeInfo.first}' is undefined")
+            println("type: '${typeNode.id}' is undefined")
             throw CompilingCheckException()
         }
         is GenericsType -> {
-            if (typeInfo.second.isEmpty() || targetType.typeParameter.size != typeInfo.second.size) {
-                println("the type args size need '${targetType.typeParameter.size}', but found '${typeInfo.second.size}'")
+            if (typeNode.typeArguments.isEmpty() || targetType.typeParameter.size != typeNode.typeArguments.size) {
+                println("the type args size need '${targetType.typeParameter.size}', but found '${typeNode.typeArguments.size}'")
                 throw CompilingCheckException()
             }
             val list = mutableListOf<Type>()
-            for (v in typeInfo.second) {
-                val typeArg = getType(v)
-                if (typeArg == null) {
-                    println("type: '${v}' is undefined")
-                    throw CompilingCheckException()
+            for (v in typeNode.typeArguments) {
+                list.add(checkType(v))
+            }
+            GenericsType(targetType.name, listOf(typeParameter), list) { li ->
+                val typeMap = mutableMapOf<String, Type>(typeParameter.name to li[0])
+                val instanceType = targetType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
+                getImplementType(targetType)?.forEach {
+                    addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
                 }
-                list.add(typeArg)
-            }
-            val instanceType = targetType.typeConstructor(list)
-            getImplementType(targetType)?.forEach {
-                addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
-            }
-            instanceType to "${targetType.name}ConstraintObject<${
+                instanceType
+            } to "${targetType.name}ConstraintObject<${
                 if (list.isEmpty()) id
                 else joinString(listOf(id).plus(list.map { it.generateTypeName() })) { it }
             }>"
         }
         else -> targetType to "${targetType.name}ConstraintObject<${id}>"
     }
-    return if (type is InterfaceType) {
+    return if (type is ConstraintType) {
         typeParameter.constraint = type
         typeParameter.constraintObjectTypeName = constraintTypeName
         typeParameter
@@ -265,14 +264,14 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         }
         addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
         pushScope()
-        val constraintObject = mutableListOf<Pair<String, String>>()
+        val constraintObjects = mutableListOf<Pair<String, String>>()
         for (v in typeParameter) {
             if (isRedefineType(v.name)) {
                 println("type: '${v.name}' is redefined")
                 throw CompilingCheckException()
             }
             addType(v)
-            constraintObject.add(
+            constraintObjects.add(
                 Pair(
                     "constraintObject_${v.name}_${v.uniqueName}",
                     v.constraintObjectTypeName
@@ -297,7 +296,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
                 }> ${id}<${typeArgumentCode}>.${
                     generateGenericsMethod(
                         it.id,
-                        constraintObject,
+                        constraintObjects,
                         it.params,
                         it.returnType,
                         it.body
@@ -305,11 +304,11 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
                 }"
             }
         }
-        checkImplementInterface(ctx, members, type)
+        val generateWrapperCode = checkImplementInterface(ctx.type(), members, type, constraintObjects)
         popScope()
         "class ${id}<${
             typeParameterCode
-        }>(${fieldList.second})$Wrap${methodCode}"
+        }>(${fieldList.second})$Wrap${methodCode}$Wrap${generateWrapperCode?.invoke(id, typeParameterCode)}$Wrap"
     } else {
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
@@ -338,74 +337,131 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
                 }"
             }
         }
-        checkImplementInterface(ctx, members, type)
+        val generateWrapperCode = checkImplementInterface(ctx.type(), members, type, listOf())
         popScope()
-        "class ${id}(${fieldList.second})${methodCode};$Wrap"
+        "class ${id}(${fieldList.second})${methodCode};$Wrap${generateWrapperCode?.invoke(id, null)}$Wrap"
     }
 }
 
 private fun DelegateVisitor.checkImplementInterface(
-    ctx: GlobalRecordDeclarationContext,
+    interfaceType: TypeContext?,
     members: MutableMap<String, Identifier>,
-    type: Type
-) {
-    if (ctx.type() != null) {
-        val typeInfo = visitType(ctx.type())
-        val (implInterface, mapInterface) = when (val targetType = getType(typeInfo.first)) {
-            null -> {
-                println("type: '${typeInfo.first}' is undefined")
+    implementType: Type,
+    constraintObjects: List<Pair<String, String>>
+): ((String, String?) -> String)? {
+    if (interfaceType == null) {
+        return null
+    }
+    val typeNode = visitType(interfaceType)
+    return when (val targetInterfaceType = getType(typeNode.id)) {
+        null -> {
+            println("type: '${typeNode.id}' is undefined")
+            throw CompilingCheckException()
+        }
+        is GenericsType -> {
+            if (typeNode.typeArguments.isEmpty() ||
+                targetInterfaceType.typeParameter.size != typeNode.typeArguments.size
+            ) {
+                println("the type args size need '${targetInterfaceType.typeParameter.size}', but found '${typeNode.typeArguments.size}'")
                 throw CompilingCheckException()
             }
-            is GenericsType -> {
-                if (typeInfo.second.isEmpty() || targetType.typeParameter.size != typeInfo.second.size) {
-                    println("the type args size need '${targetType.typeParameter.size}', but found '${typeInfo.second.size}'")
-                    throw CompilingCheckException()
-                }
-                val list = mutableListOf<Type>()
-                for (v in typeInfo.second) {
-                    val typeArg = getType(v)
-                    if (typeArg == null) {
-                        println("type: '${v}' is undefined")
-                        throw CompilingCheckException()
-                    }
-                    list.add(typeArg)
-                }
-                val instanceType = targetType.typeConstructor(list)
-                val mapType = if (type is GenericsType) {
-                    val typeParameter = type.typeParameter
-                    GenericsType(targetType.name, typeParameter, list) { li ->
-                        val typeMap = mutableMapOf<String, Type>()
-                        for (i in li.indices) {
-                            typeMap[typeParameter[i].name] = li[i]
-                        }
-                        targetType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
-                    }
-                } else {
-                    instanceType
-                }
-                getImplementType(targetType)?.forEach {
-                    addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
-                }
-                Pair(instanceType, mapType)
+            val list = mutableListOf<Type>()
+            for (v in typeNode.typeArguments) {
+                list.add(checkType(v))
             }
-            else -> Pair(targetType, targetType)
+            val instanceType = targetInterfaceType.typeConstructor(list)
+            val (mapType, ThisType) = if (implementType is GenericsType) {
+                val typeParameter = implementType.typeParameter
+                GenericsType(targetInterfaceType.name, typeParameter, list) { li ->
+                    val typeMap = mutableMapOf<String, Type>()
+                    for (i in li.indices) {
+                        typeMap[typeParameter[i].name] = li[i]
+                    }
+                    targetInterfaceType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
+                } to implementType.typeConstructor(typeParameter)
+            } else {
+                instanceType to implementType
+            }
+            getImplementType(targetInterfaceType)?.forEach {
+                addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
+            }
+            checkMemberImplement(instanceType, members)
+            addImplementType(implementType, mapType)
+            generateImplementConstraintCode(
+                ThisType,
+                targetInterfaceType.name,
+                instanceType as InterfaceType,
+                joinString(list) { it.generateTypeName() },
+                constraintObjects
+            )
         }
-        if (implInterface !is InterfaceType) {
-            println("type '${implInterface.name}' is not interface")
-            throw CompilingCheckException()
-        } else {
-            for (v in implInterface.member) {
-                val member = members[v.key]
-                if (member == null) {
-                    println("the member '${v.key}' of '${implInterface.name}' is not implement ")
-                    throw CompilingCheckException()
-                } else if (cannotAssign(v.value.type, member.type)) {
-                    println("the type of member '${v.key}' is can not to implement '${implInterface.name}'")
-                    throw CompilingCheckException()
-                }
+        else -> {
+            checkMemberImplement(targetInterfaceType, members)
+            addImplementType(implementType, targetInterfaceType)
+            generateImplementConstraintCode(
+                implementType,
+                targetInterfaceType.name,
+                targetInterfaceType as InterfaceType,
+                "",
+                constraintObjects
+            )
+        }
+    }
+}
+
+private fun DelegateVisitor.checkMemberImplement(
+    implInterface: Type,
+    members: MutableMap<String, Identifier>
+) {
+    if (implInterface !is InterfaceType) {
+        println("type '${implInterface.name}' is not interface")
+        throw CompilingCheckException()
+    } else {
+        for (v in implInterface.member) {
+            val member = members[v.key]
+            if (member == null) {
+                println("the member '${v.key}' of '${implInterface.name}' is not implement ")
+                throw CompilingCheckException()
+            } else if (cannotAssign(v.value.type, member.type)) {
+                println("the type of member '${v.key}' is can not to implement '${implInterface.name}'")
+                throw CompilingCheckException()
             }
         }
-        addImplementType(type, mapInterface)
+    }
+}
+
+fun generateImplementConstraintCode(
+    targetType: Type,
+    interfaceName: String,
+    interfaceType: InterfaceType,
+    interfaceTypeArgs: String,
+    constraintObjects: List<Pair<String, String>>
+): (String, String?) -> String {
+    return { id, typeParameterCode ->
+        val constraintTypeName =
+            "${interfaceName}ConstraintObject<${targetType.generateTypeName()}, ${interfaceTypeArgs}>"
+        val members = interfaceType.member.asSequence().fold(StringBuilder()) { acc, entry ->
+            val member = targetType.getMember(entry.key)
+            if (member != null) {
+                val funcSig = generateFunctionSignature(member.type as FunctionType)
+                acc.append(
+                    """
+                    override fun ${member.name}(thisConstraint: ${targetType.generateTypeName()}, ${funcSig.second} {
+                        return thisConstraint.${member.name}(${joinString(funcSig.first) { it }});
+                    }
+                """.trimIndent()
+                )
+            }
+            acc
+        }
+        """
+            class ${interfaceName}ConstraintObjectFor${id}${
+            if (typeParameterCode == null) ""
+            else "<${typeParameterCode}>"
+        }(${joinString(constraintObjects) { "val ${it.first}: ${it.second}" }}): $constraintTypeName {
+                $members
+            }
+        """.trimIndent()
     }
 }
 
@@ -560,15 +616,24 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             } }"
         } ?: ""
         popScope()
+        fun generateConstraintTypeName(p: TypeParameter): String {
+            return when (val constraintType = p.constraint) {
+                is GenericsType -> {
+                    val ty = constraintType.typeConstructor(listOf(p))
+                    "${p.name}: ${ty.generateTypeName()}"
+                }
+                is InterfaceType -> "${p.name}: ${constraintType.generateTypeName()}"
+            }
+        }
         """
             interface ${id}<${
             joinString(typeParameter) {
-                "${it.name}: ${it.constraint.generateTypeName()}"
+                generateConstraintTypeName(it)
             }
         }>: RawObject${methodCode};
             interface ${id}ConstraintObject<ThisConstraint: ${builtinTypeAny.generateTypeName()}, ${
             joinString(typeParameter) {
-                "${it.name}: ${it.constraint.generateTypeName()}"
+                generateConstraintTypeName(it)
             }
         }>${constraintMethodCode};$Wrap
         """.trimIndent()

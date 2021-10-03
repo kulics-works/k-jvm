@@ -32,7 +32,13 @@ fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
     callCtx: MemberAccessCallSuffixContext
 ): ExpressionNode {
     val expr = visitExpression(exprCtx)
-    val type = expr.type
+    val type = when (val ty = expr.type) {
+        is TypeParameter -> when (val constraintType = ty.constraint) {
+            is GenericsType -> constraintType.typeConstructor(listOf(ty))
+            is InterfaceType -> constraintType
+        }
+        else -> ty
+    }
     val (memberIdentifier, typeArgs, args) = visitMemberAccessCallSuffix(callCtx)
     val member = type.getMember(memberIdentifier)
     if (member == null) {
@@ -48,11 +54,11 @@ fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
             throw CompilingCheckException()
         }
     }
-    return if (type !is TypeParameter) {
+    return if (expr.type !is TypeParameter) {
         callExprNode
     } else {
         ConstraintCallExpressionNode(
-            type, expr, member,
+            expr.type, expr, member,
             if (callExprNode is CallExpressionNode) {
                 callExprNode.args
             } else throw CompilingCheckException(), callExprNode.type
@@ -122,8 +128,12 @@ private fun DelegateVisitor.processGenericsFunctionCall(
             throw CompilingCheckException()
         }
         val typeParam = type.typeParameter[i]
-        if (cannotAssign(v, typeParam.constraint)) {
-            println("the type '${v.name}' can not confirm the type parameter '${typeParam.constraint.name}'")
+        val constraintType = when (val ty = typeParam.constraint) {
+            is GenericsType -> ty.typeConstructor(listOf(v)) as InterfaceType
+            is InterfaceType -> ty
+        }
+        if (cannotAssign(v, constraintType)) {
+            println("the type '${v.name}' can not confirm the type parameter '${constraintType.name}'")
             throw CompilingCheckException()
         }
         constraintList.add(ConstraintObjectNode(v, typeParam.constraint))

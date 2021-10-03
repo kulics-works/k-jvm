@@ -155,7 +155,11 @@ class BoxExpressionNode(val expr: ExpressionNode, ty: InterfaceType) : Expressio
                 acc.append(
                     if (exprType is TypeParameter) """
                     override fun ${member.name}(${funcSig.second} {
-                        return constraintObject_${exprType.name}_${exprType.uniqueName}.${member.name}(rawValue, ${joinString(funcSig.first) { it }});
+                        return constraintObject_${exprType.name}_${exprType.uniqueName}.${member.name}(rawValue, ${
+                        joinString(
+                            funcSig.first
+                        ) { it }
+                    });
                     }
                 """.trimIndent()
                     else """
@@ -177,27 +181,14 @@ class BoxExpressionNode(val expr: ExpressionNode, ty: InterfaceType) : Expressio
     }
 }
 
-class ConstraintObjectNode(val argType: Type, interfaceType: InterfaceType) : ExpressionNode(interfaceType) {
+class ConstraintObjectNode(val argType: Type, val constraintType: ConstraintType) : ExpressionNode(argType) {
     override fun generateCode(): String {
-        val members = (type as InterfaceType).member.asSequence().fold(StringBuilder()) { acc, entry ->
-            val member = argType.getMember(entry.key)
-            if (member != null) {
-                val funcSig = generateFunctionSignature(member.type as FunctionType)
-                acc.append(
-                    """
-                    override fun ${member.name}(thisConstraint: ${argType.generateTypeName()}, ${funcSig.second} {
-                        return thisConstraint.${member.name}(${joinString(funcSig.first) { it }});
-                    }
-                """.trimIndent()
-                )
-            }
-            acc
+        return when (constraintType) {
+            is GenericsType ->
+                "${constraintType.name}ConstraintObjectFor${argType.generateTypeName()}()"
+            is InterfaceType ->
+                "${constraintType.name}ConstraintObjectFor${argType.generateTypeName()}()"
         }
-        return """
-            object: ${type.name}ConstraintObject<${argType.generateTypeName()}> {
-                $members
-            }
-        """.trimIndent()
     }
 }
 

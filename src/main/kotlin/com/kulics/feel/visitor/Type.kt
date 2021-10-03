@@ -53,7 +53,7 @@ class InterfaceType(
     val backendName: String?,
     override val uniqueName: String = name,
     val isGenericType: Boolean = false
-) : Type() {
+) : Type(), ConstraintType {
     override fun getMember(name: String): Identifier? {
         return member[name]
     }
@@ -68,7 +68,7 @@ class GenericsType(
     val typeParameter: List<TypeParameter>,
     partialTypeArgument: List<Type>? = null,
     val typeConstructor: (List<Type>) -> Type
-) : Type() {
+) : Type(), ConstraintType {
     override val uniqueName: String =
         generateGenericsUniqueName(name, partialTypeArgument ?: typeParameter)
 }
@@ -77,11 +77,9 @@ fun generateGenericsUniqueName(name: String, typeArgs: List<Type>): String {
     return "${name}_OP_${joinString(typeArgs, "_") { it.uniqueName }}_ED"
 }
 
-class TypeParameter(override val name: String, var constraint: InterfaceType) : Type() {
-    override fun getMember(name: String): Identifier? {
-        return constraint.getMember(name)
-    }
+sealed interface ConstraintType
 
+class TypeParameter(override val name: String, var constraint: ConstraintType) : Type() {
     override val uniqueName: String = "For_All_${name}"
 
     var constraintObjectTypeName: String = ""
@@ -130,25 +128,20 @@ fun typeSubstitutionImplement(type: Type, typeMap: Map<String, Type>): Type {
     }
 }
 
-internal fun DelegateVisitor.checkType(typeInfo: Pair<String, List<String>>): Type {
-    return when (val targetType = getType(typeInfo.first)) {
+internal fun DelegateVisitor.checkType(typeNode: TypeNode): Type {
+    return when (val targetType = getType(typeNode.id)) {
         null -> {
-            println("type: '${typeInfo.first}' is undefined")
+            println("type: '${typeNode.id}' is undefined")
             throw CompilingCheckException()
         }
         is GenericsType -> {
-            if (typeInfo.second.isEmpty() || targetType.typeParameter.size != typeInfo.second.size) {
-                println("the type args size need '${targetType.typeParameter.size}', but found '${typeInfo.second.size}'")
+            if (typeNode.typeArguments.isEmpty() || targetType.typeParameter.size != typeNode.typeArguments.size) {
+                println("the type args size need '${targetType.typeParameter.size}', but found '${typeNode.typeArguments.size}'")
                 throw CompilingCheckException()
             }
             val list = mutableListOf<Type>()
-            for (v in typeInfo.second) {
-                val typeArg = getType(v)
-                if (typeArg == null) {
-                    println("type: '${v}' is undefined")
-                    throw CompilingCheckException()
-                }
-                list.add(typeArg)
+            for (v in typeNode.typeArguments) {
+                list.add(checkType(v))
             }
             val instanceType = targetType.typeConstructor(list)
             getImplementType(targetType)?.forEach {
@@ -167,9 +160,11 @@ internal inline fun <T> joinString(list: List<T>, splitSymbol: String = ", ", se
     }.toString()
 }
 
-internal fun DelegateVisitor.visitType(ctx: TypeContext): Pair<String, List<String>> {
-    return visitIdentifier(ctx.identifier()) to ctx.type().map { visitType(it).first }
+internal fun DelegateVisitor.visitType(ctx: TypeContext): TypeNode {
+    return TypeNode(visitIdentifier(ctx.identifier()), ctx.type().map { visitType(it) })
 }
+
+class TypeNode(val id: String, val typeArguments: List<TypeNode>)
 
 internal fun DelegateVisitor.cannotAssign(rightValue: Type, leftValue: Type): Boolean {
     return !canAssignTo(rightValue, leftValue)
