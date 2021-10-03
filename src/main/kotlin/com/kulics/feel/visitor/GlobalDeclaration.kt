@@ -35,7 +35,7 @@ internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContex
     }
 }
 
-internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): GlobalVariableStatementNode {
+internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): GlobalVariableDeclarationNode {
     val idName = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
@@ -49,10 +49,10 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
     }
     val id = Identifier(idName, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable)
     addIdentifier(id)
-    return GlobalVariableStatementNode(id, expr)
+    return GlobalVariableDeclarationNode(id, expr)
 }
 
-internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): GlobalFunctionStatementNode {
+internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): GlobalFunctionDeclarationNode {
     val idName = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
@@ -95,10 +95,10 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             throw CompilingCheckException()
         }
         popScope()
-        GlobalGenericsFunctionStatementNode(
+        GlobalGenericsFunctionDeclarationNode(
             id,
             typeParameter,
-            params.first.map { ParameterNode(it, it.type) },
+            params.first.map { ParameterDeclarationNode(it, it.type) },
             returnType,
             expr
         )
@@ -122,9 +122,9 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             throw CompilingCheckException()
         }
         popScope()
-        GlobalFunctionStatementNode(
+        GlobalFunctionDeclarationNode(
             id,
-            params.first.map { ParameterNode(it, it.type) },
+            params.first.map { ParameterDeclarationNode(it, it.type) },
             returnType,
             expr
         )

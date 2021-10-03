@@ -19,11 +19,11 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitModuleDeclaration(ctx)
     }
 
-    override fun visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): GlobalVariableStatementNode {
+    override fun visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): GlobalVariableDeclarationNode {
         return delegate.visitGlobalVariableDeclaration(ctx)
     }
 
-    override fun visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): GlobalFunctionStatementNode {
+    override fun visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): GlobalFunctionDeclarationNode {
         return delegate.visitGlobalFunctionDeclaration(ctx)
     }
 

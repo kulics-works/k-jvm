@@ -3,14 +3,14 @@ package com.kulics.feel.node
 import com.kulics.feel.visitor.*
 import com.kulics.feel.visitor.joinString
 
-sealed class StatementNode : Node()
+sealed class DeclarationNode : Node()
 
-open class GlobalFunctionStatementNode(
+open class GlobalFunctionDeclarationNode(
     val id: Identifier,
-    val parameterTypes: List<ParameterNode>,
+    val parameterTypes: List<ParameterDeclarationNode>,
     val returnType: Type,
     val body: ExpressionNode
-) : StatementNode() {
+) : DeclarationNode() {
     override fun generateCode(): String {
         return "fun ${id.name}(${
             joinString(parameterTypes) {
@@ -20,13 +20,13 @@ open class GlobalFunctionStatementNode(
     }
 }
 
-class GlobalGenericsFunctionStatementNode(
+class GlobalGenericsFunctionDeclarationNode(
     id: Identifier,
     val typeParameter: List<TypeParameter>,
-    parameterTypes: List<ParameterNode>,
+    parameterTypes: List<ParameterDeclarationNode>,
     returnType: Type,
     body: ExpressionNode
-) : GlobalFunctionStatementNode(id, parameterTypes, returnType, body) {
+) : GlobalFunctionDeclarationNode(id, parameterTypes, returnType, body) {
     override fun generateCode(): String {
         return "fun <${
             joinString(typeParameter) {
@@ -45,13 +45,13 @@ class GlobalGenericsFunctionStatementNode(
     }
 }
 
-class ParameterNode(val id: Identifier, val paramType: Type) : Node() {
+class ParameterDeclarationNode(val id: Identifier, val paramType: Type) : Node() {
     override fun generateCode(): String {
         return "${id.name}: ${paramType.generateTypeName()}"
     }
 }
 
-class GlobalVariableStatementNode(val id: Identifier, val initValue: ExpressionNode) : StatementNode() {
+class GlobalVariableDeclarationNode(val id: Identifier, val initValue: ExpressionNode) : DeclarationNode() {
     override fun generateCode(): String {
         return if (id.kind == IdentifierKind.Immutable) {
             "val ${id.name}: ${id.type.generateTypeName()} = ${initValue.generateCode()}$Wrap"
@@ -61,19 +61,3 @@ class GlobalVariableStatementNode(val id: Identifier, val initValue: ExpressionN
     }
 }
 
-fun <T : StatementNode> genericsSubstitution(node: T, typeMap: Map<String, Type>): T {
-    return when (node) {
-        is GlobalVariableStatementNode -> node
-        is GlobalFunctionStatementNode -> {
-            GlobalFunctionStatementNode(
-                node.id,
-                node.parameterTypes.map {
-                    ParameterNode(it.id, typeSubstitution(it.paramType, typeMap))
-                },
-                typeSubstitution(node.returnType, typeMap),
-                node.body
-            ) as T
-        }
-        else -> throw CompilingCheckException()
-    }
-}
