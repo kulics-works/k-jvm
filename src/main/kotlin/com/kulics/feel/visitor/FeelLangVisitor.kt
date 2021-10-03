@@ -4,6 +4,8 @@ import com.kulics.feel.grammar.FeelParser.*
 import com.kulics.feel.grammar.FeelParserBaseVisitor
 import com.kulics.feel.node.BlockExpressionNode
 import com.kulics.feel.node.ExpressionNode
+import com.kulics.feel.node.GlobalFunctionStatementNode
+import com.kulics.feel.node.GlobalVariableStatementNode
 
 class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
     private val delegate = DelegateVisitor()
@@ -20,11 +22,11 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitModuleDeclaration(ctx)
     }
 
-    override fun visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): String {
+    override fun visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): GlobalVariableStatementNode {
         return delegate.visitGlobalVariableDeclaration(ctx)
     }
 
-    override fun visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): String {
+    override fun visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): GlobalFunctionStatementNode {
         return delegate.visitGlobalFunctionDeclaration(ctx)
     }
 

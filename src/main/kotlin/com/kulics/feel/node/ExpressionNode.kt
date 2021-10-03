@@ -2,9 +2,7 @@ package com.kulics.feel.node
 
 import com.kulics.feel.visitor.*
 
-sealed class ExpressionNode(val type: Type) : Node() {
-    abstract fun generateCode(): String
-}
+sealed class ExpressionNode(val type: Type) : Node()
 
 class ParenExpressionNode(private val expr: ExpressionNode) : ExpressionNode(expr.type) {
     override fun generateCode(): String {

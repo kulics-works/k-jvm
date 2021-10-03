@@ -1,9 +1,7 @@
 package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser.*
-import com.kulics.feel.node.BoxExpressionNode
-import com.kulics.feel.node.ExpressionNode
-import com.kulics.feel.node.generateFunctionSignature
+import com.kulics.feel.node.*
 
 internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContext): String {
     return "package ${visitIdentifier(ctx.identifier())}$Wrap"
@@ -34,18 +32,18 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
 
 internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {
     return when (val declaration = ctx.getChild(0)) {
-        is GlobalVariableDeclarationContext -> visitGlobalVariableDeclaration(declaration)
-        is GlobalFunctionDeclarationContext -> visitGlobalFunctionDeclaration(declaration)
+        is GlobalVariableDeclarationContext -> visitGlobalVariableDeclaration(declaration).generateCode()
+        is GlobalFunctionDeclarationContext -> visitGlobalFunctionDeclaration(declaration).generateCode()
         is GlobalRecordDeclarationContext -> visitGlobalRecordDeclaration(declaration)
         is GlobalInterfaceDeclarationContext -> visitGlobalInterfaceDeclaration(declaration)
         else -> throw CompilingCheckException()
     }
 }
 
-internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): String {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
+internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): GlobalVariableStatementNode {
+    val idName = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(idName)) {
+        println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
@@ -54,24 +52,29 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
     }
-    addIdentifier(Identifier(id, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable))
-    val exprCode = boxToImplementInterface(type, expr)
-    return "var $id: ${type.generateTypeName()} = (${exprCode});$Wrap"
+    val id = Identifier(idName, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable)
+    addIdentifier(id)
+    return GlobalVariableStatementNode(id, boxToImplementInterface(type, expr))
 }
 
-internal fun boxToImplementInterface(
+fun boxToImplementInterface(
     type: Type,
     expr: ExpressionNode
-) = if (type.name != builtinTypeAny.name && type is InterfaceType && expr.type !is InterfaceType) BoxExpressionNode(
-    expr,
-    type
-).generateCode()
-else expr.generateCode()
+): ExpressionNode {
+    return if (type.name != builtinTypeAny.name && type is InterfaceType && expr.type !is InterfaceType) {
+        BoxExpressionNode(
+            expr,
+            type
+        )
+    } else {
+        expr
+    }
+}
 
-internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): String {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
+internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): GlobalFunctionStatementNode {
+    val idName = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(idName)) {
+        println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
     val typeParameterList = ctx.typeParameterList()
@@ -80,7 +83,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         val typeParameter = visitTypeParameterList(typeParameterList)
         val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
-        val type = GenericsType(id, typeParameter) { li ->
+        val type = GenericsType(idName, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
             for (i in li.indices) {
                 typeMap[typeParameter[i].name] = li[i]
@@ -88,7 +91,8 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             typeSubstitution(FunctionType(params.first.map { it.type }, returnType, true), typeMap)
         }
         popScope()
-        addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
+        val id = Identifier(idName, type, IdentifierKind.Immutable)
+        addIdentifier(id)
         pushScope()
         val constraintObject = mutableListOf<Pair<String, String>>()
         for (v in typeParameter) {
@@ -120,18 +124,25 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         val exprCode = boxToImplementInterface(returnType, expr)
         "fun <${
             joinString(typeParameter) { "${it.name}: Any" }
-        }> ${id}(${
+        }> ${idName}(${
             joinString(constraintObject) { (name, type) ->
                 "$name: $type"
             }
         }, ${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${
             exprCode
         });$Wrap}$Wrap"
+        GlobalFunctionStatementNode(
+            id,
+            params.first.map { ParameterNode(it, it.type) },
+            returnType,
+            boxToImplementInterface(returnType, expr)
+        )
     } else {
         val returnType = checkType(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
         val type = FunctionType(params.first.map { it.type }, returnType)
-        addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
+        val id = Identifier(idName, type, IdentifierKind.Immutable)
+        addIdentifier(id)
         pushScope()
         for (v in params.first) {
             if (isRedefineIdentifier(v.name)) {
@@ -146,8 +157,12 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             throw CompilingCheckException()
         }
         popScope()
-        val exprCode = boxToImplementInterface(returnType, expr)
-        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${exprCode});$Wrap}$Wrap"
+        GlobalFunctionStatementNode(
+            id,
+            params.first.map { ParameterNode(it, it.type) },
+            returnType,
+            boxToImplementInterface(returnType, expr)
+        )
     }
 }
 

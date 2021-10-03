@@ -1,3 +1,5 @@
 package com.kulics.feel.node
 
-abstract class Node
+sealed class Node {
+    abstract fun generateCode(): String
+}
