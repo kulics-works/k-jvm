@@ -355,9 +355,9 @@ private fun DelegateVisitor.processIfPattern(
                 throw CompilingCheckException()
             }
             val matchCode =
-                "val ${pattern.identifier.name} = BuiltinTool.cast<${
+                "val ${pattern.identifier.name} = ${cond.generateCode()}.castOrNull<${
                     pattern.type.generateTypeName()
-                }>(${cond.generateCode()});$Wrap"
+                }>();$Wrap"
             val condExpr =
                 ConditionExpressionNode(
                     LiteralExpressionNode("${pattern.identifier.name} != null", builtinTypeBool),

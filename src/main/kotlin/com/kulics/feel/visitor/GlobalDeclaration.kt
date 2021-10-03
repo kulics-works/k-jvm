@@ -12,9 +12,8 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
     result.append(visitModuleDeclaration(ctx.moduleDeclaration()))
     result.append(
         """
-        object BuiltinTool {
-            inline fun <reified T> cast(obj: Any): T? = obj as? T
-        };
+        inline fun <reified T> Any.castOrThrow(): T = this as T
+        inline fun <reified T> Any.castOrNull(): T? = this as? T
         inline fun<reified T> newArray(size: Int, initValue: T): Array<T> = Array(size) { initValue };
         inline fun<reified T> emptyArray(): Array<T> = arrayOf();$Wrap
     """.trimIndent()

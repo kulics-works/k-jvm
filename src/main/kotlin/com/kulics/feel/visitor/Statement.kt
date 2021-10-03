@@ -132,9 +132,9 @@ internal fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
                     throw CompilingCheckException()
                 }
                 val matchCode =
-                    "val ${pattern.identifier.name} = BuiltinTool.cast<${
+                    "val ${pattern.identifier.name} = ${cond.generateCode()}.castOrNull<${
                         pattern.type.generateTypeName()
-                    }>(${cond.generateCode()});$Wrap"
+                    }>();$Wrap"
                 val condCode = "${pattern.identifier.name} != null"
                 if (ctx.ifStatement() != null) {
                     "$matchCode if (${condCode}) { $thenBranch } else {${visitIfStatement(ctx.ifStatement())}}"
