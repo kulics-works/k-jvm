@@ -75,19 +75,12 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         val id = Identifier(idName, type, IdentifierKind.Immutable)
         addIdentifier(id)
         pushScope()
-        val constraintObject = mutableListOf<Pair<String, String>>()
         for (v in typeParameter) {
             if (isRedefineType(v.name)) {
                 println("type: '${v.name}' is redefined")
                 throw CompilingCheckException()
             }
             addType(v)
-            constraintObject.add(
-                Pair(
-                    "constraintObject_${v.name}_${v.uniqueName}",
-                    v.constraintObjectTypeName
-                )
-            )
         }
         for (v in params.first) {
             if (isRedefineIdentifier(v.name)) {
@@ -251,50 +244,52 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         }
         addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
         pushScope()
-        val constraintObjects = mutableListOf<Pair<String, String>>()
         for (v in typeParameter) {
             if (isRedefineType(v.name)) {
                 println("type: '${v.name}' is redefined")
                 throw CompilingCheckException()
             }
             addType(v)
-            constraintObjects.add(
-                Pair(
-                    "constraintObject_${v.name}_${v.uniqueName}",
-                    v.constraintObjectTypeName
-                )
-            )
         }
         fieldList.first.forEach { addIdentifier(it) }
-        val typeParameterCode = joinString(typeParameter) {
-            "${it.name}: ${builtinTypeAny.generateTypeName()}"
-        }
-        val methodCode = if (ctx.methodList() == null) {
-            ""
-        } else {
+        val methods = if (ctx.methodList() != null) {
             val methods = visitMethodList(ctx.methodList())
             for (v in methods) {
                 members[v.id.name] = v.id
             }
+            methods
+        } else listOf()
+        val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), members, type)
+        popScope()
+        "class ${id}<${
+            joinString(typeParameter) {
+                "${it.name}: ${
+                    when (val constraintType = it.constraint) {
+                        is GenericsType -> constraintType.typeConstructor(listOf(it)).generateTypeName()
+                        is InterfaceType -> constraintType.generateTypeName()
+                    }
+                }"
+            }
+        }>(${fieldList.second}) ${
+            if (interfaceType != null) ": ${interfaceType.generateTypeName()}" else ""
+        } {$Wrap${
             joinString(methods, Wrap) {
-                "fun ${
-                    generateGenericsMethod(
+                "${
+                    if (overrideMembers.contains(it.id.name)) {
+                        "override "
+                    } else {
+                        ""
+                    }
+                }fun ${
+                    generateMethod(
                         it.id,
-                        constraintObjects,
                         it.params,
                         it.returnType,
                         it.body
                     )
                 }"
             }
-        }
-        val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), members, type)
-        popScope()
-        "class ${id}<${
-            typeParameterCode
-        }>(${fieldList.second}) ${
-            if (interfaceType != null) ": ${interfaceType.generateTypeName()}" else ""
-        } {$Wrap${methodCode} }$Wrap"
+        } }$Wrap"
     } else {
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
@@ -574,7 +569,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             joinString(typeParameter) {
                 generateConstraintTypeName(it)
             }
-        }> ${methodCode};
+        }> ${methodCode}$Wrap
         """.trimIndent()
     } else {
         val type = InterfaceType(id, members, null)
@@ -598,7 +593,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
         } ?: ""
         popScope()
         """
-            interface ${id} ${methodCode}$Wrap
+            interface $id ${methodCode}$Wrap
         """.trimIndent()
     }
 }

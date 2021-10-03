@@ -57,12 +57,7 @@ fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
     return if (expr.type !is TypeParameter) {
         callExprNode
     } else {
-        ConstraintCallExpressionNode(
-            expr.type, expr, member,
-            if (callExprNode is CallExpressionNode) {
-                callExprNode.args
-            } else throw CompilingCheckException(), callExprNode.type
-        )
+        callExprNode
     }
 }
 

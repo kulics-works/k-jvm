@@ -32,7 +32,7 @@ class GlobalGenericsFunctionStatementNode(
             joinString(typeParameter) {
                 "${it.name}: ${
                     when (val constraintType = it.constraint) {
-                        is GenericsType -> constraintType.generateTypeName()
+                        is GenericsType -> constraintType.typeConstructor(listOf(it)).generateTypeName()
                         is InterfaceType -> constraintType.generateTypeName()
                     }
                 }"
