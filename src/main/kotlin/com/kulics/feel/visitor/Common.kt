@@ -75,7 +75,9 @@ val builtinTypeArray = run {
             RecordType(
                 "Array[${joinString(li) { it.name }}]",
                 members,
-                "Array<${joinString(li) { it.generateTypeName() }}>"
+                "Array<${joinString(li) { it.generateTypeName() }}>",
+                generateGenericsUniqueName("Array", li),
+                true
             ), typeMap
         )
     }
