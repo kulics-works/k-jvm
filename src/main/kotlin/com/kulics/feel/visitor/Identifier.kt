@@ -11,3 +11,10 @@ open class Identifier(val name: String, val type: Type, val kind: IdentifierKind
 enum class IdentifierKind {
     Immutable, Mutable
 }
+
+class VirtualIdentifier(
+    name: String,
+    type: Type,
+    kind: IdentifierKind = IdentifierKind.Immutable,
+    var hasImplement: Boolean = false
+) : Identifier(name, type, kind)

@@ -11,6 +11,7 @@ globalDeclaration
     | globalFunctionDeclaration
     | globalRecordDeclaration
     | globalInterfaceDeclaration
+    | globalExtensionDeclaration
     ) Semi
     ;
 
@@ -18,6 +19,7 @@ globalVariableDeclaration: Let Mut? identifier type Equal expression;
 globalFunctionDeclaration: Let identifier typeParameterList? parameterList type Equal expression;
 globalRecordDeclaration: Def identifier typeParameterList? fieldList type? methodList?;
 globalInterfaceDeclaration: Def identifier typeParameterList? virtualMethodList?;
+globalExtensionDeclaration: Ext identifier typeParameterList? type? methodList?;
 
 typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
 
@@ -37,7 +39,7 @@ method: identifier parameterList type Equal expression;
 
 virtualMethodList: LeftBrace (virtualMethod Semi)* RightBrace;
 
-virtualMethod: identifier parameterList type;
+virtualMethod: identifier parameterList type (Equal expression)?;
 
 block: LeftBrace (statement Semi)* RightBrace;
 
