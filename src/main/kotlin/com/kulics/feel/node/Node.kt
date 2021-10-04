@@ -16,7 +16,6 @@ interface NodeVisitor {
     fun visit(node: ProgramNode)
     fun visit(node: ModuleDeclarationNode)
     fun visit(node: GlobalRecordDeclarationNode)
-    fun visit(node: GlobalGenericsRecordDeclarationNode)
     fun visit(node: GlobalFunctionDeclarationNode)
     fun visit(node: ParameterDeclarationNode)
     fun visit(node: GlobalVariableDeclarationNode)

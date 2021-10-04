@@ -11,9 +11,17 @@ class KotlinCodeGenerator : CodeGenerator {
         codeBuilder.append(code)
     }
 
+    private class RecordDeclaration(
+        val type: Type,
+        val typeParameter: List<TypeParameter>,
+        val fields: List<Identifier>,
+        val methods: MutableList<MethodNode>,
+        val implements: MutableList<Type>
+    )
+
     override fun generateCode(): String {
         records.forEach {
-            append(it.value.generateCode())
+            append(generateRecord(it.value))
         }
         return codeBuilder.toString()
     }
@@ -33,7 +41,6 @@ class KotlinCodeGenerator : CodeGenerator {
                 is GlobalVariableDeclarationNode -> visit(it)
                 is GlobalFunctionDeclarationNode -> visit(it)
                 is GlobalInterfaceDeclarationNode -> visit(it)
-                is GlobalGenericsRecordDeclarationNode -> visit(it)
                 is GlobalRecordDeclarationNode -> visit(it)
                 is GlobalExtensionDeclarationNode -> visit(it)
                 else -> throw CompilingCheckException()
@@ -47,14 +54,61 @@ class KotlinCodeGenerator : CodeGenerator {
 
     override fun visit(node: GlobalRecordDeclarationNode) {
         records[node.type] = RecordDeclaration(
-            node.type, node.fields, node.methods.toMutableList(), if (node.implements != null) {
+            node.type, node.typeParameter, node.fields, node.methods.toMutableList(), if (node.implements != null) {
                 mutableListOf(node.implements)
             } else mutableListOf()
         )
     }
 
-    override fun visit(node: GlobalGenericsRecordDeclarationNode) {
-        TODO("Not yet implemented")
+    private fun generateRecord(record: RecordDeclaration): String {
+        return with(record) {
+            if (typeParameter.isEmpty()) {
+                "class ${type.name}(${
+                    joinString(fields) {
+                        "${if (it.kind == IdentifierKind.Immutable) "val" else "var"} ${it.name}: ${it.type.generateTypeName()}"
+                    }
+                }) ${
+                    if (implements.isEmpty()) "" else ": ${
+                        joinString(implements) {
+                            it.generateTypeName()
+                        }
+                    }"
+                } { $Wrap${
+                    joinString(methods, Wrap) {
+                        it.generateCode()
+                    }
+                }$Wrap }$Wrap"
+            } else {
+                "class ${type.name}<${
+                    joinString(typeParameter) {
+                        "${it.name}: ${
+                            when (val constraintType = it.constraint) {
+                                is GenericsType -> constraintType.typeConstructor(listOf(it)).generateTypeName()
+                                is InterfaceType -> constraintType.generateTypeName()
+                            }
+                        }"
+                    }
+                }>(${
+                    joinString(fields) {
+                        "${if (it.kind == IdentifierKind.Immutable) "val" else "var"} ${it.name}: ${it.type.generateTypeName()}"
+                    }
+                }) ${
+                    if (implements.isEmpty()) "" else ": ${
+                        joinString(implements) {
+                            when (val interfaceType = it) {
+                                is GenericsType -> interfaceType.typeConstructor(listOf(it)).generateTypeName()
+                                is InterfaceType -> interfaceType.generateTypeName()
+                                else -> throw CompilingCheckException()
+                            }
+                        }
+                    }"
+                } {$Wrap${
+                    joinString(methods, Wrap) {
+                        it.generateCode()
+                    }
+                } }$Wrap"
+            }
+        }
     }
 
     override fun visit(node: GlobalFunctionDeclarationNode) {

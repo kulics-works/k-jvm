@@ -252,7 +252,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         } else listOf()
         val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), members, type)
         popScope()
-        GlobalGenericsRecordDeclarationNode(type, typeParameter, fieldList.first, methods.map {
+        GlobalRecordDeclarationNode(type, typeParameter, fieldList.first, methods.map {
             if (overrideMembers.contains(it.id.name)) {
                 MethodNode(it.id, it.params, it.returnType, it.body, true)
             } else {
@@ -278,7 +278,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         } else listOf()
         val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), members, type)
         popScope()
-        GlobalRecordDeclarationNode(type, fieldList.first, methods.map {
+        GlobalRecordDeclarationNode(type, listOf(), fieldList.first, methods.map {
             if (overrideMembers.contains(it.id.name)) {
                 MethodNode(it.id, it.params, it.returnType, it.body, true)
             } else {

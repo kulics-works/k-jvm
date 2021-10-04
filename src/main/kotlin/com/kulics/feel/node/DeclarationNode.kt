@@ -37,67 +37,11 @@ class GlobalVariableDeclarationNode(val id: Identifier, val initValue: Expressio
 
 open class GlobalRecordDeclarationNode(
     val type: Type,
+    val typeParameter: List<TypeParameter>,
     val fields: List<Identifier>,
     val methods: List<MethodNode>,
     val implements: Type?
 ) : DeclarationNode() {
-    override fun generateCode(): String {
-        return "class ${type.name}(${
-            joinString(fields) {
-                "${it.name}: ${it.type.generateTypeName()}"
-            }
-        }) ${
-            if (implements != null) ": ${implements.generateTypeName()}" else ""
-        } { $Wrap${
-            joinString(methods, Wrap) {
-                "${
-                    if (it.isOverride) {
-                        "override "
-                    } else {
-                        ""
-                    }
-                }fun ${it.generateCode()}"
-            }
-        }$Wrap }$Wrap"
-    }
-
-    override fun accept(visitor: NodeVisitor) {
-        visitor.visit(this)
-    }
-}
-
-class GlobalGenericsRecordDeclarationNode(
-    type: Type,
-    val typeParameter: List<TypeParameter>,
-    fields: List<Identifier>,
-    methods: List<MethodNode>,
-    implements: Type?
-) : GlobalRecordDeclarationNode(type, fields, methods, implements) {
-    override fun generateCode(): String {
-        return "class ${type.name}<${
-            joinString(typeParameter) {
-                "${it.name}: ${
-                    when (val constraintType = it.constraint) {
-                        is GenericsType -> constraintType.typeConstructor(listOf(it)).generateTypeName()
-                        is InterfaceType -> constraintType.generateTypeName()
-                    }
-                }"
-            }
-        }>(${fields}) ${
-            if (implements != null) ": ${implements.generateTypeName()}" else ""
-        } {$Wrap${
-            joinString(methods, Wrap) {
-                "${
-                    if (it.isOverride) {
-                        "override "
-                    } else {
-                        ""
-                    }
-                }fun ${it.generateCode()}"
-            }
-        } }$Wrap"
-    }
-
     override fun accept(visitor: NodeVisitor) {
         visitor.visit(this)
     }
