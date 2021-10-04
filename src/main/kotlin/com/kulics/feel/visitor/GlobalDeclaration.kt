@@ -3,14 +3,10 @@ package com.kulics.feel.visitor
 import com.kulics.feel.grammar.FeelParser.*
 import com.kulics.feel.node.*
 
-internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContext): String {
-    return "package ${visitIdentifier(ctx.identifier())}$Wrap"
-}
-
-internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
-    val result = StringBuilder()
-    result.append(visitModuleDeclaration(ctx.moduleDeclaration()))
-    result.append(
+internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): ProgramNode {
+    val preloadCode = StringBuilder()
+    preloadCode.append(visitModuleDeclaration(ctx.moduleDeclaration()))
+    preloadCode.append(
         """
         inline fun <reified T> Any.castOrThrow(): T = this as T
         inline fun <reified T> Any.castOrNull(): T? = this as? T
@@ -18,18 +14,24 @@ internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): String {
         inline fun<reified T> emptyArray(): Array<T> = arrayOf();$Wrap
     """.trimIndent()
     )
+    val declarations = mutableListOf<DeclarationNode>()
     for (item in ctx.globalDeclaration()) {
-        result.append(visitGlobalDeclaration(item))
+        declarations.add(visitGlobalDeclaration(item))
     }
-    return result.toString()
+    return ProgramNode(preloadCode.toString(), declarations)
 }
 
-internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {
+internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContext): String {
+    return "package ${visitIdentifier(ctx.identifier())}$Wrap"
+}
+
+internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): DeclarationNode {
     return when (val declaration = ctx.getChild(0)) {
-        is GlobalVariableDeclarationContext -> visitGlobalVariableDeclaration(declaration).generateCode()
-        is GlobalFunctionDeclarationContext -> visitGlobalFunctionDeclaration(declaration).generateCode()
+        is GlobalVariableDeclarationContext -> visitGlobalVariableDeclaration(declaration)
+        is GlobalFunctionDeclarationContext -> visitGlobalFunctionDeclaration(declaration)
         is GlobalRecordDeclarationContext -> visitGlobalRecordDeclaration(declaration)
         is GlobalInterfaceDeclarationContext -> visitGlobalInterfaceDeclaration(declaration)
+        is GlobalExtensionDeclarationContext -> visitGlobalExtensionDeclaration(declaration)
         else -> throw CompilingCheckException()
     }
 }
@@ -203,10 +205,10 @@ internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): Type
     }
 }
 
-internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationContext): String {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id) || isRedefineType(id)) {
-        println("identifier: '$id' is redefined")
+internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationContext): GlobalRecordDeclarationNode {
+    val idName = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(idName) || isRedefineType(idName)) {
+        println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
     val typeParameterList = ctx.typeParameterList()
@@ -217,31 +219,31 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         val members = mutableMapOf<String, Identifier>()
         fieldList.first.forEach { members[it.name] = it }
         popScope()
-        val type = GenericsType(id, typeParameter) { li ->
+        val type = GenericsType(idName, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
             for (i in li.indices) {
                 typeMap[typeParameter[i].name] = li[i]
             }
             typeSubstitution(
                 RecordType(
-                    "${id}[${joinString(li) { it.name }}]",
+                    "${idName}[${joinString(li) { it.name }}]",
                     members,
-                    "${id}<${joinString(li) { it.name }}>",
-                    generateGenericsUniqueName(id, li),
+                    "${idName}<${joinString(li) { it.name }}>",
+                    generateGenericsUniqueName(idName, li),
                     true,
                 ),
                 typeMap
             )
         }
         addType(type)
-        val constructorType = GenericsType(id, typeParameter) { li ->
+        val constructorType = GenericsType(idName, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
             for (i in li.indices) {
                 typeMap[typeParameter[i].name] = li[i]
             }
             typeSubstitution(FunctionType(fieldList.first.map { it.type }, type.typeConstructor(li)), typeMap)
         }
-        addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
+        addIdentifier(Identifier(idName, constructorType, IdentifierKind.Immutable))
         pushScope()
         for (v in typeParameter) {
             if (isRedefineType(v.name)) {
@@ -260,36 +262,21 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         } else listOf()
         val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), members, type)
         popScope()
-        "class ${id}<${
-            joinString(typeParameter) {
-                "${it.name}: ${
-                    when (val constraintType = it.constraint) {
-                        is GenericsType -> constraintType.typeConstructor(listOf(it)).generateTypeName()
-                        is InterfaceType -> constraintType.generateTypeName()
-                    }
-                }"
+        GlobalGenericsRecordDeclarationNode(type, typeParameter, fieldList.first, methods.map {
+            if (overrideMembers.contains(it.id.name)) {
+                MethodNode(it.id, it.params, it.returnType, it.body, true)
+            } else {
+                it
             }
-        }>(${fieldList.second}) ${
-            if (interfaceType != null) ": ${interfaceType.generateTypeName()}" else ""
-        } {$Wrap${
-            joinString(methods, Wrap) {
-                "${
-                    if (overrideMembers.contains(it.id.name)) {
-                        "override "
-                    } else {
-                        ""
-                    }
-                }fun ${it.generateCode()}"
-            }
-        } }$Wrap"
+        }, interfaceType)
     } else {
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
         fieldList.first.forEach { members[it.name] = it }
-        val type = RecordType(id, members, null)
+        val type = RecordType(idName, members, null)
         addType(type)
         val constructorType = FunctionType(fieldList.first.map { it.type }, type)
-        addIdentifier(Identifier(id, constructorType, IdentifierKind.Immutable))
+        addIdentifier(Identifier(idName, constructorType, IdentifierKind.Immutable))
         pushScope()
         fieldList.first.forEach { addIdentifier(it) }
         val methods = if (ctx.methodList() != null) {
@@ -301,19 +288,13 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         } else listOf()
         val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), members, type)
         popScope()
-        "class ${id}(${fieldList.second}) ${
-            if (interfaceType != null) ": ${interfaceType.generateTypeName()}" else ""
-        } { $Wrap${
-            joinString(methods, Wrap) {
-                "${
-                    if (overrideMembers.contains(it.id.name)) {
-                        "override "
-                    } else {
-                        ""
-                    }
-                }fun ${it.generateCode()}"
+        GlobalRecordDeclarationNode(type, fieldList.first, methods.map {
+            if (overrideMembers.contains(it.id.name)) {
+                MethodNode(it.id, it.params, it.returnType, it.body, true)
+            } else {
+                it
             }
-        }$Wrap }$Wrap"
+        }, interfaceType)
     }
 }
 
@@ -426,13 +407,13 @@ internal fun DelegateVisitor.visitField(ctx: FieldContext): Identifier {
     return Identifier(id, type, if (ctx.Mut() == null) IdentifierKind.Immutable else IdentifierKind.Mutable)
 }
 
-internal fun DelegateVisitor.visitMethodList(ctx: MethodListContext): List<Method> {
+internal fun DelegateVisitor.visitMethodList(ctx: MethodListContext): List<MethodNode> {
     return ctx.method().map {
         visitMethod(it)
     }
 }
 
-internal fun DelegateVisitor.visitMethod(ctx: MethodContext): Method {
+internal fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
     val id = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(id)) {
         println("identifier: '$id' is redefined")
@@ -457,23 +438,10 @@ internal fun DelegateVisitor.visitMethod(ctx: MethodContext): Method {
         throw CompilingCheckException()
     }
     popScope()
-    return Method(identifier, params.first, returnType, expr)
+    return MethodNode(identifier, params.first, returnType, expr, false)
 }
 
-class Method(
-    val id: Identifier,
-    val params: List<Identifier>,
-    val returnType: Type,
-    val body: ExpressionNode
-) {
-    fun generateCode(): String {
-        return "${id.name}(${
-            joinString(params) { "${it.name}: ${it.type.generateTypeName()}" }
-        }): ${returnType.generateTypeName()} { return run{ ${body.generateCode()} } }"
-    }
-}
-
-internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): String {
+internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): GlobalInterfaceDeclarationNode {
     val id = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(id)) {
         println("identifier: '$id' is redefined")
@@ -513,24 +481,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             methods
         } else listOf()
         popScope()
-        fun generateConstraintTypeName(p: TypeParameter): String {
-            return when (val constraintType = p.constraint) {
-                is GenericsType -> {
-                    val ty = constraintType.typeConstructor(listOf(p))
-                    "${p.name}: ${ty.generateTypeName()}"
-                }
-                is InterfaceType -> "${p.name}: ${constraintType.generateTypeName()}"
-            }
-        }
-        "interface ${id}<${
-            joinString(typeParameter) {
-                generateConstraintTypeName(it)
-            }
-        }> {${
-            joinString(methods, Wrap) {
-                it.generateCode()
-            }
-        }}$Wrap"
+        GlobalGenericsInterfaceDeclarationNode(type, typeParameter, methods)
     } else {
         val type = InterfaceType(id, members, null)
         addType(type)
@@ -541,11 +492,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             }
             methods
         } else listOf()
-        "interface $id {${
-            joinString(methods, Wrap) {
-                it.generateCode()
-            }
-        }}$Wrap"
+        GlobalInterfaceDeclarationNode(type, methods)
     }
 }
 
@@ -589,21 +536,41 @@ internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Virt
     return node
 }
 
-class VirtualMethodNode(
-    val id: VirtualIdentifier,
-    val params: ArrayList<Identifier>,
-    val returnType: Type,
-    val body: ExpressionNode?
-) {
-    fun generateCode(): String {
-        return "fun ${id.name}(${
-            joinString(params) { "${it.name}: ${it.type.generateTypeName()}" }
-        }): ${returnType.generateTypeName()} ${
-            if (body != null) {
-                "{ return run{ ${body.generateCode()} } }"
-            } else {
-                ""
+internal fun DelegateVisitor.visitGlobalExtensionDeclaration(ctx: GlobalExtensionDeclarationContext): GlobalExtensionDeclarationNode {
+    val idName = visitIdentifier(ctx.identifier())
+    val type = getType(idName)
+    if (type == null) {
+        println("identifier: '$idName' is not defined")
+        throw CompilingCheckException()
+    }
+    val typeParameterList = ctx.typeParameterList()
+    return if (typeParameterList != null) {
+        throw CompilingCheckException()
+    } else {
+        if (type !is RecordType) {
+            println("the type '${type.name}' is not a record type")
+            throw CompilingCheckException()
+        }
+        pushScope()
+        val methods = if (ctx.methodList() != null) {
+            val methods = visitMethodList(ctx.methodList())
+            for (v in methods) {
+                if (type.member.contains(v.id.name)) {
+                    println("the member: '${v.id.name}' of type '${type.name}' is redefined")
+                    throw CompilingCheckException()
+                }
+                type.member[v.id.name] = v.id
             }
-        } "
+            methods
+        } else listOf()
+        val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), type.member, type)
+        popScope()
+        GlobalExtensionDeclarationNode(type, methods.map {
+            if (overrideMembers.contains(it.id.name)) {
+                MethodNode(it.id, it.params, it.returnType, it.body, true)
+            } else {
+                it
+            }
+        }, interfaceType)
     }
 }

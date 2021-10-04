@@ -8,7 +8,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
     private val delegate = DelegateVisitor()
 
     fun generateCode(ctx: ProgramContext): String {
-        return visitProgram(ctx)
+        return delegate.codeGenerate(visitProgram(ctx))
     }
 
     override fun visitIdentifier(ctx: IdentifierContext): String {
@@ -27,6 +27,10 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitGlobalFunctionDeclaration(ctx)
     }
 
+    override fun visitGlobalExtensionDeclaration(ctx: GlobalExtensionDeclarationContext): GlobalExtensionDeclarationNode {
+        return delegate.visitGlobalExtensionDeclaration(ctx)
+    }
+
     override fun visitParameterList(ctx: ParameterListContext): Pair<ArrayList<Identifier>, String> {
         return delegate.visitParameterList(ctx)
     }
@@ -43,7 +47,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitTypeParameter(ctx)
     }
 
-    override fun visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationContext): String {
+    override fun visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationContext): GlobalRecordDeclarationNode {
         return delegate.visitGlobalRecordDeclaration(ctx)
     }
 
@@ -55,15 +59,15 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitField(ctx)
     }
 
-    override fun visitMethodList(ctx: MethodListContext): List<Method> {
+    override fun visitMethodList(ctx: MethodListContext): List<MethodNode> {
         return delegate.visitMethodList(ctx)
     }
 
-    override fun visitMethod(ctx: MethodContext): Method {
+    override fun visitMethod(ctx: MethodContext): MethodNode {
         return delegate.visitMethod(ctx)
     }
 
-    override fun visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): String {
+    override fun visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): GlobalInterfaceDeclarationNode {
         return delegate.visitGlobalInterfaceDeclaration(ctx)
     }
 
@@ -83,7 +87,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitBlockExpression(ctx)
     }
 
-    override fun visitGlobalDeclaration(ctx: GlobalDeclarationContext): String {
+    override fun visitGlobalDeclaration(ctx: GlobalDeclarationContext): DeclarationNode {
         return delegate.visitGlobalDeclaration(ctx)
     }
 
@@ -151,7 +155,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitType(ctx)
     }
 
-    override fun visitProgram(ctx: ProgramContext): String {
+    override fun visitProgram(ctx: ProgramContext): ProgramNode {
         return delegate.visitProgram(ctx)
     }
 }
