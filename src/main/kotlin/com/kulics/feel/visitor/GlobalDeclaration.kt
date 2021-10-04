@@ -153,8 +153,8 @@ internal fun DelegateVisitor.visitTypeParameterList(ctx: TypeParameterListContex
 }
 
 internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter {
-    val id = visitIdentifier(ctx.identifier())
-    val typeParameter = TypeParameter(id, builtinTypeAny)
+    val idName = visitIdentifier(ctx.identifier())
+    val typeParameter = TypeParameter(idName, builtinTypeAny)
     addType(typeParameter)
     val typeNode = visitType(ctx.type())
     val (type, constraintTypeName) = when (val targetType = getType(typeNode.id)) {
@@ -179,18 +179,18 @@ internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): Type
                 }
                 instanceType
             } to "${targetType.name}ConstraintObject<${
-                if (list.isEmpty()) id
-                else joinString(listOf(id).plus(list.map { it.generateTypeName() })) { it }
+                if (list.isEmpty()) idName
+                else joinString(listOf(idName).plus(list.map { it.generateTypeName() })) { it }
             }>"
         }
-        else -> targetType to "${targetType.name}ConstraintObject<${id}>"
+        else -> targetType to "${targetType.name}ConstraintObject<${idName}>"
     }
     return if (type is ConstraintType) {
         typeParameter.constraint = type
         typeParameter.constraintObjectTypeName = constraintTypeName
         typeParameter
     } else {
-        println("the constraint of '${id}' is not interface")
+        println("the constraint of '${idName}' is not interface")
         throw CompilingCheckException()
     }
 }
@@ -207,7 +207,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         val typeParameter = visitTypeParameterList(typeParameterList)
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
-        fieldList.first.forEach { members[it.name] = it }
+        fieldList.forEach { members[it.name] = it }
         popScope()
         val type = GenericsType(idName, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
@@ -231,7 +231,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             for (i in li.indices) {
                 typeMap[typeParameter[i].name] = li[i]
             }
-            typeSubstitution(FunctionType(fieldList.first.map { it.type }, type.typeConstructor(li)), typeMap)
+            typeSubstitution(FunctionType(fieldList.map { it.type }, type.typeConstructor(li)), typeMap)
         }
         addIdentifier(Identifier(idName, constructorType, IdentifierKind.Immutable))
         pushScope()
@@ -242,7 +242,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
             }
             addType(v)
         }
-        fieldList.first.forEach { addIdentifier(it) }
+        fieldList.forEach { addIdentifier(it) }
         val methods = if (ctx.methodList() != null) {
             val methods = visitMethodList(ctx.methodList())
             for (v in methods) {
@@ -252,7 +252,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         } else listOf()
         val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), members, type)
         popScope()
-        GlobalRecordDeclarationNode(type, typeParameter, fieldList.first, methods.map {
+        GlobalRecordDeclarationNode(type, typeParameter, fieldList, methods.map {
             if (overrideMembers.contains(it.id.name)) {
                 MethodNode(it.id, it.params, it.returnType, it.body, true)
             } else {
@@ -262,13 +262,13 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
     } else {
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
-        fieldList.first.forEach { members[it.name] = it }
+        fieldList.forEach { members[it.name] = it }
         val type = RecordType(idName, members, null)
         addType(type)
-        val constructorType = FunctionType(fieldList.first.map { it.type }, type)
+        val constructorType = FunctionType(fieldList.map { it.type }, type)
         addIdentifier(Identifier(idName, constructorType, IdentifierKind.Immutable))
         pushScope()
-        fieldList.first.forEach { addIdentifier(it) }
+        fieldList.forEach { addIdentifier(it) }
         val methods = if (ctx.methodList() != null) {
             val methods = visitMethodList(ctx.methodList())
             for (v in methods) {
@@ -278,7 +278,7 @@ internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDecla
         } else listOf()
         val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), members, type)
         popScope()
-        GlobalRecordDeclarationNode(type, listOf(), fieldList.first, methods.map {
+        GlobalRecordDeclarationNode(type, listOf(), fieldList, methods.map {
             if (overrideMembers.contains(it.id.name)) {
                 MethodNode(it.id, it.params, it.returnType, it.body, true)
             } else {
@@ -368,52 +368,33 @@ private fun DelegateVisitor.checkMemberImplement(
     }
 }
 
-internal fun DelegateVisitor.visitFieldList(ctx: FieldListContext): Pair<ArrayList<Identifier>, String> {
-    val fields = ctx.field()
-    val buf = StringBuilder()
-    val ids = ArrayList<Identifier>()
-    if (fields.size > 0) {
-        val first = visitField(fields[0])
-        fun genParam(id: Identifier): String {
-            return "${
-                if (id.kind == IdentifierKind.Immutable) "val"
-                else "var"
-            } ${id.name}: ${id.type.generateTypeName()}"
-        }
-        buf.append(genParam(first))
-        ids.add(first)
-        for (i in 1 until fields.size) {
-            val id = visitField(fields[i])
-            ids.add(id)
-            buf.append(", ${genParam(id)}")
-        }
-    }
-    return ids to buf.toString()
+internal fun DelegateVisitor.visitFieldList(ctx: FieldListContext): List<Identifier> {
+    return ctx.field().map { visitField(it) }
 }
 
 internal fun DelegateVisitor.visitField(ctx: FieldContext): Identifier {
-    val id = visitIdentifier(ctx.identifier())
-    val type = checkType(visitType(ctx.type()))
-    return Identifier(id, type, if (ctx.Mut() == null) IdentifierKind.Immutable else IdentifierKind.Mutable)
+    return Identifier(
+        visitIdentifier(ctx.identifier()),
+        checkType(visitType(ctx.type())),
+        if (ctx.Mut() == null) IdentifierKind.Immutable else IdentifierKind.Mutable
+    )
 }
 
 internal fun DelegateVisitor.visitMethodList(ctx: MethodListContext): List<MethodNode> {
-    return ctx.method().map {
-        visitMethod(it)
-    }
+    return ctx.method().map { visitMethod(it) }
 }
 
 internal fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
+    val idName = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(idName)) {
+        println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
     val returnType = checkType(visitType(ctx.type()))
     val params = visitParameterList(ctx.parameterList())
     val type = FunctionType(params.first.map { it.type }, returnType)
-    val identifier = Identifier(id, type, IdentifierKind.Immutable)
-    addIdentifier(identifier)
+    val id = Identifier(idName, type, IdentifierKind.Immutable)
+    addIdentifier(id)
     pushScope()
     for (v in params.first) {
         if (isRedefineIdentifier(v.name)) {
@@ -428,13 +409,13 @@ internal fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
         throw CompilingCheckException()
     }
     popScope()
-    return MethodNode(identifier, params.first, returnType, expr, false)
+    return MethodNode(id, params.first, returnType, expr, false)
 }
 
 internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): GlobalInterfaceDeclarationNode {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
+    val idName = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(idName)) {
+        println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
     val members = mutableMapOf<String, VirtualIdentifier>()
@@ -442,17 +423,17 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
     return if (typeParameterList != null) {
         pushScope()
         val typeParameter = visitTypeParameterList(typeParameterList)
-        val type = GenericsType(id, typeParameter) { li ->
+        val type = GenericsType(idName, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
             for (i in li.indices) {
                 typeMap[typeParameter[i].name] = li[i]
             }
             typeSubstitution(
                 InterfaceType(
-                    "${id}[${joinString(li) { it.name }}]",
+                    "${idName}[${joinString(li) { it.name }}]",
                     members,
-                    "${id}<${joinString(li) { it.generateTypeName() }}>",
-                    generateGenericsUniqueName(id, typeParameter),
+                    "${idName}<${joinString(li) { it.generateTypeName() }}>",
+                    generateGenericsUniqueName(idName, typeParameter),
                     true,
                 ), typeMap
             )
@@ -473,7 +454,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
         popScope()
         GlobalInterfaceDeclarationNode(type, typeParameter, methods)
     } else {
-        val type = InterfaceType(id, members, null)
+        val type = InterfaceType(idName, members, null)
         addType(type)
         val methods = if (ctx.virtualMethodList() != null) {
             val methods = visitVirtualMethodList(ctx.virtualMethodList())
@@ -487,22 +468,20 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
 }
 
 internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): List<VirtualMethodNode> {
-    return ctx.virtualMethod().map {
-        visitVirtualMethod(it)
-    }
+    return ctx.virtualMethod().map { visitVirtualMethod(it) }
 }
 
 internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): VirtualMethodNode {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
+    val idName = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(idName)) {
+        println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
     val returnType = checkType(visitType(ctx.type()))
     val params = visitParameterList(ctx.parameterList())
     val type = FunctionType(params.first.map { it.type }, returnType)
-    val identifier = VirtualIdentifier(id, type, IdentifierKind.Immutable)
-    addIdentifier(identifier)
+    val id = VirtualIdentifier(idName, type, IdentifierKind.Immutable)
+    addIdentifier(id)
     pushScope()
     for (v in params.first) {
         if (isRedefineIdentifier(v.name)) {
@@ -517,10 +496,10 @@ internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Virt
             println("the return is '${returnType.name}', but find '${expr.type.name}'")
             throw CompilingCheckException()
         }
-        identifier.hasImplement = true
-        VirtualMethodNode(identifier, params.first, returnType, expr)
+        id.hasImplement = true
+        VirtualMethodNode(id, params.first, returnType, expr)
     } else {
-        VirtualMethodNode(identifier, params.first, returnType, null)
+        VirtualMethodNode(id, params.first, returnType, null)
     }
     popScope()
     return node

@@ -21,7 +21,7 @@ class KotlinCodeGenerator : CodeGenerator {
 
     override fun generateCode(): String {
         records.forEach {
-            append(generateRecord(it.value))
+            append(generate(it.value))
         }
         return codeBuilder.toString()
     }
@@ -60,7 +60,7 @@ class KotlinCodeGenerator : CodeGenerator {
         )
     }
 
-    private fun generateRecord(record: RecordDeclaration): String {
+    private fun generate(record: RecordDeclaration): String {
         return with(record) {
             if (typeParameter.isEmpty()) {
                 "class ${type.name}(${
@@ -75,7 +75,7 @@ class KotlinCodeGenerator : CodeGenerator {
                     }"
                 } { $Wrap${
                     joinString(methods, Wrap) {
-                        it.generateCode()
+                        generate(it)
                     }
                 }$Wrap }$Wrap"
             } else {
@@ -104,7 +104,7 @@ class KotlinCodeGenerator : CodeGenerator {
                     }"
                 } {$Wrap${
                     joinString(methods, Wrap) {
-                        it.generateCode()
+                        generate(it)
                     }
                 } }$Wrap"
             }
@@ -155,7 +155,7 @@ class KotlinCodeGenerator : CodeGenerator {
         if (node.typeParameter.isEmpty()) {
             append("interface ${node.type.generateTypeName()} {${
                 joinString(node.methods, Wrap) {
-                    it.generateCode()
+                    generate(it)
                 }
             }}$Wrap")
         } else {
@@ -171,7 +171,7 @@ class KotlinCodeGenerator : CodeGenerator {
                 }
             }> {${
                 joinString(node.methods, Wrap) {
-                    it.generateCode()
+                    generate(it)
                 }
             }}$Wrap")
         }
@@ -185,5 +185,23 @@ class KotlinCodeGenerator : CodeGenerator {
                 record.implements.add(node.implements)
             }
         }
+    }
+
+    private fun generate(node: MethodNode): String {
+        return "${if (node.isOverride) "override" else ""} fun ${node.id.name}(${
+            joinString(node.params) { "${it.name}: ${it.type.generateTypeName()}" }
+        }): ${node.returnType.generateTypeName()} { return run{ ${node.body.generateCode()} } }"
+    }
+
+    private fun generate(node: VirtualMethodNode): String {
+        return "fun ${node.id.name}(${
+            joinString(node.params) { "${it.name}: ${it.type.generateTypeName()}" }
+        }): ${node.returnType.generateTypeName()} ${
+            if (node.body != null) {
+                "{ return run{ ${node.body.generateCode()} } }"
+            } else {
+                ""
+            }
+        } "
     }
 }

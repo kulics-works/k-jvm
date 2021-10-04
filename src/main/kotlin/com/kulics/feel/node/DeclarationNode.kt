@@ -73,29 +73,11 @@ class MethodNode(
     val returnType: Type,
     val body: ExpressionNode,
     val isOverride: Boolean
-) : DeclarationNode() {
-    override fun generateCode(): String {
-        return "${if (isOverride) "override" else ""} fun ${id.name}(${
-            joinString(params) { "${it.name}: ${it.type.generateTypeName()}" }
-        }): ${returnType.generateTypeName()} { return run{ ${body.generateCode()} } }"
-    }
-}
+) : DeclarationNode()
 
 class VirtualMethodNode(
     val id: VirtualIdentifier,
     val params: ArrayList<Identifier>,
     val returnType: Type,
     val body: ExpressionNode?
-) : DeclarationNode() {
-    override fun generateCode(): String {
-        return "fun ${id.name}(${
-            joinString(params) { "${it.name}: ${it.type.generateTypeName()}" }
-        }): ${returnType.generateTypeName()} ${
-            if (body != null) {
-                "{ return run{ ${body.generateCode()} } }"
-            } else {
-                ""
-            }
-        } "
-    }
-}
+) : DeclarationNode()

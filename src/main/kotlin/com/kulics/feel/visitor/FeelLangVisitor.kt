@@ -47,7 +47,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitGlobalRecordDeclaration(ctx)
     }
 
-    override fun visitFieldList(ctx: FieldListContext): Pair<ArrayList<Identifier>, String> {
+    override fun visitFieldList(ctx: FieldListContext): List<Identifier> {
         return delegate.visitFieldList(ctx)
     }
 

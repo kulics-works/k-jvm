@@ -126,27 +126,3 @@ class ConditionExpressionNode(
         return "if (${condExpr.generateCode()}) { ${thenExpr.generateCode()} } else { ${elseExpr.generateCode()} }"
     }
 }
-
-class ConstraintObjectNode(val argType: Type, val constraintType: ConstraintType) : ExpressionNode(argType) {
-    override fun generateCode(): String {
-        return when (constraintType) {
-            is GenericsType ->
-                "${constraintType.name}ConstraintObjectFor${argType.generateTypeName()}()"
-            is InterfaceType ->
-                "${constraintType.name}ConstraintObjectFor${argType.generateTypeName()}()"
-        }
-    }
-}
-
-fun generateFunctionSignature(type: FunctionType): Pair<List<String>, String> {
-    var startName = 'a'
-    val paramList = mutableListOf<String>()
-    return paramList to "${
-        joinString(type.parameterTypes) {
-            val paramName = startName
-            startName = startName.inc()
-            paramList.add(paramName.toString())
-            "${paramName}: ${it.generateTypeName()}"
-        }
-    }): ${type.returnType.generateTypeName()}"
-}
