@@ -1,5 +1,6 @@
 package com.kulics.feel
 
+import com.kulics.feel.codeGenerator.codeGenerate
 import com.kulics.feel.grammar.FeelLexer
 import com.kulics.feel.grammar.FeelParser
 import com.kulics.feel.visitor.FeelErrorListener
@@ -18,7 +19,7 @@ fun main(arg: Array<String>) {
     parser.addErrorListener(FeelErrorListener())
     val tree = parser.program() // parse
     val vt = FeelLangVisitor()
-    val result = vt.generateCode(tree)
+    val result = codeGenerate(vt.visitProgram(tree))
     val output = File("./src/test/kotlin/example.kt")
     output.bufferedWriter().use {
         it.write(result)

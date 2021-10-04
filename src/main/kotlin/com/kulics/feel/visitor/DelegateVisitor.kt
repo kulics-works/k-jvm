@@ -1,7 +1,5 @@
 package com.kulics.feel.visitor
 
-import com.kulics.feel.node.*
-
 class DelegateVisitor {
     private val implementMap = mutableMapOf<Type, MutableSet<Type>>()
 
@@ -121,70 +119,5 @@ class Scope {
 
     internal fun getType(ty: String): Type? {
         return types[ty]
-    }
-}
-
-fun DelegateVisitor.codeGenerate(programNode: ProgramNode): String {
-    val records = mutableMapOf<Type, RecordDeclaration>()
-    val code = StringBuilder().append("${programNode.preloadCode}$Wrap ${
-        joinString(programNode.declarations, Wrap) {
-            when (it) {
-                is GlobalVariableDeclarationNode -> it.generateCode()
-                is GlobalFunctionDeclarationNode -> it.generateCode()
-                is GlobalInterfaceDeclarationNode -> it.generateCode()
-                is GlobalRecordDeclarationNode -> if (it is GlobalGenericsRecordDeclarationNode) {
-                    ""
-                } else {
-                    records[it.type] = RecordDeclaration(
-                        it.type, it.fields, it.methods.toMutableList(), if (it.implements != null) {
-                            mutableListOf(it.implements)
-                        } else mutableListOf()
-                    )
-                    ""
-                }
-                is GlobalExtensionDeclarationNode -> if (it is GlobalGenericsExtensionDeclarationNode) {
-                    ""
-                } else {
-                    val record = records[it.type]
-                    if (record != null) {
-                        record.methods.addAll(it.methods)
-                        if (it.implements != null) {
-                            record.implements.add(it.implements)
-                        }
-                    }
-                    ""
-                }
-                else -> throw CompilingCheckException()
-            }
-        }
-    }")
-    for ((_, v) in records) {
-        code.append(v.generateCode())
-    }
-    return code.toString()
-}
-
-class RecordDeclaration(
-    val type: Type,
-    val fields: List<Identifier>,
-    val methods: MutableList<MethodNode>,
-    val implements: MutableList<Type>
-) {
-    fun generateCode(): String {
-        return "class ${type.name}(${
-            joinString(fields) {
-                "${it.name}: ${it.type.generateTypeName()}"
-            }
-        }) ${
-            if (implements.isEmpty()) "" else ": ${
-                joinString(implements, Wrap) {
-                    it.generateTypeName()
-                }
-            }"
-        } { $Wrap${
-            joinString(methods, Wrap) {
-                it.generateCode()
-            }
-        }$Wrap }$Wrap"
     }
 }

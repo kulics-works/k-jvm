@@ -7,15 +7,11 @@ import com.kulics.feel.node.*
 class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
     private val delegate = DelegateVisitor()
 
-    fun generateCode(ctx: ProgramContext): String {
-        return delegate.codeGenerate(visitProgram(ctx))
-    }
-
     override fun visitIdentifier(ctx: IdentifierContext): String {
         return visitIdentifier(ctx)
     }
 
-    override fun visitModuleDeclaration(ctx: ModuleDeclarationContext): String {
+    override fun visitModuleDeclaration(ctx: ModuleDeclarationContext): ModuleDeclarationNode {
         return delegate.visitModuleDeclaration(ctx)
     }
 

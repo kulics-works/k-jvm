@@ -4,25 +4,14 @@ import com.kulics.feel.grammar.FeelParser.*
 import com.kulics.feel.node.*
 
 internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): ProgramNode {
-    val preloadCode = StringBuilder()
-    preloadCode.append(visitModuleDeclaration(ctx.moduleDeclaration()))
-    preloadCode.append(
-        """
-        inline fun <reified T> Any.castOrThrow(): T = this as T
-        inline fun <reified T> Any.castOrNull(): T? = this as? T
-        inline fun<reified T> newArray(size: Int, initValue: T): Array<T> = Array(size) { initValue };
-        inline fun<reified T> emptyArray(): Array<T> = arrayOf();$Wrap
-    """.trimIndent()
-    )
-    val declarations = mutableListOf<DeclarationNode>()
-    for (item in ctx.globalDeclaration()) {
-        declarations.add(visitGlobalDeclaration(item))
-    }
-    return ProgramNode(preloadCode.toString(), declarations)
+    return ProgramNode(visitModuleDeclaration(ctx.moduleDeclaration()),
+        ctx.globalDeclaration().map {
+            visitGlobalDeclaration(it)
+        })
 }
 
-internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContext): String {
-    return "package ${visitIdentifier(ctx.identifier())}$Wrap"
+internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContext): ModuleDeclarationNode {
+    return ModuleDeclarationNode(visitIdentifier(ctx.identifier()))
 }
 
 internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): DeclarationNode {
@@ -96,7 +85,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
             throw CompilingCheckException()
         }
         popScope()
-        GlobalGenericsFunctionDeclarationNode(
+        GlobalFunctionDeclarationNode(
             id,
             typeParameter,
             params.first.map { ParameterDeclarationNode(it, it.type) },
@@ -125,6 +114,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
         popScope()
         GlobalFunctionDeclarationNode(
             id,
+            listOf(),
             params.first.map { ParameterDeclarationNode(it, it.type) },
             returnType,
             expr
@@ -481,7 +471,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             methods
         } else listOf()
         popScope()
-        GlobalGenericsInterfaceDeclarationNode(type, typeParameter, methods)
+        GlobalInterfaceDeclarationNode(type, typeParameter, methods)
     } else {
         val type = InterfaceType(id, members, null)
         addType(type)
@@ -492,7 +482,7 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
             }
             methods
         } else listOf()
-        GlobalInterfaceDeclarationNode(type, methods)
+        GlobalInterfaceDeclarationNode(type, listOf(), methods)
     }
 }
 
@@ -565,7 +555,7 @@ internal fun DelegateVisitor.visitGlobalExtensionDeclaration(ctx: GlobalExtensio
         } else listOf()
         val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), type.member, type)
         popScope()
-        GlobalExtensionDeclarationNode(type, methods.map {
+        GlobalExtensionDeclarationNode(type, listOf(), methods.map {
             if (overrideMembers.contains(it.id.name)) {
                 MethodNode(it.id, it.params, it.returnType, it.body, true)
             } else {
