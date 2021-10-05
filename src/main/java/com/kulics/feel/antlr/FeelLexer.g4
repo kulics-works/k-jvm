@@ -50,6 +50,7 @@ Def: 'def';
 Ext: 'ext';
 Module: 'mod';
 If: 'if';
+Then: 'then';
 Else: 'else';
 While: 'while';
 Is: 'is';

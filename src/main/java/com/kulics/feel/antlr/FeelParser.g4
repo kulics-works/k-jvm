@@ -77,11 +77,11 @@ memberAccess: Dot identifier;
 assignment: identifier Equal expression;
 
 ifStatement
-    : If LeftParen expression (Is pattern)? RightParen block (Else (block | ifStatement))?
+    : If expression (Is pattern)? Then block (Else (block | ifStatement))?
     ;
 
 ifExpression
-    : If LeftParen expression (Is pattern)? RightParen expression Else expression
+    : If expression (Is pattern)? Then expression Else expression
     ;
 
 whileStatement

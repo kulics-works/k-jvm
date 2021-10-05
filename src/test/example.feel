@@ -10,7 +10,7 @@ let mut b Int = 321 - 300;
 
 let c Int = 2 * 2;
 
-let mut d Int = b + (c * 2);
+let mut d Int = b + c * 2;
 
 let T Bool = true;
 
@@ -32,7 +32,6 @@ let call_id() Void = {
     let a = id[Int](1);
     let b = id[Float](1.0);
 };
-
 
 let blockExpr1 Int = {
     let a = 0;
@@ -62,16 +61,16 @@ let logicExpr Void = {
     let b = true || false;
 };
 
-let ifExpr1 Int = if(true) 0 else if(true) 0 else 0;
+let ifExpr1 Int = if true then 0 else if true then 0 else 0;
 
-let ifExpr2 Int = if(true) { 0 } else { 1 };
+let ifExpr2 Int = if true then { 0 } else { 1 };
 
-let ifExpr3 Void = if(true) {} else {};
+let ifExpr3 Void = if true then {} else {};
 
 let ifStat Void = {
-    if(true) {
+    if true then {
         0;
-    } else if(true) {
+    } else if true then {
         1;
     } else {
         2;
@@ -126,7 +125,7 @@ let makeIntList() IntList = {
     li.value();
     li
 };
-let sumIntList(li IntList) Int = if(li is Cons v) {
+let sumIntList(li IntList) Int = if li is Cons v then {
     v.head + sumIntList(v.tail)
 } else {
     0
@@ -134,7 +133,7 @@ let sumIntList(li IntList) Int = if(li is Cons v) {
 
 let typePattern() Void = {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
-    let i = if (li is Cons v) {
+    let i = if li is Cons v then {
         v.head
     } else {
         0
@@ -143,7 +142,7 @@ let typePattern() Void = {
 
 let typePattern2() Void = {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
-    if (li is Cons v) {
+    if li is Cons v then {
         v.head;
     } else {
         0;
@@ -152,14 +151,14 @@ let typePattern2() Void = {
 
 let identifierPattern() Int = {
     let a = 1;
-    if (a is a) 123 else 123
+    if a is a then 123 else 123
 };
 
 let identifierPattern2() Void = {
     let a = 1;
-    if (a is a) {
+    if a is a then {
         localFunction();
-    } else if (a is b) {
+    } else if a is b then {
         localFunction();
     } else {
         localFunction();
@@ -168,14 +167,14 @@ let identifierPattern2() Void = {
 
 let wildcardPattern() Int = {
     let a = 1;
-    if (a is _) 123 else 123
+    if a is _ then 123 else 123
 };
 
 let wildcardPattern2() Void = {
     let a = 1;
-    if (a is _) {
+    if a is _ then {
         localFunction();
-    } else if (a is _) {
+    } else if a is _ then {
         localFunction();
     } else {
         localFunction();
@@ -184,14 +183,14 @@ let wildcardPattern2() Void = {
 
 let literalPattern() Int = {
     let a = 1;
-    if (a is 1) 123 else 123
+    if a is 1 then 123 else 123
 };
 
 let literalPattern2() Void = {
     let a = 1;
-    if (a is 1) {
+    if a is 1 then {
         localFunction();
-    } else if (a is 1) {
+    } else if a is 1 then {
         localFunction();
     } else {
         localFunction();
@@ -218,7 +217,7 @@ def None[T Any]() Option[T];
 let genericsEnum() Int = {
     let x Option[Int] = Some[Int](123);
     let y Option[Int] = Some[Int](123);
-    if (x is Some[Int] v) v.value else 0
+    if x is Some[Int] v then v.value else 0
 };
 
 def GenericsInterface[T1 Any, T2 Any];
@@ -277,16 +276,22 @@ def EqFoo() Eq[EqFoo] {
     eq(other EqFoo) Bool = true;
 };
 
+def EqBar() I1;
+
+ext EqBar Eq[EqBar] {
+    eq(other EqBar) Bool = true;
+};
+
 def EqPair[T1 Eq[T1], T2 Eq[T2]](first T1, second T2) Eq[EqPair[T1, T2]] {
     eq(other EqPair[T1, T2]) Bool = first.eq(other.first) && second.eq(other.second);
 };
 
-/*
-def EqPair[T1 Any, T2 Any](first T1, second T2);
-ext EqPair[T1 Eq[T1], T2 Eq[T2]] Eq[EqPair[T1, T2]] {
-    eq(other EqPair[T1, T2]) Bool = first.eq(other.first) && second.eq(other.second);
+def EqPair2[T1 Any, T2 Any](first T1, second T2);
+
+ext EqPair2[T1 Eq[T1], T2 Eq[T2]] Eq[EqPair2[T1, T2]] {
+    eq(other EqPair2[T1, T2]) Bool = first.eq(other.first) && second.eq(other.second);
 };
-*/
+
 let complicatedGenericsType[T Eq[T]](a T, b T) Bool = {
     a.eq(b)
 };
