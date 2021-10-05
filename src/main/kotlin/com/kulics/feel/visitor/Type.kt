@@ -81,8 +81,6 @@ sealed interface ConstraintType
 
 class TypeParameter(override val name: String, var constraint: ConstraintType) : Type() {
     override val uniqueName: String = "For_All_${name}"
-
-    var constraintObjectTypeName: String = ""
 }
 
 fun typeSubstitution(type: Type, typeMap: Map<String, Type>): Type {

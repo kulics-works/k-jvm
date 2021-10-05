@@ -32,8 +32,8 @@ class KotlinCodeGenerator : CodeGenerator {
             """
         inline fun <reified T> Any.castOrThrow(): T = this as T
         inline fun <reified T> Any.castOrNull(): T? = this as? T
-        inline fun<reified T> newArray(size: Int, initValue: T): Array<T> = Array(size) { initValue };
-        inline fun<reified T> emptyArray(): Array<T> = arrayOf();$Wrap
+        inline fun <reified T> newArray(size: Int, initValue: T): Array<T> = Array(size) { initValue };
+        inline fun <reified T> emptyArray(): Array<T> = arrayOf();$Wrap
     """.trimIndent()
         )
         node.declarations.forEach {
@@ -54,9 +54,12 @@ class KotlinCodeGenerator : CodeGenerator {
 
     override fun visit(node: GlobalRecordDeclarationNode) {
         records[node.type] = RecordDeclaration(
-            node.type, node.typeParameter, node.fields, node.methods.toMutableList(), if (node.implements != null) {
-                mutableListOf(node.implements)
-            } else mutableListOf()
+            node.type,
+            node.typeParameter,
+            node.fields,
+            node.methods.toMutableList(),
+            if (node.implements != null) mutableListOf(node.implements)
+            else mutableListOf()
         )
     }
 

@@ -3,18 +3,18 @@ package com.kulics.feel.visitor
 import com.kulics.feel.grammar.FeelParser.*
 import com.kulics.feel.node.*
 
-internal fun DelegateVisitor.visitProgram(ctx: ProgramContext): ProgramNode {
+fun DelegateVisitor.visitProgram(ctx: ProgramContext): ProgramNode {
     return ProgramNode(visitModuleDeclaration(ctx.moduleDeclaration()),
         ctx.globalDeclaration().map {
             visitGlobalDeclaration(it)
         })
 }
 
-internal fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContext): ModuleDeclarationNode {
+fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContext): ModuleDeclarationNode {
     return ModuleDeclarationNode(visitIdentifier(ctx.identifier()))
 }
 
-internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): DeclarationNode {
+fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): DeclarationNode {
     return when (val declaration = ctx.getChild(0)) {
         is GlobalVariableDeclarationContext -> visitGlobalVariableDeclaration(declaration)
         is GlobalFunctionDeclarationContext -> visitGlobalFunctionDeclaration(declaration)
@@ -25,7 +25,7 @@ internal fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContex
     }
 }
 
-internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): GlobalVariableDeclarationNode {
+fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): GlobalVariableDeclarationNode {
     val idName = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
@@ -42,7 +42,7 @@ internal fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableD
     return GlobalVariableDeclarationNode(id, expr)
 }
 
-internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): GlobalFunctionDeclarationNode {
+fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): GlobalFunctionDeclarationNode {
     val idName = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
@@ -122,7 +122,7 @@ internal fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionD
     }
 }
 
-internal fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): Pair<ArrayList<Identifier>, String> {
+fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): Pair<ArrayList<Identifier>, String> {
     val params = ctx.parameter()
     val buf = StringBuilder()
     val ids = ArrayList<Identifier>()
@@ -142,22 +142,22 @@ internal fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): Pair
     return ids to buf.toString()
 }
 
-internal fun DelegateVisitor.visitParameter(ctx: ParameterContext): Identifier {
+fun DelegateVisitor.visitParameter(ctx: ParameterContext): Identifier {
     val id = visitIdentifier(ctx.identifier())
     val type = checkType(visitType(ctx.type()))
     return Identifier(id, type, IdentifierKind.Immutable)
 }
 
-internal fun DelegateVisitor.visitTypeParameterList(ctx: TypeParameterListContext): List<TypeParameter> {
+fun DelegateVisitor.visitTypeParameterList(ctx: TypeParameterListContext): List<TypeParameter> {
     return ctx.typeParameter().map { visitTypeParameter(it) }
 }
 
-internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter {
+fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter {
     val idName = visitIdentifier(ctx.identifier())
     val typeParameter = TypeParameter(idName, builtinTypeAny)
     addType(typeParameter)
     val typeNode = visitType(ctx.type())
-    val (type, constraintTypeName) = when (val targetType = getType(typeNode.id)) {
+    val type = when (val targetType = getType(typeNode.id)) {
         null -> {
             println("type: '${typeNode.id}' is undefined")
             throw CompilingCheckException()
@@ -178,16 +178,12 @@ internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): Type
                     addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
                 }
                 instanceType
-            } to "${targetType.name}ConstraintObject<${
-                if (list.isEmpty()) idName
-                else joinString(listOf(idName).plus(list.map { it.generateTypeName() })) { it }
-            }>"
+            }
         }
-        else -> targetType to "${targetType.name}ConstraintObject<${idName}>"
+        else -> targetType
     }
     return if (type is ConstraintType) {
         typeParameter.constraint = type
-        typeParameter.constraintObjectTypeName = constraintTypeName
         typeParameter
     } else {
         println("the constraint of '${idName}' is not interface")
@@ -195,7 +191,7 @@ internal fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): Type
     }
 }
 
-internal fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationContext): GlobalRecordDeclarationNode {
+fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationContext): GlobalRecordDeclarationNode {
     val idName = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(idName) || isRedefineType(idName)) {
         println("identifier: '$idName' is redefined")
@@ -368,11 +364,11 @@ private fun DelegateVisitor.checkMemberImplement(
     }
 }
 
-internal fun DelegateVisitor.visitFieldList(ctx: FieldListContext): List<Identifier> {
+fun DelegateVisitor.visitFieldList(ctx: FieldListContext): List<Identifier> {
     return ctx.field().map { visitField(it) }
 }
 
-internal fun DelegateVisitor.visitField(ctx: FieldContext): Identifier {
+fun DelegateVisitor.visitField(ctx: FieldContext): Identifier {
     return Identifier(
         visitIdentifier(ctx.identifier()),
         checkType(visitType(ctx.type())),
@@ -380,11 +376,11 @@ internal fun DelegateVisitor.visitField(ctx: FieldContext): Identifier {
     )
 }
 
-internal fun DelegateVisitor.visitMethodList(ctx: MethodListContext): List<MethodNode> {
+fun DelegateVisitor.visitMethodList(ctx: MethodListContext): List<MethodNode> {
     return ctx.method().map { visitMethod(it) }
 }
 
-internal fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
+fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
     val idName = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
@@ -412,7 +408,7 @@ internal fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
     return MethodNode(id, params.first, returnType, expr, false)
 }
 
-internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): GlobalInterfaceDeclarationNode {
+fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): GlobalInterfaceDeclarationNode {
     val idName = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
@@ -467,11 +463,11 @@ internal fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfac
     }
 }
 
-internal fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): List<VirtualMethodNode> {
+fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): List<VirtualMethodNode> {
     return ctx.virtualMethod().map { visitVirtualMethod(it) }
 }
 
-internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): VirtualMethodNode {
+fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): VirtualMethodNode {
     val idName = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
@@ -505,7 +501,7 @@ internal fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): Virt
     return node
 }
 
-internal fun DelegateVisitor.visitGlobalExtensionDeclaration(ctx: GlobalExtensionDeclarationContext): GlobalExtensionDeclarationNode {
+fun DelegateVisitor.visitGlobalExtensionDeclaration(ctx: GlobalExtensionDeclarationContext): GlobalExtensionDeclarationNode {
     val idName = visitIdentifier(ctx.identifier())
     val type = getType(idName)
     if (type == null) {
@@ -514,7 +510,40 @@ internal fun DelegateVisitor.visitGlobalExtensionDeclaration(ctx: GlobalExtensio
     }
     val typeParameterList = ctx.typeParameterList()
     return if (typeParameterList != null) {
-        throw CompilingCheckException()
+        if (type !is GenericsType) {
+            println("the type '${type.name}' is not a generics type")
+            throw CompilingCheckException()
+        }
+        val typeParameters = visitTypeParameterList(typeParameterList)
+        val instanceType = type.typeConstructor(typeParameters)
+        if (instanceType !is RecordType) {
+            println("the type '${type.name}' is not a record type")
+            throw CompilingCheckException()
+        }
+        pushScope()
+        for ((_, id) in instanceType.member) {
+            addIdentifier(id)
+        }
+        val methods = if (ctx.methodList() != null) {
+            val methods = visitMethodList(ctx.methodList())
+            for (v in methods) {
+                if (instanceType.member.contains(v.id.name)) {
+                    println("the member: '${v.id.name}' of type '${type.name}' is redefined")
+                    throw CompilingCheckException()
+                }
+                instanceType.member[v.id.name] = v.id
+            }
+            methods
+        } else listOf()
+        val (interfaceType, overrideMembers) = checkImplementInterface(ctx.type(), instanceType.member, type)
+        popScope()
+        GlobalExtensionDeclarationNode(type, typeParameters, methods.map {
+            if (overrideMembers.contains(it.id.name)) {
+                MethodNode(it.id, it.params, it.returnType, it.body, true)
+            } else {
+                it
+            }
+        }, interfaceType)
     } else {
         if (type !is RecordType) {
             println("the type '${type.name}' is not a record type")

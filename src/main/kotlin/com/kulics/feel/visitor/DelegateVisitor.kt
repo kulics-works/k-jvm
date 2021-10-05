@@ -27,39 +27,39 @@ class DelegateVisitor {
         })
     }
 
-    internal fun hasIdentifier(id: String): Boolean {
+    fun hasIdentifier(id: String): Boolean {
         return scopes.any { it.hasIdentifier(id) }
     }
 
-    internal fun isRedefineIdentifier(id: String): Boolean {
+    fun isRedefineIdentifier(id: String): Boolean {
         return scopes.peek().hasIdentifier(id)
     }
 
-    internal fun addIdentifier(id: Identifier) {
+    fun addIdentifier(id: Identifier) {
         scopes.peek().addIdentifier(id)
     }
 
-    internal fun getIdentifier(id: String): Identifier? {
+    fun getIdentifier(id: String): Identifier? {
         return scopes.firstNotNullOfOrNull { it.getIdentifier(id) }
     }
 
-    internal fun hasType(ty: String): Boolean {
+    fun hasType(ty: String): Boolean {
         return scopes.any { it.hasType(ty) }
     }
 
-    internal fun addType(ty: Type) {
+    fun addType(ty: Type) {
         scopes.peek().addType(ty)
     }
 
-    internal fun getType(ty: String): Type? {
+    fun getType(ty: String): Type? {
         return scopes.firstNotNullOfOrNull { it.getType(ty) }
     }
 
-    internal fun isRedefineType(ty: String): Boolean {
+    fun isRedefineType(ty: String): Boolean {
         return scopes.peek().hasType(ty)
     }
 
-    internal fun addImplementType(subtype: Type, type: Type) {
+    fun addImplementType(subtype: Type, type: Type) {
         val implements = implementMap[subtype]
         if (implements != null) {
             implements.add(type)
@@ -68,7 +68,7 @@ class DelegateVisitor {
         }
     }
 
-    internal fun checkSubtype(subtype: Type, type: Type): Boolean {
+    fun checkSubtype(subtype: Type, type: Type): Boolean {
         val implements = implementMap[subtype]
         if (implements != null) {
             for (v in implements) {
@@ -80,15 +80,15 @@ class DelegateVisitor {
         return false
     }
 
-    internal fun getImplementType(subtype: Type): Set<Type>? {
+    fun getImplementType(subtype: Type): Set<Type>? {
         return implementMap[subtype]
     }
 
-    internal fun pushScope() {
+    fun pushScope() {
         scopes.push(Scope())
     }
 
-    internal fun popScope() {
+    fun popScope() {
         scopes.pop()
     }
 }
@@ -97,27 +97,27 @@ class Scope {
     private val identifiers = HashMap<String, Identifier>()
     private val types = HashMap<String, Type>()
 
-    internal fun addIdentifier(id: Identifier) {
+    fun addIdentifier(id: Identifier) {
         identifiers[id.name] = id
     }
 
-    internal fun hasIdentifier(id: String): Boolean {
+    fun hasIdentifier(id: String): Boolean {
         return identifiers.contains(id)
     }
 
-    internal fun getIdentifier(id: String): Identifier? {
+    fun getIdentifier(id: String): Identifier? {
         return identifiers[id]
     }
 
-    internal fun addType(ty: Type) {
+    fun addType(ty: Type) {
         types[ty.name] = ty
     }
 
-    internal fun hasType(ty: String): Boolean {
+    fun hasType(ty: String): Boolean {
         return types.contains(ty)
     }
 
-    internal fun getType(ty: String): Type? {
+    fun getType(ty: String): Type? {
         return types[ty]
     }
 }

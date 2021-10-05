@@ -54,7 +54,6 @@ statement
 
 expression
     : primaryExpression
-    | parenExpression
     | blockExpression
     | ifExpression
     | expression memberAccessCallSuffix
@@ -125,8 +124,6 @@ primaryExpression
     : literalExpression
     | identifier
     ;
-
-parenExpression: LeftParen expression RightParen;
 
 literalExpression
     : integerExpression

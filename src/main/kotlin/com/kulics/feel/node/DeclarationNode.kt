@@ -1,7 +1,6 @@
 package com.kulics.feel.node
 
 import com.kulics.feel.visitor.*
-import com.kulics.feel.visitor.joinString
 
 sealed class DeclarationNode : Node()
 

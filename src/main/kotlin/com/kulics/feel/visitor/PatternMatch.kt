@@ -3,7 +3,7 @@ package com.kulics.feel.visitor
 import com.kulics.feel.grammar.FeelParser.*
 import com.kulics.feel.node.ExpressionNode
 
-internal fun DelegateVisitor.visitPattern(ctx: PatternContext): Pattern {
+fun DelegateVisitor.visitPattern(ctx: PatternContext): Pattern {
     return when (val pattern = ctx.getChild(0)) {
         is TypePatternContext -> {
             val castType = checkType(visitType(pattern.type()))

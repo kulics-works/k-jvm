@@ -2,7 +2,7 @@ package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser.*
 
-internal fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
+fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
     return when (val stat = ctx.getChild(0)) {
         is VariableDeclarationContext -> visitVariableDeclaration(stat)
         is FunctionDeclarationContext -> visitFunctionDeclaration(stat)
@@ -14,7 +14,7 @@ internal fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
     }
 }
 
-internal fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationContext): String {
+fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationContext): String {
     val idName = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
@@ -36,7 +36,7 @@ internal fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationCo
     return "var $idName: ${type.generateTypeName()} = ${expr.generateCode()}"
 }
 
-internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): String {
+fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): String {
     val id = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(id)) {
         println("identifier: '$id' is redefined")
@@ -81,7 +81,7 @@ internal fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationCo
     }
 }
 
-internal fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {
+fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {
     val idName = visitIdentifier(ctx.identifier())
     val id = getIdentifier(idName)
     if (id == null) {
@@ -101,7 +101,7 @@ internal fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {
     return "${id.name} = ${expr.generateCode()}"
 }
 
-internal fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
+fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
     val cond = visitExpression(ctx.expression())
     if (ctx.pattern() == null) {
         if (cond.type != builtinTypeBool) {
@@ -170,7 +170,7 @@ internal fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
     }
 }
 
-internal fun DelegateVisitor.visitWhileStatement(ctx: WhileStatementContext): String {
+fun DelegateVisitor.visitWhileStatement(ctx: WhileStatementContext): String {
     val cond = visitExpression(ctx.expression())
     if (cond.type != builtinTypeBool) {
         println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
@@ -180,7 +180,7 @@ internal fun DelegateVisitor.visitWhileStatement(ctx: WhileStatementContext): St
     return "while (${cond.generateCode()}) { $block }"
 }
 
-internal fun DelegateVisitor.visitBlock(ctx: BlockContext): String {
+fun DelegateVisitor.visitBlock(ctx: BlockContext): String {
     pushScope()
     val code = ctx.statement().fold(StringBuilder()) { acc, v -> acc.append("${visitStatement(v)};") }.toString()
     popScope()

@@ -4,7 +4,7 @@ import com.kulics.feel.grammar.FeelParser.*
 import com.kulics.feel.node.*
 import org.antlr.v4.runtime.tree.ParseTree
 
-internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): ExpressionNode = when (ctx.childCount) {
+fun DelegateVisitor.visitExpression(ctx: ExpressionContext): ExpressionNode = when (ctx.childCount) {
     1 -> visitSingleExpression(ctx.getChild(0))
     2 -> if (ctx.memberAccessCallSuffix() != null) {
         visitMemberAccessFunctionCallExpression(ctx.expression(0), ctx.memberAccessCallSuffix())
@@ -20,7 +20,6 @@ internal fun DelegateVisitor.visitExpression(ctx: ExpressionContext): Expression
 fun DelegateVisitor.visitSingleExpression(expr: ParseTree): ExpressionNode {
     return when (expr) {
         is PrimaryExpressionContext -> visitPrimaryExpression(expr)
-        is ParenExpressionContext -> visitParenExpression(expr)
         is BlockExpressionContext -> visitBlockExpression(expr)
         is IfExpressionContext -> visitIfExpression(expr)
         else -> throw CompilingCheckException()
@@ -252,7 +251,7 @@ fun checkLogicExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
     }
 }
 
-internal fun DelegateVisitor.visitMemberAccessCallSuffix(ctx: MemberAccessCallSuffixContext): MemberAccessCallSuffix {
+fun DelegateVisitor.visitMemberAccessCallSuffix(ctx: MemberAccessCallSuffixContext): MemberAccessCallSuffix {
     return MemberAccessCallSuffix(
         visitIdentifier(ctx.identifier()),
         ctx.type().map {
@@ -264,21 +263,17 @@ internal fun DelegateVisitor.visitMemberAccessCallSuffix(ctx: MemberAccessCallSu
 
 data class MemberAccessCallSuffix(val memberName: String, val typeArgs: List<Type>, val args: List<ExpressionNode>)
 
-internal fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): Pair<List<Type>, List<ExpressionNode>> {
+fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): Pair<List<Type>, List<ExpressionNode>> {
     return (ctx.type().map {
         checkType(visitType(it))
     }) to (ctx.expression().map { visitExpression(it) })
 }
 
-internal fun DelegateVisitor.visitMemberAccess(ctx: MemberAccessContext): String {
+fun DelegateVisitor.visitMemberAccess(ctx: MemberAccessContext): String {
     return visitIdentifier(ctx.identifier())
 }
 
-internal fun DelegateVisitor.visitParenExpression(ctx: ParenExpressionContext): ExpressionNode {
-    return ParenExpressionNode(visitExpression(ctx.expression()))
-}
-
-internal fun DelegateVisitor.visitPrimaryExpression(ctx: PrimaryExpressionContext): ExpressionNode {
+fun DelegateVisitor.visitPrimaryExpression(ctx: PrimaryExpressionContext): ExpressionNode {
     return if (ctx.literalExpression() != null) {
         visitLiteralExpression(ctx.literalExpression())
     } else {
@@ -293,7 +288,7 @@ internal fun DelegateVisitor.visitPrimaryExpression(ctx: PrimaryExpressionContex
     }
 }
 
-internal fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContext): ExpressionNode {
+fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContext): ExpressionNode {
     return if (ctx.integerExpression() != null) {
         LiteralExpressionNode(ctx.integerExpression().text, builtinTypeInt)
     } else if (ctx.floatExpression() != null) {
@@ -305,7 +300,7 @@ internal fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContex
     }
 }
 
-internal fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): ExpressionNode {
+fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): ExpressionNode {
     val cond = visitExpression(ctx.expression(0))
     return if (ctx.pattern() == null) {
         processIf(ctx, cond)
@@ -386,11 +381,11 @@ private fun DelegateVisitor.processIfPattern(
     }
 }
 
-internal fun DelegateVisitor.visitIdentifierPattern(ctx: IdentifierPatternContext): String {
+fun DelegateVisitor.visitIdentifierPattern(ctx: IdentifierPatternContext): String {
     return visitIdentifier(ctx.identifier())
 }
 
-internal fun DelegateVisitor.visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {
+fun DelegateVisitor.visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {
     pushScope()
     val code = ctx.statement().fold(StringBuilder()) { acc, v -> acc.append("${visitStatement(v)};") }.toString()
     val node = BlockExpressionNode(
