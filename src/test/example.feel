@@ -84,7 +84,7 @@ let assignment Void = {
 
 let whileStat() Void = {
     let mut i = 0;
-    while (i <= 10) {
+    while i <= 10 then {
         i = i + 1;
     };
 };
@@ -292,9 +292,7 @@ ext EqPair2[T1 Eq[T1], T2 Eq[T2]] Eq[EqPair2[T1, T2]] {
     eq(other EqPair2[T1, T2]) Bool = first.eq(other.first) && second.eq(other.second);
 };
 
-let complicatedGenericsType[T Eq[T]](a T, b T) Bool = {
-    a.eq(b)
-};
+let complicatedGenericsType[T Eq[T]](a T, b T) Bool = a.eq(b);
 
 let complicatedGenericsType2() Void = {
     complicatedGenericsType[EqFoo](EqFoo(), EqFoo());
