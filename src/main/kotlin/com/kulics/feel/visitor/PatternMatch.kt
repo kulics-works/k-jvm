@@ -6,7 +6,7 @@ import com.kulics.feel.node.ExpressionNode
 fun DelegateVisitor.visitPattern(ctx: PatternContext): Pattern {
     return when (val pattern = ctx.getChild(0)) {
         is TypePatternContext -> {
-            val castType = checkType(visitType(pattern.type()))
+            val castType = checkTypeNode(visitType(pattern.type()))
             if (pattern.identifierPattern() == null) {
                 println("Unsupported pattern")
                 throw CompilingCheckException()

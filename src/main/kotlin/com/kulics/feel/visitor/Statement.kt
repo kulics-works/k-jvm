@@ -24,7 +24,7 @@ fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationContext): S
     val type = if (ctx.type() == null) {
         expr.type
     } else {
-        val type = checkType(visitType(ctx.type()))
+        val type = checkTypeNode(visitType(ctx.type()))
         if (cannotAssign(expr.type, type)) {
             println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
             throw CompilingCheckException()
@@ -59,7 +59,7 @@ fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): S
         addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
         "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
     } else {
-        val returnType = checkType(visitType(ctx.type()))
+        val returnType = checkTypeNode(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
         val type = FunctionType(params.first.map { it.type }, returnType)
         addIdentifier(Identifier(id, type, IdentifierKind.Immutable))

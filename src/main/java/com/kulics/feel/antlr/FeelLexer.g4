@@ -54,6 +54,7 @@ Then: 'then';
 Else: 'else';
 While: 'while';
 Is: 'is';
+Fn: 'fn';
 
 FloatLiteral: Digit (Exponent | '.' Digit Exponent?);
 DecimalLiteral: Digit;

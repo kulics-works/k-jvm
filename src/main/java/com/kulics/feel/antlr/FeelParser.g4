@@ -134,7 +134,12 @@ literalExpression
 
 type
     : identifier (LeftBrack type (Comma type)* RightBrack)?
+    | functionType
     ;
+
+functionType: Fn LeftParen parameterTypeList? RightParen type;
+
+parameterTypeList: type (Comma type)*;
 
 identifier: Identifier;
 

@@ -255,7 +255,7 @@ fun DelegateVisitor.visitMemberAccessCallSuffix(ctx: MemberAccessCallSuffixConte
     return MemberAccessCallSuffix(
         visitIdentifier(ctx.identifier()),
         ctx.type().map {
-            checkType(visitType(it))
+            checkTypeNode(visitType(it))
         },
         ctx.expression().map { visitExpression(it) }
     )
@@ -265,7 +265,7 @@ data class MemberAccessCallSuffix(val memberName: String, val typeArgs: List<Typ
 
 fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): Pair<List<Type>, List<ExpressionNode>> {
     return (ctx.type().map {
-        checkType(visitType(it))
+        checkTypeNode(visitType(it))
     }) to (ctx.expression().map { visitExpression(it) })
 }
 

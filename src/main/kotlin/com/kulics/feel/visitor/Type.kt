@@ -22,7 +22,7 @@ sealed class Type {
 
 class FunctionType(val parameterTypes: List<Type>, val returnType: Type, val isGenericType: Boolean = false) : Type() {
     override val name: String =
-        "Func[${joinString(parameterTypes) { it.name }},${returnType.name}]"
+        "fn(${joinString(parameterTypes) { it.name }}) ${returnType.name}"
 
     override fun generateTypeName(): String =
         "(${joinString(parameterTypes) { it.generateTypeName() }})->${returnType.generateTypeName()}"
@@ -127,20 +127,29 @@ fun typeSubstitutionImplement(type: Type, typeMap: Map<String, Type>): Type {
     }
 }
 
-internal fun DelegateVisitor.checkType(typeNode: TypeNode): Type {
-    return when (val targetType = getType(typeNode.id)) {
+fun DelegateVisitor.checkTypeNode(node: TypeNode): Type {
+    return when (node) {
+        is FunctionTypeNode -> FunctionType(node.parameterTypes.map {
+            checkTypeNode(it)
+        }, checkTypeNode(node.returnType))
+        is NominalTypeNode -> checkNominalTypeNode(node)
+    }
+}
+
+fun DelegateVisitor.checkNominalTypeNode(node: NominalTypeNode): Type {
+    return when (val targetType = getType(node.id)) {
         null -> {
-            println("type: '${typeNode.id}' is undefined")
+            println("type: '${node.id}' is undefined")
             throw CompilingCheckException()
         }
         is GenericsType -> {
-            if (typeNode.typeArguments.isEmpty() || targetType.typeParameter.size != typeNode.typeArguments.size) {
-                println("the type args size need '${targetType.typeParameter.size}', but found '${typeNode.typeArguments.size}'")
+            if (node.typeArguments.isEmpty() || targetType.typeParameter.size != node.typeArguments.size) {
+                println("the type args size need '${targetType.typeParameter.size}', but found '${node.typeArguments.size}'")
                 throw CompilingCheckException()
             }
             val list = mutableListOf<Type>()
-            for (v in typeNode.typeArguments) {
-                list.add(checkType(v))
+            for (v in node.typeArguments) {
+                list.add(checkTypeNode(v))
             }
             val instanceType = targetType.typeConstructor(list)
             getImplementType(targetType)?.forEach {
@@ -152,24 +161,44 @@ internal fun DelegateVisitor.checkType(typeNode: TypeNode): Type {
     }
 }
 
-internal inline fun <T> joinString(list: List<T>, splitSymbol: String = ", ", select: (T) -> String): String {
+inline fun <T> joinString(list: List<T>, splitSymbol: String = ", ", select: (T) -> String): String {
     return list.foldIndexed(StringBuffer()) { index, acc, type ->
         if (index == 0) acc.append(select(type))
         else acc.append(splitSymbol).append(select(type))
     }.toString()
 }
 
-internal fun DelegateVisitor.visitType(ctx: TypeContext): TypeNode {
-    return TypeNode(visitIdentifier(ctx.identifier()), ctx.type().map { visitType(it) })
+fun DelegateVisitor.visitType(ctx: TypeContext): TypeNode {
+    if (ctx.functionType() != null) {
+        return visitFunctionType(ctx.functionType())
+    }
+    return NominalTypeNode(visitIdentifier(ctx.identifier()), ctx.type().map { visitType(it) })
 }
 
-class TypeNode(val id: String, val typeArguments: List<TypeNode>)
+fun DelegateVisitor.visitFunctionType(ctx: FunctionTypeContext): FunctionTypeNode {
+    return FunctionTypeNode(
+        visitParameterTypeList(ctx.parameterTypeList()),
+        visitType(ctx.type())
+    )
+}
 
-internal fun DelegateVisitor.cannotAssign(rightValue: Type, leftValue: Type): Boolean {
+fun DelegateVisitor.visitParameterTypeList(ctx: ParameterTypeListContext?): List<TypeNode> {
+    return ctx?.type()?.map {
+        visitType(it)
+    } ?: listOf()
+}
+
+sealed interface TypeNode
+
+class NominalTypeNode(val id: String, val typeArguments: List<TypeNode>) : TypeNode
+
+class FunctionTypeNode(val parameterTypes: List<TypeNode>, val returnType: TypeNode) : TypeNode
+
+fun DelegateVisitor.cannotAssign(rightValue: Type, leftValue: Type): Boolean {
     return !canAssignTo(rightValue, leftValue)
 }
 
-internal fun DelegateVisitor.canAssignTo(rightValue: Type, leftValue: Type): Boolean {
+fun DelegateVisitor.canAssignTo(rightValue: Type, leftValue: Type): Boolean {
     if (rightValue == leftValue) {
         return true
     }

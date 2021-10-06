@@ -32,7 +32,7 @@ fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclaratio
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
-    val type = checkType(visitType(ctx.type()))
+    val type = checkTypeNode(visitType(ctx.type()))
     if (cannotAssign(expr.type, type)) {
         println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
         throw CompilingCheckException()
@@ -52,7 +52,7 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
     return if (typeParameterList != null) {
         pushScope()
         val typeParameter = visitTypeParameterList(typeParameterList)
-        val returnType = checkType(visitType(ctx.type()))
+        val returnType = checkTypeNode(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
         val type = GenericsType(idName, typeParameter) { li ->
             val typeMap = mutableMapOf<String, Type>()
@@ -93,7 +93,7 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
             expr
         )
     } else {
-        val returnType = checkType(visitType(ctx.type()))
+        val returnType = checkTypeNode(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
         val type = FunctionType(params.first.map { it.type }, returnType)
         val id = Identifier(idName, type, IdentifierKind.Immutable)
@@ -144,7 +144,7 @@ fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): Pair<ArrayLis
 
 fun DelegateVisitor.visitParameter(ctx: ParameterContext): Identifier {
     val id = visitIdentifier(ctx.identifier())
-    val type = checkType(visitType(ctx.type()))
+    val type = checkTypeNode(visitType(ctx.type()))
     return Identifier(id, type, IdentifierKind.Immutable)
 }
 
@@ -156,38 +156,45 @@ fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter
     val idName = visitIdentifier(ctx.identifier())
     val typeParameter = TypeParameter(idName, builtinTypeAny)
     addType(typeParameter)
-    val typeNode = visitType(ctx.type())
-    val type = when (val targetType = getType(typeNode.id)) {
-        null -> {
-            println("type: '${typeNode.id}' is undefined")
+    return when (val typeNode = visitType(ctx.type())) {
+        is FunctionTypeNode -> {
+            println("the constraint type is not interface")
             throw CompilingCheckException()
         }
-        is GenericsType -> {
-            if (typeNode.typeArguments.isEmpty() || targetType.typeParameter.size != typeNode.typeArguments.size) {
-                println("the type args size need '${targetType.typeParameter.size}', but found '${typeNode.typeArguments.size}'")
+        is NominalTypeNode -> {
+            val type = when (val targetType = getType(typeNode.id)) {
+                null -> {
+                    println("type: '${typeNode.id}' is undefined")
+                    throw CompilingCheckException()
+                }
+                is GenericsType -> {
+                    if (typeNode.typeArguments.isEmpty() || targetType.typeParameter.size != typeNode.typeArguments.size) {
+                        println("the type args size need '${targetType.typeParameter.size}', but found '${typeNode.typeArguments.size}'")
+                        throw CompilingCheckException()
+                    }
+                    val list = mutableListOf<Type>()
+                    for (v in typeNode.typeArguments) {
+                        list.add(checkTypeNode(v))
+                    }
+                    GenericsType(targetType.name, listOf(typeParameter), list) { li ->
+                        val typeMap = mutableMapOf<String, Type>(typeParameter.name to li[0])
+                        val instanceType = targetType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
+                        getImplementType(targetType)?.forEach {
+                            addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
+                        }
+                        instanceType
+                    }
+                }
+                else -> targetType
+            }
+            if (type is ConstraintType) {
+                typeParameter.constraint = type
+                typeParameter
+            } else {
+                println("the constraint of '${idName}' is not interface")
                 throw CompilingCheckException()
             }
-            val list = mutableListOf<Type>()
-            for (v in typeNode.typeArguments) {
-                list.add(checkType(v))
-            }
-            GenericsType(targetType.name, listOf(typeParameter), list) { li ->
-                val typeMap = mutableMapOf<String, Type>(typeParameter.name to li[0])
-                val instanceType = targetType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
-                getImplementType(targetType)?.forEach {
-                    addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
-                }
-                instanceType
-            }
         }
-        else -> targetType
-    }
-    return if (type is ConstraintType) {
-        typeParameter.constraint = type
-        typeParameter
-    } else {
-        println("the constraint of '${idName}' is not interface")
-        throw CompilingCheckException()
     }
 }
 
@@ -292,47 +299,52 @@ private fun DelegateVisitor.checkImplementInterface(
     if (interfaceType == null) {
         return null to mutableMapOf()
     }
-    val typeNode = visitType(interfaceType)
-    return when (val targetInterfaceType = getType(typeNode.id)) {
-        null -> {
-            println("type: '${typeNode.id}' is undefined")
+    return when (val typeNode = visitType(interfaceType)) {
+        is FunctionTypeNode -> {
+            println("the implements type is not interface")
             throw CompilingCheckException()
         }
-        is GenericsType -> {
-            if (typeNode.typeArguments.isEmpty() ||
-                targetInterfaceType.typeParameter.size != typeNode.typeArguments.size
-            ) {
-                println("the type args size need '${targetInterfaceType.typeParameter.size}', but found '${typeNode.typeArguments.size}'")
+        is NominalTypeNode -> when (val targetInterfaceType = getType(typeNode.id)) {
+            null -> {
+                println("type: '${typeNode.id}' is undefined")
                 throw CompilingCheckException()
             }
-            val list = mutableListOf<Type>()
-            for (v in typeNode.typeArguments) {
-                list.add(checkType(v))
-            }
-            val instanceType = targetInterfaceType.typeConstructor(list)
-            val mapType = if (implementType is GenericsType) {
-                val typeParameter = implementType.typeParameter
-                GenericsType(targetInterfaceType.name, typeParameter, list) { li ->
-                    val typeMap = mutableMapOf<String, Type>()
-                    for (i in li.indices) {
-                        typeMap[typeParameter[i].name] = li[i]
-                    }
-                    targetInterfaceType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
+            is GenericsType -> {
+                if (typeNode.typeArguments.isEmpty() ||
+                    targetInterfaceType.typeParameter.size != typeNode.typeArguments.size
+                ) {
+                    println("the type args size need '${targetInterfaceType.typeParameter.size}', but found '${typeNode.typeArguments.size}'")
+                    throw CompilingCheckException()
                 }
-            } else {
-                instanceType
+                val list = mutableListOf<Type>()
+                for (v in typeNode.typeArguments) {
+                    list.add(checkTypeNode(v))
+                }
+                val instanceType = targetInterfaceType.typeConstructor(list)
+                val mapType = if (implementType is GenericsType) {
+                    val typeParameter = implementType.typeParameter
+                    GenericsType(targetInterfaceType.name, typeParameter, list) { li ->
+                        val typeMap = mutableMapOf<String, Type>()
+                        for (i in li.indices) {
+                            typeMap[typeParameter[i].name] = li[i]
+                        }
+                        targetInterfaceType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
+                    }
+                } else {
+                    instanceType
+                }
+                getImplementType(targetInterfaceType)?.forEach {
+                    addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
+                }
+                val overrideMember = checkMemberImplement(instanceType, members)
+                addImplementType(implementType, mapType)
+                instanceType to overrideMember
             }
-            getImplementType(targetInterfaceType)?.forEach {
-                addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
+            else -> {
+                val overrideMember = checkMemberImplement(targetInterfaceType, members)
+                addImplementType(implementType, targetInterfaceType)
+                targetInterfaceType to overrideMember
             }
-            val overrideMember = checkMemberImplement(instanceType, members)
-            addImplementType(implementType, mapType)
-            instanceType to overrideMember
-        }
-        else -> {
-            val overrideMember = checkMemberImplement(targetInterfaceType, members)
-            addImplementType(implementType, targetInterfaceType)
-            targetInterfaceType to overrideMember
         }
     }
 }
@@ -371,7 +383,7 @@ fun DelegateVisitor.visitFieldList(ctx: FieldListContext): List<Identifier> {
 fun DelegateVisitor.visitField(ctx: FieldContext): Identifier {
     return Identifier(
         visitIdentifier(ctx.identifier()),
-        checkType(visitType(ctx.type())),
+        checkTypeNode(visitType(ctx.type())),
         if (ctx.Mut() == null) IdentifierKind.Immutable else IdentifierKind.Mutable
     )
 }
@@ -386,7 +398,7 @@ fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
-    val returnType = checkType(visitType(ctx.type()))
+    val returnType = checkTypeNode(visitType(ctx.type()))
     val params = visitParameterList(ctx.parameterList())
     val type = FunctionType(params.first.map { it.type }, returnType)
     val id = Identifier(idName, type, IdentifierKind.Immutable)
@@ -473,7 +485,7 @@ fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): VirtualMethod
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
-    val returnType = checkType(visitType(ctx.type()))
+    val returnType = checkTypeNode(visitType(ctx.type()))
     val params = visitParameterList(ctx.parameterList())
     val type = FunctionType(params.first.map { it.type }, returnType)
     val id = VirtualIdentifier(idName, type, IdentifierKind.Immutable)

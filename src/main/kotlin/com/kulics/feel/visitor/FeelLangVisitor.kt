@@ -147,6 +147,14 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitType(ctx)
     }
 
+    override fun visitFunctionType(ctx: FunctionTypeContext): FunctionTypeNode {
+        return delegate.visitFunctionType(ctx)
+    }
+
+    override fun visitParameterTypeList(ctx: ParameterTypeListContext): List<TypeNode> {
+        return delegate.visitParameterTypeList(ctx)
+    }
+
     override fun visitProgram(ctx: ProgramContext): ProgramNode {
         return delegate.visitProgram(ctx)
     }
