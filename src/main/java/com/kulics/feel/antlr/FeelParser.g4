@@ -63,6 +63,7 @@ expression
     | expression additiveOperator expression
     | expression compareOperator expression
     | expression logicOperator expression
+    | lambdaExpression
     ;
 
 variableDeclaration: Let Mut? identifier type? Equal expression;
@@ -75,6 +76,8 @@ callSuffix: (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Co
 memberAccess: Dot identifier;
 
 assignment: identifier Equal expression;
+
+lambdaExpression: Fn parameterList type? Equal expression;
 
 ifStatement
     : If expression (Is pattern)? Then block (Else (block | ifStatement))?

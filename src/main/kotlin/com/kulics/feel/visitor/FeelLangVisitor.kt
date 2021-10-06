@@ -99,6 +99,10 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitFunctionDeclaration(ctx)
     }
 
+    override fun visitLambdaExpression(ctx: LambdaExpressionContext): LambdaExpressionNode {
+        return delegate.visitLambdaExpression(ctx)
+    }
+
     override fun visitAssignment(ctx: AssignmentContext): String {
         return delegate.visitAssignment(ctx)
     }

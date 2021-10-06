@@ -87,6 +87,18 @@ class BlockExpressionNode(val code: String, val expr: ExpressionNode?) : Express
     }
 }
 
+class LambdaExpressionNode(
+    val parameterTypes: List<ParameterDeclarationNode>,
+    val returnType: Type,
+    val body: ExpressionNode
+) : ExpressionNode(FunctionType(parameterTypes.map { it.paramType }, returnType)) {
+    override fun generateCode(): String {
+        return "fun (${
+            joinString(parameterTypes) { "${it.id.name}: ${it.paramType.generateTypeName()}" }
+        }): ${returnType.generateTypeName()} {${Wrap}return (${body.generateCode()});$Wrap}$Wrap "
+    }
+}
+
 class CallExpressionNode(val expr: ExpressionNode, val args: List<ExpressionNode>, type: Type) : ExpressionNode(type) {
     override fun generateCode(): String {
         return "${expr.generateCode()}(${

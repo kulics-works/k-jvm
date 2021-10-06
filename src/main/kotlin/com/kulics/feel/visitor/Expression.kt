@@ -22,6 +22,7 @@ fun DelegateVisitor.visitSingleExpression(expr: ParseTree): ExpressionNode {
         is PrimaryExpressionContext -> visitPrimaryExpression(expr)
         is BlockExpressionContext -> visitBlockExpression(expr)
         is IfExpressionContext -> visitIfExpression(expr)
+        is LambdaExpressionContext -> visitLambdaExpression(expr)
         else -> throw CompilingCheckException()
     }
 }
@@ -396,4 +397,44 @@ fun DelegateVisitor.visitBlockExpression(ctx: BlockExpressionContext): BlockExpr
     )
     popScope()
     return node
+}
+
+fun DelegateVisitor.visitLambdaExpression(ctx: LambdaExpressionContext): LambdaExpressionNode {
+    return if (ctx.type() == null) {
+        val params = visitParameterList(ctx.parameterList())
+        pushScope()
+        for (v in params.first) {
+            if (isRedefineIdentifier(v.name)) {
+                println("identifier: '${v.name}' is redefined")
+                throw CompilingCheckException()
+            }
+            addIdentifier(v)
+        }
+        val expr = visitExpression(ctx.expression())
+        val returnType = expr.type
+        popScope()
+        LambdaExpressionNode(params.first.map {
+            ParameterDeclarationNode(it, it.type)
+        }, returnType, expr)
+    } else {
+        val returnType = checkTypeNode(visitType(ctx.type()))
+        val params = visitParameterList(ctx.parameterList())
+        pushScope()
+        for (v in params.first) {
+            if (isRedefineIdentifier(v.name)) {
+                println("identifier: '${v.name}' is redefined")
+                throw CompilingCheckException()
+            }
+            addIdentifier(v)
+        }
+        val expr = visitExpression(ctx.expression())
+        if (cannotAssign(expr.type, returnType)) {
+            println("the return is '${returnType.name}', but find '${expr.type.name}'")
+            throw CompilingCheckException()
+        }
+        popScope()
+        LambdaExpressionNode(params.first.map {
+            ParameterDeclarationNode(it, it.type)
+        }, returnType, expr)
+    }
 }
