@@ -68,18 +68,6 @@ class DelegateVisitor {
         }
     }
 
-    fun checkSubtype(subtype: Type, type: Type): Boolean {
-        val implements = implementMap[subtype]
-        if (implements != null) {
-            for (v in implements) {
-                if (v.uniqueName == type.uniqueName) {
-                    return true
-                }
-            }
-        }
-        return false
-    }
-
     fun getImplementType(subtype: Type): Set<Type>? {
         return implementMap[subtype]
     }

@@ -13,10 +13,12 @@ sealed class Type {
     }
 
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (other !is Type) return false
-        if (uniqueName != other.uniqueName) return false
-        return true
+        return when {
+            this === other -> true
+            other !is Type -> false
+            uniqueName != other.uniqueName -> false
+            else -> true
+        }
     }
 }
 
@@ -203,10 +205,30 @@ fun DelegateVisitor.canAssignTo(rightValue: Type, leftValue: Type): Boolean {
         return true
     }
     if (leftValue is InterfaceType) {
-        if (rightValue is TypeParameter && rightValue.constraint == leftValue) {
-            return true
+        return checkSubtype(
+            if (rightValue is TypeParameter) when (val ty = rightValue.constraint) {
+                is InterfaceType -> ty
+                is GenericsType -> ty.typeConstructor(listOf(rightValue))
+            } else rightValue, leftValue
+        )
+    }
+    return false
+}
+
+fun DelegateVisitor.checkSubtype(subtype: Type, type: Type): Boolean {
+    if (type == builtinTypeAny) {
+        return true
+    }
+    if (type == subtype) {
+        return true
+    }
+    val implements = getImplementType(subtype)
+    if (implements != null) {
+        for (v in implements) {
+            if (v.uniqueName == type.uniqueName) {
+                return true
+            }
         }
-        return checkSubtype(rightValue, leftValue)
     }
     return false
 }

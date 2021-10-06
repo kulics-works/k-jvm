@@ -287,11 +287,11 @@ def EqPair[T1 Eq[T1], T2 Eq[T2]](first T1, second T2) Eq[EqPair[T1, T2]] {
 };
 
 def EqPair2[T1 Any, T2 Any](first T1, second T2);
-/*
+
 ext EqPair2[T1 Eq[T1], T2 Eq[T2]] Eq[EqPair2[T1, T2]] {
     eq(other EqPair2[T1, T2]) Bool = first.eq(other.first) && second.eq(other.second);
 };
-*/
+
 let complicatedGenericsType[T Eq[T]](a T, b T) Bool = a.eq(b);
 
 let complicatedGenericsType2() Void = {
@@ -299,6 +299,7 @@ let complicatedGenericsType2() Void = {
     let a = EqPair[EqFoo, EqFoo](EqFoo(), EqFoo());
     complicatedGenericsType[EqPair[EqFoo, EqFoo]](a, a);
     let b Eq[EqPair[EqFoo, EqFoo]] = a;
+    let c Eq[EqPair2[EqBar, EqBar]] = EqPair2[EqBar, EqBar](EqBar(), EqBar());
 };
 
 let functionType(x Int, f fn(Int) Int) Int = f(x);
