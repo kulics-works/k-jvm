@@ -185,7 +185,10 @@ fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter
                         instanceType
                     }
                 }
-                else -> targetType
+                else -> if (typeParameter == targetType) {
+                    println("the constraint of '${idName}' can not be it self")
+                    throw CompilingCheckException()
+                } else targetType
             }
             if (type is ConstraintType) {
                 typeParameter.constraint = type
