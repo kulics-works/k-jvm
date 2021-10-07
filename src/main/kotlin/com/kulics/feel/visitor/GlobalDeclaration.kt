@@ -59,7 +59,7 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
             for (i in li.indices) {
                 typeMap[typeParameter[i].name] = li[i]
             }
-            typeSubstitution(FunctionType(params.first.map { it.type }, returnType, true), typeMap)
+            typeSubstitution(FunctionType(params.map { it.type }, returnType, true), typeMap)
         }
         popScope()
         val id = Identifier(idName, type, IdentifierKind.Immutable)
@@ -72,7 +72,7 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
             }
             addType(v)
         }
-        for (v in params.first) {
+        for (v in params) {
             if (isRedefineIdentifier(v.name)) {
                 println("identifier: '${v.name}' is redefined")
                 throw CompilingCheckException()
@@ -88,18 +88,18 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
         GlobalFunctionDeclarationNode(
             id,
             typeParameter,
-            params.first.map { ParameterDeclarationNode(it, it.type) },
+            params.map { ParameterDeclarationNode(it, it.type) },
             returnType,
             expr
         )
     } else {
         val returnType = checkTypeNode(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
-        val type = FunctionType(params.first.map { it.type }, returnType)
+        val type = FunctionType(params.map { it.type }, returnType)
         val id = Identifier(idName, type, IdentifierKind.Immutable)
         addIdentifier(id)
         pushScope()
-        for (v in params.first) {
+        for (v in params) {
             if (isRedefineIdentifier(v.name)) {
                 println("identifier: '${v.name}' is redefined")
                 throw CompilingCheckException()
@@ -115,31 +115,15 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
         GlobalFunctionDeclarationNode(
             id,
             listOf(),
-            params.first.map { ParameterDeclarationNode(it, it.type) },
+            params.map { ParameterDeclarationNode(it, it.type) },
             returnType,
             expr
         )
     }
 }
 
-fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): Pair<ArrayList<Identifier>, String> {
-    val params = ctx.parameter()
-    val buf = StringBuilder()
-    val ids = ArrayList<Identifier>()
-    if (params.size > 0) {
-        val first = visitParameter(params[0])
-        fun genParam(id: Identifier): String {
-            return "${id.name}: ${id.type.generateTypeName()}"
-        }
-        buf.append(genParam(first))
-        ids.add(first)
-        for (i in 1 until params.size) {
-            val id = visitParameter(params[i])
-            ids.add(id)
-            buf.append(", ${genParam(id)}")
-        }
-    }
-    return ids to buf.toString()
+fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): List<Identifier> {
+    return ctx.parameter().map { visitParameter(it) }
 }
 
 fun DelegateVisitor.visitParameter(ctx: ParameterContext): Identifier {
@@ -403,11 +387,11 @@ fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
     }
     val returnType = checkTypeNode(visitType(ctx.type()))
     val params = visitParameterList(ctx.parameterList())
-    val type = FunctionType(params.first.map { it.type }, returnType)
+    val type = FunctionType(params.map { it.type }, returnType)
     val id = Identifier(idName, type, IdentifierKind.Immutable)
     addIdentifier(id)
     pushScope()
-    for (v in params.first) {
+    for (v in params) {
         if (isRedefineIdentifier(v.name)) {
             println("identifier: '${v.name}' is redefined")
             throw CompilingCheckException()
@@ -420,7 +404,7 @@ fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
         throw CompilingCheckException()
     }
     popScope()
-    return MethodNode(id, params.first, returnType, expr, false)
+    return MethodNode(id, params, returnType, expr, false)
 }
 
 fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): GlobalInterfaceDeclarationNode {
@@ -490,11 +474,11 @@ fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): VirtualMethod
     }
     val returnType = checkTypeNode(visitType(ctx.type()))
     val params = visitParameterList(ctx.parameterList())
-    val type = FunctionType(params.first.map { it.type }, returnType)
+    val type = FunctionType(params.map { it.type }, returnType)
     val id = VirtualIdentifier(idName, type, IdentifierKind.Immutable)
     addIdentifier(id)
     pushScope()
-    for (v in params.first) {
+    for (v in params) {
         if (isRedefineIdentifier(v.name)) {
             println("identifier: '${v.name}' is redefined")
             throw CompilingCheckException()
@@ -508,9 +492,9 @@ fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): VirtualMethod
             throw CompilingCheckException()
         }
         id.hasImplement = true
-        VirtualMethodNode(id, params.first, returnType, expr)
+        VirtualMethodNode(id, params, returnType, expr)
     } else {
-        VirtualMethodNode(id, params.first, returnType, null)
+        VirtualMethodNode(id, params, returnType, null)
     }
     popScope()
     return node

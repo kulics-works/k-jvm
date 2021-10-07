@@ -27,7 +27,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitGlobalExtensionDeclaration(ctx)
     }
 
-    override fun visitParameterList(ctx: ParameterListContext): Pair<ArrayList<Identifier>, String> {
+    override fun visitParameterList(ctx: ParameterListContext): List<Identifier> {
         return delegate.visitParameterList(ctx)
     }
 
@@ -35,7 +35,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitParameter(ctx)
     }
 
-    override fun visitTypeParameterList(ctx: TypeParameterListContext): Any {
+    override fun visitTypeParameterList(ctx: TypeParameterListContext): List<TypeParameter> {
         return delegate.visitTypeParameterList(ctx)
     }
 

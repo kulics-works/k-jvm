@@ -380,7 +380,7 @@ fun DelegateVisitor.visitLambdaExpression(ctx: LambdaExpressionContext): LambdaE
     return if (ctx.type() == null) {
         val params = visitParameterList(ctx.parameterList())
         pushScope()
-        for (v in params.first) {
+        for (v in params) {
             if (isRedefineIdentifier(v.name)) {
                 println("identifier: '${v.name}' is redefined")
                 throw CompilingCheckException()
@@ -390,14 +390,14 @@ fun DelegateVisitor.visitLambdaExpression(ctx: LambdaExpressionContext): LambdaE
         val expr = visitExpression(ctx.expression())
         val returnType = expr.type
         popScope()
-        LambdaExpressionNode(params.first.map {
+        LambdaExpressionNode(params.map {
             ParameterDeclarationNode(it, it.type)
         }, returnType, expr)
     } else {
         val returnType = checkTypeNode(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
         pushScope()
-        for (v in params.first) {
+        for (v in params) {
             if (isRedefineIdentifier(v.name)) {
                 println("identifier: '${v.name}' is redefined")
                 throw CompilingCheckException()
@@ -410,7 +410,7 @@ fun DelegateVisitor.visitLambdaExpression(ctx: LambdaExpressionContext): LambdaE
             throw CompilingCheckException()
         }
         popScope()
-        LambdaExpressionNode(params.first.map {
+        LambdaExpressionNode(params.map {
             ParameterDeclarationNode(it, it.type)
         }, returnType, expr)
     }

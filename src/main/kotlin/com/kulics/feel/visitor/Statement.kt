@@ -46,7 +46,7 @@ fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): F
     return if (ctx.type() == null) {
         val params = visitParameterList(ctx.parameterList())
         pushScope()
-        for (v in params.first) {
+        for (v in params) {
             if (isRedefineIdentifier(v.name)) {
                 println("identifier: '${v.name}' is redefined")
                 throw CompilingCheckException()
@@ -56,18 +56,18 @@ fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): F
         val expr = visitExpression(ctx.expression())
         val returnType = expr.type
         popScope()
-        val type = FunctionType(params.first.map { it.type }, returnType)
+        val type = FunctionType(params.map { it.type }, returnType)
         val id = Identifier(idName, type, IdentifierKind.Immutable)
         addIdentifier(id)
-        FunctionStatementNode(id, params.first.map { ParameterDeclarationNode(it, it.type) }, returnType, expr)
+        FunctionStatementNode(id, params.map { ParameterDeclarationNode(it, it.type) }, returnType, expr)
     } else {
         val returnType = checkTypeNode(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
-        val type = FunctionType(params.first.map { it.type }, returnType)
+        val type = FunctionType(params.map { it.type }, returnType)
         val id = Identifier(idName, type, IdentifierKind.Immutable)
         addIdentifier(id)
         pushScope()
-        for (v in params.first) {
+        for (v in params) {
             if (isRedefineIdentifier(v.name)) {
                 println("identifier: '${v.name}' is redefined")
                 throw CompilingCheckException()
@@ -80,7 +80,7 @@ fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): F
             throw CompilingCheckException()
         }
         popScope()
-        FunctionStatementNode(id, params.first.map { ParameterDeclarationNode(it, it.type) }, returnType, expr)
+        FunctionStatementNode(id, params.map { ParameterDeclarationNode(it, it.type) }, returnType, expr)
     }
 }
 
@@ -127,7 +127,8 @@ fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): IfStatementNode {
             }
             is LiteralPattern ->
                 checkCompareExpressionType(cond, pattern.expr)
-            else -> {}
+            else -> {
+            }
         }
         val thenBranch = visitBlock(ctx.block(0))
         popScope()
