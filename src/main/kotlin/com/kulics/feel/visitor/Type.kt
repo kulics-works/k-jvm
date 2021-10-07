@@ -1,6 +1,9 @@
 package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser.*
+import com.kulics.feel.node.FunctionTypeNode
+import com.kulics.feel.node.NominalTypeNode
+import com.kulics.feel.node.TypeNode
 
 sealed class Type {
     abstract val name: String
@@ -190,11 +193,6 @@ fun DelegateVisitor.visitParameterTypeList(ctx: ParameterTypeListContext?): List
     } ?: listOf()
 }
 
-sealed interface TypeNode
-
-class NominalTypeNode(val id: String, val typeArguments: List<TypeNode>) : TypeNode
-
-class FunctionTypeNode(val parameterTypes: List<TypeNode>, val returnType: TypeNode) : TypeNode
 
 fun DelegateVisitor.cannotAssign(rightValue: Type, leftValue: Type): Boolean {
     return !canAssignTo(rightValue, leftValue)
