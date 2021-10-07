@@ -1,20 +1,21 @@
 package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser.*
+import com.kulics.feel.node.*
 
-fun DelegateVisitor.visitStatement(ctx: StatementContext): String {
+fun DelegateVisitor.visitStatement(ctx: StatementContext): StatementNode {
     return when (val stat = ctx.getChild(0)) {
         is VariableDeclarationContext -> visitVariableDeclaration(stat)
         is FunctionDeclarationContext -> visitFunctionDeclaration(stat)
         is AssignmentContext -> visitAssignment(stat)
         is IfStatementContext -> visitIfStatement(stat)
         is WhileStatementContext -> visitWhileStatement(stat)
-        is ExpressionContext -> visitExpression(stat).generateCode()
+        is ExpressionContext -> ExpressionStatementNode(visitExpression(stat))
         else -> throw CompilingCheckException()
     }
 }
 
-fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationContext): String {
+fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationContext): VariableStatementNode {
     val idName = visitIdentifier(ctx.identifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
@@ -33,13 +34,13 @@ fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationContext): S
     }
     val id = Identifier(idName, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable)
     addIdentifier(id)
-    return "var $idName: ${type.generateTypeName()} = ${expr.generateCode()}"
+    return VariableStatementNode(id, expr)
 }
 
-fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): String {
-    val id = visitIdentifier(ctx.identifier())
-    if (isRedefineIdentifier(id)) {
-        println("identifier: '$id' is redefined")
+fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): FunctionStatementNode {
+    val idName = visitIdentifier(ctx.identifier())
+    if (isRedefineIdentifier(idName)) {
+        println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
     return if (ctx.type() == null) {
@@ -56,13 +57,15 @@ fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): S
         val returnType = expr.type
         popScope()
         val type = FunctionType(params.first.map { it.type }, returnType)
-        addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
-        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+        val id = Identifier(idName, type, IdentifierKind.Immutable)
+        addIdentifier(id)
+        FunctionStatementNode(id, params.first.map { ParameterDeclarationNode(it, it.type) }, returnType, expr)
     } else {
         val returnType = checkTypeNode(visitType(ctx.type()))
         val params = visitParameterList(ctx.parameterList())
         val type = FunctionType(params.first.map { it.type }, returnType)
-        addIdentifier(Identifier(id, type, IdentifierKind.Immutable))
+        val id = Identifier(idName, type, IdentifierKind.Immutable)
+        addIdentifier(id)
         pushScope()
         for (v in params.first) {
             if (isRedefineIdentifier(v.name)) {
@@ -77,11 +80,11 @@ fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): S
             throw CompilingCheckException()
         }
         popScope()
-        "fun ${id}(${params.second}): ${returnType.generateTypeName()} {${Wrap}return (${expr.generateCode()});$Wrap}$Wrap"
+        FunctionStatementNode(id, params.first.map { ParameterDeclarationNode(it, it.type) }, returnType, expr)
     }
 }
 
-fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {
+fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): AssignmentStatementNode {
     val idName = visitIdentifier(ctx.identifier())
     val id = getIdentifier(idName)
     if (id == null) {
@@ -98,10 +101,10 @@ fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): String {
         println("the type of assign value '${expr.type.name}' is not confirm '${id.type.name}'")
         throw CompilingCheckException()
     }
-    return "${id.name} = ${expr.generateCode()}"
+    return AssignmentStatementNode(id, expr)
 }
 
-fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
+fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): IfStatementNode {
     val cond = visitExpression(ctx.expression())
     if (ctx.pattern() == null) {
         if (cond.type != builtinTypeBool) {
@@ -109,13 +112,7 @@ fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
             throw CompilingCheckException()
         }
         val thenBranch = visitBlock(ctx.block(0))
-        return if (ctx.ifStatement() != null) {
-            "if (${cond.generateCode()}) { $thenBranch } else {${visitIfStatement(ctx.ifStatement())}}"
-        } else if (ctx.block().size == 1) {
-            "if (${cond.generateCode()}) { $thenBranch }"
-        } else {
-            "if (${cond.generateCode()}) { $thenBranch } else { ${visitBlock(ctx.block(1))} }"
-        }
+        return ifStatementNode(ctx, cond, null, thenBranch)
     } else {
         pushScope()
         val pattern = visitPattern(ctx.pattern())
@@ -123,66 +120,51 @@ fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): String {
             val identifier = Identifier(pattern.identifier, cond.type)
             addIdentifier(identifier)
         }
+        when (pattern) {
+            is TypePattern -> if (cond.type !is InterfaceType) {
+                println("the type of condition is not interface, only interface type can use type pattern")
+                throw CompilingCheckException()
+            }
+            is LiteralPattern ->
+                checkCompareExpressionType(cond, pattern.expr)
+            else -> {}
+        }
         val thenBranch = visitBlock(ctx.block(0))
         popScope()
-        return when (pattern) {
-            is TypePattern -> {
-                if (cond.type !is InterfaceType) {
-                    println("the type of condition is not interface, only interface type can use type pattern")
-                    throw CompilingCheckException()
-                }
-                val matchCode =
-                    "val ${pattern.identifier.name} = ${cond.generateCode()}.castOrNull<${
-                        pattern.type.generateTypeName()
-                    }>();$Wrap"
-                val condCode = "${pattern.identifier.name} != null"
-                if (ctx.ifStatement() != null) {
-                    "$matchCode if (${condCode}) { $thenBranch } else {${visitIfStatement(ctx.ifStatement())}}"
-                } else if (ctx.block().size == 1) {
-                    "$matchCode if (${condCode}) { $thenBranch }"
-                } else {
-                    "$matchCode if (${condCode}) { $thenBranch } else { ${visitBlock(ctx.block(1))} }"
-                }
-            }
-            is IdentifierPattern ->
-                "run{val ${pattern.identifier} = ${cond.generateCode()};$Wrap ${thenBranch}${Wrap}};Unit;$Wrap"
-            is LiteralPattern -> {
-                checkCompareExpressionType(cond, pattern.expr)
-                if (ctx.ifStatement() != null) {
-                    "if (${cond.generateCode()} == ${pattern.expr.generateCode()}) { $thenBranch } else {${
-                        visitIfStatement(
-                            ctx.ifStatement()
-                        )
-                    }}"
-                } else if (ctx.block().size == 1) {
-                    "if (${cond.generateCode()} == ${pattern.expr.generateCode()}) { $thenBranch }"
-                } else {
-                    "if (${cond.generateCode()} == ${pattern.expr.generateCode()}) { $thenBranch } else { ${
-                        visitBlock(
-                            ctx.block(1)
-                        )
-                    } }"
-                }
-            }
-            is WildcardPattern ->
-                "run{${cond.generateCode()};$Wrap ${thenBranch}${Wrap}};Unit;$Wrap"
-        }
+        return ifStatementNode(ctx, cond, pattern, thenBranch)
     }
 }
 
-fun DelegateVisitor.visitWhileStatement(ctx: WhileStatementContext): String {
+private fun DelegateVisitor.ifStatementNode(
+    ctx: IfStatementContext,
+    cond: ExpressionNode,
+    pattern: Pattern?,
+    thenBranch: List<StatementNode>
+): IfStatementNode {
+    return if (ctx.ifStatement() != null) {
+        IfStatementNode(cond, pattern, thenBranch, visitIfStatement(ctx.ifStatement()))
+    } else if (ctx.block().size == 1) {
+        IfStatementNode(cond, pattern, thenBranch, null)
+    } else {
+        IfStatementNode(cond, pattern, thenBranch, ElseBranch(visitBlock(ctx.block(1))))
+    }
+}
+
+fun DelegateVisitor.visitWhileStatement(ctx: WhileStatementContext): WhileStatementNode {
     val cond = visitExpression(ctx.expression())
     if (cond.type != builtinTypeBool) {
         println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
         throw CompilingCheckException()
     }
-    val block = visitBlock(ctx.block())
-    return "while (${cond.generateCode()}) { $block }"
+    return WhileStatementNode(cond, visitBlock(ctx.block()))
 }
 
-fun DelegateVisitor.visitBlock(ctx: BlockContext): String {
+fun DelegateVisitor.visitBlock(ctx: BlockContext): List<StatementNode> {
+    val stats = mutableListOf<StatementNode>()
     pushScope()
-    val code = ctx.statement().fold(StringBuilder()) { acc, v -> acc.append("${visitStatement(v)};") }.toString()
+    for (v in ctx.statement()) {
+        stats.add(visitStatement(v))
+    }
     popScope()
-    return code
+    return stats
 }

@@ -75,7 +75,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitVirtualMethod(ctx)
     }
 
-    override fun visitBlock(ctx: BlockContext): String {
+    override fun visitBlock(ctx: BlockContext): List<StatementNode> {
         return delegate.visitBlock(ctx)
     }
 
@@ -87,15 +87,15 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitGlobalDeclaration(ctx)
     }
 
-    override fun visitStatement(ctx: StatementContext): String {
+    override fun visitStatement(ctx: StatementContext): StatementNode {
         return delegate.visitStatement(ctx)
     }
 
-    override fun visitVariableDeclaration(ctx: VariableDeclarationContext): String {
+    override fun visitVariableDeclaration(ctx: VariableDeclarationContext): VariableStatementNode {
         return delegate.visitVariableDeclaration(ctx)
     }
 
-    override fun visitFunctionDeclaration(ctx: FunctionDeclarationContext): String {
+    override fun visitFunctionDeclaration(ctx: FunctionDeclarationContext): FunctionStatementNode {
         return delegate.visitFunctionDeclaration(ctx)
     }
 
@@ -103,11 +103,11 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitLambdaExpression(ctx)
     }
 
-    override fun visitAssignment(ctx: AssignmentContext): String {
+    override fun visitAssignment(ctx: AssignmentContext): AssignmentStatementNode {
         return delegate.visitAssignment(ctx)
     }
 
-    override fun visitIfStatement(ctx: IfStatementContext): String {
+    override fun visitIfStatement(ctx: IfStatementContext): IfStatementNode {
         return delegate.visitIfStatement(ctx)
     }
 
@@ -115,7 +115,7 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitIfExpression(ctx)
     }
 
-    override fun visitWhileStatement(ctx: WhileStatementContext): String {
+    override fun visitWhileStatement(ctx: WhileStatementContext): WhileStatementNode {
         return delegate.visitWhileStatement(ctx)
     }
 

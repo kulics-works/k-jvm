@@ -313,7 +313,7 @@ fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): ExpressionNode 
 private fun DelegateVisitor.processIf(
     ctx: IfExpressionContext,
     cond: ExpressionNode
-): ConditionExpressionNode {
+): IfExpressionNode {
     if (cond.type != builtinTypeBool) {
         println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
         throw CompilingCheckException()
@@ -324,13 +324,13 @@ private fun DelegateVisitor.processIf(
         println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
         throw CompilingCheckException()
     }
-    return ConditionExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
+    return IfExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
 }
 
 private fun DelegateVisitor.processIfPattern(
     ctx: IfExpressionContext,
     cond: ExpressionNode
-): ExpressionNode {
+): IfPatternExpressionNode {
     pushScope()
     val pattern = visitPattern(ctx.pattern())
     if (pattern is IdentifierPattern) {
@@ -344,42 +344,15 @@ private fun DelegateVisitor.processIfPattern(
         println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
         throw CompilingCheckException()
     }
-    return when (pattern) {
-        is TypePattern -> {
-            if (cond.type !is InterfaceType) {
-                println("the type of condition is not interface, only interface type can use type pattern")
-                throw CompilingCheckException()
-            }
-            val matchCode =
-                "val ${pattern.identifier.name} = ${cond.generateCode()}.castOrNull<${
-                    pattern.type.generateTypeName()
-                }>();$Wrap"
-            val condExpr =
-                ConditionExpressionNode(
-                    LiteralExpressionNode("${pattern.identifier.name} != null", builtinTypeBool),
-                    thenBranch,
-                    elseBranch,
-                    thenBranch.type
-                )
-            BlockExpressionNode(matchCode, condExpr)
+    when (pattern) {
+        is TypePattern -> if (cond.type !is InterfaceType) {
+            println("the type of condition is not interface, only interface type can use type pattern")
+            throw CompilingCheckException()
         }
-        is IdentifierPattern -> {
-            val matchCode = "val ${pattern.identifier} = ${cond.generateCode()};$Wrap"
-            BlockExpressionNode(matchCode, thenBranch)
-        }
-        is LiteralPattern -> {
-            checkCompareExpressionType(cond, pattern.expr)
-            ConditionExpressionNode(
-                LiteralExpressionNode("${cond.generateCode()} == ${pattern.expr.generateCode()}", builtinTypeBool),
-                thenBranch,
-                elseBranch,
-                thenBranch.type
-            )
-        }
-        is WildcardPattern -> {
-            BlockExpressionNode("${cond.generateCode()};$Wrap", thenBranch)
-        }
+        is LiteralPattern -> checkCompareExpressionType(cond, pattern.expr)
+        else -> Unit
     }
+    return IfPatternExpressionNode(cond, pattern, thenBranch, elseBranch, thenBranch.type)
 }
 
 fun DelegateVisitor.visitIdentifierPattern(ctx: IdentifierPatternContext): String {
@@ -388,9 +361,13 @@ fun DelegateVisitor.visitIdentifierPattern(ctx: IdentifierPatternContext): Strin
 
 fun DelegateVisitor.visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {
     pushScope()
-    val code = ctx.statement().fold(StringBuilder()) { acc, v -> acc.append("${visitStatement(v)};") }.toString()
+    val stats = mutableListOf<StatementNode>()
+    for (v in ctx.statement()) {
+        stats.add(visitStatement(v))
+    }
     val node = BlockExpressionNode(
-        code, when (val expr = ctx.expression()) {
+        stats,
+        when (val expr = ctx.expression()) {
             null -> null
             else -> visitExpression(expr)
         }

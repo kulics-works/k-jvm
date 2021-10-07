@@ -5,7 +5,7 @@ import com.kulics.feel.visitor.*
 sealed class DeclarationNode : Node()
 
 class ModuleDeclarationNode(val name: String) : Node() {
-    override fun accept(visitor: NodeVisitor) {
+    override fun<T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)
     }
 }
@@ -17,19 +17,19 @@ class GlobalFunctionDeclarationNode(
     val returnType: Type,
     val body: ExpressionNode
 ) : DeclarationNode() {
-    override fun accept(visitor: NodeVisitor) {
+    override fun<T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)
     }
 }
 
 class ParameterDeclarationNode(val id: Identifier, val paramType: Type) : Node() {
-    override fun accept(visitor: NodeVisitor) {
+    override fun<T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)
     }
 }
 
 class GlobalVariableDeclarationNode(val id: Identifier, val initValue: ExpressionNode) : DeclarationNode() {
-    override fun accept(visitor: NodeVisitor) {
+    override fun<T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)
     }
 }
@@ -41,7 +41,7 @@ open class GlobalRecordDeclarationNode(
     val methods: List<MethodNode>,
     val implements: Type?
 ) : DeclarationNode() {
-    override fun accept(visitor: NodeVisitor) {
+    override fun<T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)
     }
 }
@@ -51,7 +51,7 @@ class GlobalInterfaceDeclarationNode(
     val typeParameter: List<TypeParameter>,
     val methods: List<VirtualMethodNode>
 ) : DeclarationNode() {
-    override fun accept(visitor: NodeVisitor) {
+    override fun<T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)
     }
 }
@@ -61,10 +61,12 @@ open class GlobalExtensionDeclarationNode(
     val typeParameter: List<TypeParameter>,
     val methods: List<MethodNode>, val implements: Type?
 ) : DeclarationNode() {
-    override fun accept(visitor: NodeVisitor) {
+    override fun<T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)
     }
 }
+
+sealed class MemberNode : Node()
 
 class MethodNode(
     val id: Identifier,
@@ -72,11 +74,11 @@ class MethodNode(
     val returnType: Type,
     val body: ExpressionNode,
     val isOverride: Boolean
-) : DeclarationNode()
+) : MemberNode()
 
 class VirtualMethodNode(
     val id: VirtualIdentifier,
     val params: ArrayList<Identifier>,
     val returnType: Type,
     val body: ExpressionNode?
-) : DeclarationNode()
+) : MemberNode()

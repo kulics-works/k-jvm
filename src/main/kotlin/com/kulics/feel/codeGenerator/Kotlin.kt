@@ -3,7 +3,7 @@ package com.kulics.feel.codeGenerator
 import com.kulics.feel.node.*
 import com.kulics.feel.visitor.*
 
-class KotlinCodeGenerator : CodeGenerator {
+class KotlinCodeGenerator : CodeGenerator<String> {
     private val codeBuilder = StringBuilder()
     private val records = mutableMapOf<Type, RecordDeclaration>()
 
@@ -26,8 +26,8 @@ class KotlinCodeGenerator : CodeGenerator {
         return codeBuilder.toString()
     }
 
-    override fun visit(node: ProgramNode) {
-        visit(node.module)
+    override fun visit(node: ProgramNode): String {
+        append(visit(node.module))
         append(
             """
         inline fun <reified T> Any.castOrThrow(): T = this as T
@@ -37,22 +37,24 @@ class KotlinCodeGenerator : CodeGenerator {
     """.trimIndent()
         )
         node.declarations.forEach {
-            when (it) {
-                is GlobalVariableDeclarationNode -> visit(it)
-                is GlobalFunctionDeclarationNode -> visit(it)
-                is GlobalInterfaceDeclarationNode -> visit(it)
-                is GlobalRecordDeclarationNode -> visit(it)
-                is GlobalExtensionDeclarationNode -> visit(it)
-                else -> throw CompilingCheckException()
-            }
+            append(
+                when (it) {
+                    is GlobalVariableDeclarationNode -> visit(it)
+                    is GlobalFunctionDeclarationNode -> visit(it)
+                    is GlobalInterfaceDeclarationNode -> visit(it)
+                    is GlobalRecordDeclarationNode -> visit(it)
+                    is GlobalExtensionDeclarationNode -> visit(it)
+                }
+            )
         }
+        return ""
     }
 
-    override fun visit(node: ModuleDeclarationNode) {
-        append("package ${node.name}$Wrap")
+    override fun visit(node: ModuleDeclarationNode): String {
+        return "package ${node.name}$Wrap"
     }
 
-    override fun visit(node: GlobalRecordDeclarationNode) {
+    override fun visit(node: GlobalRecordDeclarationNode): String {
         records[node.type] = RecordDeclaration(
             node.type,
             node.typeParameter,
@@ -61,6 +63,7 @@ class KotlinCodeGenerator : CodeGenerator {
             if (node.implements != null) mutableListOf(node.implements)
             else mutableListOf()
         )
+        return ""
     }
 
     private fun generate(record: RecordDeclaration): String {
@@ -114,55 +117,54 @@ class KotlinCodeGenerator : CodeGenerator {
         }
     }
 
-    override fun visit(node: GlobalFunctionDeclarationNode) {
-        if (node.typeParameter.isEmpty()) {
-            append("fun ${node.id.name}(")
-        } else {
-            append("fun <${
-                joinString(node.typeParameter) {
-                    "${it.name}: ${
-                        when (val constraintType = it.constraint) {
-                            is GenericsType -> constraintType.typeConstructor(listOf(it)).generateTypeName()
-                            is InterfaceType -> constraintType.generateTypeName()
-                        }
-                    }"
-                }
-            }> ${node.id.name}(")
-        }
-        for ((i, v) in node.parameterTypes.withIndex()) {
-            if (i == 0) {
-                visit(v)
+    override fun visit(node: GlobalFunctionDeclarationNode): String {
+        return "${
+            if (node.typeParameter.isEmpty()) {
+                "fun ${node.id.name}("
             } else {
-                append(",")
-                visit(v)
+                "fun <${
+                    joinString(node.typeParameter) {
+                        "${it.name}: ${
+                            when (val constraintType = it.constraint) {
+                                is GenericsType -> constraintType.typeConstructor(listOf(it)).generateTypeName()
+                                is InterfaceType -> constraintType.generateTypeName()
+                            }
+                        }"
+                    }
+                }> ${node.id.name}("
             }
-        }
-        append("): ${node.returnType.generateTypeName()} {${Wrap}return (${node.body.generateCode()});$Wrap}$Wrap")
+        } ${
+            joinString(node.parameterTypes) { visit(it) }
+        }): ${
+            node.returnType.generateTypeName()
+        } {${Wrap}return (${
+            visit(node.body)
+        });$Wrap}$Wrap"
     }
 
-    override fun visit(node: ParameterDeclarationNode) {
-        append("${node.id.name}: ${node.paramType.generateTypeName()}")
+    override fun visit(node: ParameterDeclarationNode): String {
+        return "${node.id.name}: ${node.paramType.generateTypeName()}"
     }
 
-    override fun visit(node: GlobalVariableDeclarationNode) {
-        append(
-            if (node.id.kind == IdentifierKind.Immutable) {
-                "val ${node.id.name}: ${node.id.type.generateTypeName()} = ${node.initValue.generateCode()}$Wrap"
-            } else {
-                "var ${node.id.name}: ${node.id.type.generateTypeName()} = ${node.initValue.generateCode()}$Wrap"
-            }
-        )
+    override fun visit(node: GlobalVariableDeclarationNode): String {
+        return "${
+            if (node.id.kind == IdentifierKind.Immutable) "val" else "var"
+        } ${node.id.name}: ${node.id.type.generateTypeName()} = ${
+            visit(
+                node.initValue
+            )
+        }$Wrap"
     }
 
-    override fun visit(node: GlobalInterfaceDeclarationNode) {
-        if (node.typeParameter.isEmpty()) {
-            append("interface ${node.type.generateTypeName()} {${
+    override fun visit(node: GlobalInterfaceDeclarationNode): String {
+        return if (node.typeParameter.isEmpty()) {
+            "interface ${node.type.generateTypeName()} {${
                 joinString(node.methods, Wrap) {
                     generate(it)
                 }
-            }}$Wrap")
+            }}$Wrap"
         } else {
-            append("interface ${node.type.name}<${
+            "interface ${node.type.name}<${
                 joinString(node.typeParameter) {
                     when (val constraintType = it.constraint) {
                         is GenericsType -> {
@@ -176,11 +178,11 @@ class KotlinCodeGenerator : CodeGenerator {
                 joinString(node.methods, Wrap) {
                     generate(it)
                 }
-            }}$Wrap")
+            }}$Wrap"
         }
     }
 
-    override fun visit(node: GlobalExtensionDeclarationNode) {
+    override fun visit(node: GlobalExtensionDeclarationNode): String {
         val record = records[node.type]
         if (record != null) {
             record.methods.addAll(node.methods)
@@ -188,12 +190,13 @@ class KotlinCodeGenerator : CodeGenerator {
                 record.implements.add(node.implements)
             }
         }
+        return ""
     }
 
     private fun generate(node: MethodNode): String {
         return "${if (node.isOverride) "override" else ""} fun ${node.id.name}(${
             joinString(node.params) { "${it.name}: ${it.type.generateTypeName()}" }
-        }): ${node.returnType.generateTypeName()} { return run{ ${node.body.generateCode()} } }"
+        }): ${node.returnType.generateTypeName()} { return run{ ${visit(node.body)} } }"
     }
 
     private fun generate(node: VirtualMethodNode): String {
@@ -201,10 +204,248 @@ class KotlinCodeGenerator : CodeGenerator {
             joinString(node.params) { "${it.name}: ${it.type.generateTypeName()}" }
         }): ${node.returnType.generateTypeName()} ${
             if (node.body != null) {
-                "{ return run{ ${node.body.generateCode()} } }"
+                "{ return run{ ${visit(node.body)} } }"
             } else {
                 ""
             }
         } "
+    }
+
+    override fun visit(node: StatementNode): String {
+        return when (node) {
+            is VariableStatementNode -> visit(node)
+            is ExpressionStatementNode -> visit(node)
+            is AssignmentStatementNode -> visit(node)
+            is FunctionStatementNode -> visit(node)
+            is IfStatementNode -> visit(node)
+            is WhileStatementNode -> visit(node)
+        }
+    }
+
+    override fun visit(node: VariableStatementNode): String {
+        return "var ${node.id.name}: ${node.id.type.generateTypeName()} = ${visit(node.initValue)}"
+    }
+
+    override fun visit(node: ExpressionStatementNode): String {
+        return visit(node.expr)
+    }
+
+    override fun visit(node: AssignmentStatementNode): String {
+        return "${node.id.name} = ${visit(node.newValue)}"
+    }
+
+    override fun visit(node: FunctionStatementNode): String {
+        return "fun ${node.id.name}(${
+            joinString(node.parameterTypes) {
+                "${it.id.name}: ${it.paramType.generateTypeName()}"
+            }
+        }): ${node.returnType.generateTypeName()} {${Wrap}return (${visit(node.body)});$Wrap}$Wrap"
+    }
+
+    private fun generateStatements(branch: List<StatementNode>): String {
+        return joinString(branch, ";$Wrap") { visit(it) }
+    }
+
+    override fun visit(node: IfStatementNode): String {
+        val pattern = node.pattern
+        return if (pattern == null) {
+            val elseBranch = node.elseBranch
+            if (elseBranch == null) {
+                "if (${visit(node.cond)}) { ${
+                    generateStatements(node.thenBranch)
+                } }"
+            } else when (elseBranch) {
+                is IfStatementNode ->
+                    "if (${visit(node.cond)}) { ${
+                        generateStatements(node.thenBranch)
+                    } } else {${
+                        visit(elseBranch)
+                    }}"
+                is ElseBranch ->
+                    "if (${visit(node.cond)}) { ${
+                        generateStatements(node.thenBranch)
+                    } } else { ${
+                        generateStatements(elseBranch.branch)
+                    } }"
+            }
+        } else when (pattern) {
+            is TypePattern -> {
+                val matchCode =
+                    "val ${pattern.identifier.name} = ${visit(node.cond)}.castOrNull<${
+                        pattern.type.generateTypeName()
+                    }>();$Wrap"
+                val condCode = "${pattern.identifier.name} != null"
+                val elseBranch = node.elseBranch
+                if (elseBranch == null) {
+                    "$matchCode if (${condCode}) { ${generateStatements(node.thenBranch)} }"
+                } else when (elseBranch) {
+                    is IfStatementNode ->
+                        "$matchCode if (${condCode}) { ${
+                            generateStatements(node.thenBranch)
+                        } } else {${visit(elseBranch)}}"
+                    is ElseBranch ->
+                        "$matchCode if (${condCode}) { ${
+                            generateStatements(node.thenBranch)
+                        } } else { ${
+                            generateStatements(elseBranch.branch)
+                        } }"
+                }
+            }
+            is IdentifierPattern ->
+                "run{val ${pattern.identifier} = ${
+                    visit(node.cond)
+                };$Wrap ${generateStatements(node.thenBranch)}${Wrap}};Unit;$Wrap"
+            is LiteralPattern -> {
+                val elseBranch = node.elseBranch
+                if (elseBranch == null) {
+                    "if (${visit(node.cond)} == ${visit(pattern.expr)}) { ${
+                        generateStatements(node.thenBranch)
+                    } }"
+                } else when (elseBranch) {
+                    is IfStatementNode ->
+                        "if (${visit(node.cond)} == ${visit(pattern.expr)}) { ${
+                            generateStatements(node.thenBranch)
+                        } } else {${
+                            visit(elseBranch)
+                        }}"
+                    is ElseBranch ->
+                        "if (${visit(node.cond)} == ${visit(pattern.expr)}) { ${
+                            generateStatements(node.thenBranch)
+                        } } else {${
+                            generateStatements(elseBranch.branch)
+                        }}"
+                }
+            }
+            is WildcardPattern ->
+                "run{${
+                    visit(node.cond)
+                };$Wrap ${generateStatements(node.thenBranch)}${Wrap}};Unit;$Wrap"
+        }
+    }
+
+    override fun visit(node: WhileStatementNode): String {
+        return "while (${visit(node.cond)}) { ${
+            joinString(node.stats, Wrap) {
+                visit(it)
+            }
+        } }"
+    }
+
+    override fun visit(node: ExpressionNode): String {
+        return when (node) {
+            is IdentifierExpressionNode -> visit(node)
+            is LiteralExpressionNode -> visit(node)
+            is MultiplicativeExpressionNode -> visit(node)
+            is CompareExpressionNode -> visit(node)
+            is LogicExpressionNode -> visit(node)
+            is BlockExpressionNode -> visit(node)
+            is LambdaExpressionNode -> visit(node)
+            is CallExpressionNode -> visit(node)
+            is GenericsCallExpressionNode -> visit(node)
+            is MemberExpressionNode -> visit(node)
+            is IfExpressionNode -> visit(node)
+            is IfPatternExpressionNode -> visit(node)
+        }
+    }
+
+    override fun visit(node: IdentifierExpressionNode): String {
+        return node.id.name
+    }
+
+    override fun visit(node: LiteralExpressionNode): String {
+        return node.text
+    }
+
+    override fun visit(node: MultiplicativeExpressionNode): String {
+        return when (node.operator) {
+            CalculativeOperator.Add -> "(${visit(node.lhs)} + ${visit(node.rhs)})"
+            CalculativeOperator.Sub -> "(${visit(node.lhs)} - ${visit(node.rhs)})"
+            CalculativeOperator.Mul -> "(${visit(node.lhs)} * ${visit(node.rhs)})"
+            CalculativeOperator.Div -> "(${visit(node.lhs)} / ${visit(node.rhs)})"
+            CalculativeOperator.Mod -> "(${visit(node.lhs)} % ${visit(node.rhs)})"
+        }
+    }
+
+    override fun visit(node: CompareExpressionNode): String {
+        return when (node.operator) {
+            CompareOperator.Equal -> "(${visit(node.lhs)} == ${visit(node.rhs)})"
+            CompareOperator.NotEqual -> "(${visit(node.lhs)} != ${visit(node.rhs)})"
+            CompareOperator.Less -> "(${visit(node.lhs)} < ${visit(node.rhs)})"
+            CompareOperator.LessEqual -> "(${visit(node.lhs)} <= ${visit(node.rhs)})"
+            CompareOperator.Greater -> "(${visit(node.lhs)} > ${visit(node.rhs)})"
+            CompareOperator.GreaterEqual -> "(${visit(node.lhs)} >= ${visit(node.rhs)})"
+        }
+    }
+
+    override fun visit(node: LogicExpressionNode): String {
+        return when (node.operator) {
+            LogicOperator.And -> "(${visit(node.lhs)} && ${visit(node.rhs)})"
+            LogicOperator.Or -> "(${visit(node.lhs)} || ${visit(node.rhs)})"
+        }
+    }
+
+    override fun visit(node: BlockExpressionNode): String {
+        return "run{${
+            generateStatements(node.stats)
+        };${node.expr?.let { visit(it) } ?: "Unit"}}"
+    }
+
+    override fun visit(node: LambdaExpressionNode): String {
+        return "fun (${
+            joinString(node.parameterTypes) { "${it.id.name}: ${it.paramType.generateTypeName()}" }
+        }): ${node.returnType.generateTypeName()} {${Wrap}return (${visit(node.body)});$Wrap}$Wrap "
+    }
+
+    override fun visit(node: CallExpressionNode): String {
+        return "${visit(node.expr)}(${
+            joinString(node.args) { visit(it) }
+        })"
+    }
+
+    override fun visit(node: GenericsCallExpressionNode): String {
+        return "${visit(node.expr)}<${
+            joinString(node.types) { it.generateTypeName() }
+        }> (${
+            joinString(node.args) { visit(it) }
+        })"
+    }
+
+    override fun visit(node: MemberExpressionNode): String {
+        return "${visit(node.expr)}.${node.member.name}"
+    }
+
+    override fun visit(node: IfExpressionNode): String {
+        return "if (${visit(node.condExpr)}) { ${visit(node.thenExpr)} } else { ${visit(node.elseExpr)} }"
+    }
+
+    override fun visit(node: IfPatternExpressionNode): String {
+        return when (node.pattern) {
+            is TypePattern -> {
+                val matchCode =
+                    "val ${node.pattern.identifier.name} = ${visit(node.condExpr)}.castOrNull<${
+                        node.pattern.type.generateTypeName()
+                    }>();$Wrap"
+                "run{${matchCode}if (${
+                    node.pattern.identifier.name
+                } != null) { ${
+                    visit(node.thenExpr)
+                } } else { ${
+                    visit(node.elseExpr)
+                } }}"
+            }
+            is IdentifierPattern -> {
+                "run{val ${node.pattern.identifier} = ${visit(node.condExpr)};$Wrap${visit(node.thenExpr)}}"
+            }
+            is LiteralPattern -> {
+                "if (${visit(node.condExpr)}==${visit(node.pattern.expr)}) { ${
+                    visit(node.thenExpr)
+                } } else { ${
+                    visit(node.elseExpr)
+                } }"
+            }
+            is WildcardPattern -> {
+                "run{${visit(node.condExpr)};$Wrap${visit(node.thenExpr)}}"
+            }
+        }
     }
 }

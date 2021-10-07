@@ -1,9 +1,6 @@
 package com.kulics.feel.visitor
 
 import com.kulics.feel.grammar.FeelParser.*
-import com.kulics.feel.node.FunctionTypeNode
-import com.kulics.feel.node.NominalTypeNode
-import com.kulics.feel.node.TypeNode
 
 sealed class Type {
     abstract val name: String
@@ -230,3 +227,9 @@ fun DelegateVisitor.checkSubtype(subtype: Type, type: Type): Boolean {
     }
     return false
 }
+
+sealed class TypeNode
+
+class NominalTypeNode(val id: String, val typeArguments: List<TypeNode>) : TypeNode()
+
+class FunctionTypeNode(val parameterTypes: List<TypeNode>, val returnType: TypeNode) : TypeNode()
