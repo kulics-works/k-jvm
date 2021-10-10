@@ -59,7 +59,7 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
             for (i in li.indices) {
                 typeMap[typeParameter[i].name] = li[i]
             }
-            typeSubstitution(FunctionType(params.map { it.type }, returnType, true), typeMap)
+            typeSubstitution(FunctionType(params.map { it.type }, returnType), typeMap)
         }
         popScope()
         val id = Identifier(idName, type, IdentifierKind.Immutable)
@@ -213,9 +213,8 @@ fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationCon
                 RecordType(
                     "${idName}[${joinString(li) { it.name }}]",
                     members,
-                    "${idName}<${joinString(li) { it.name }}>",
                     generateGenericsUniqueName(idName, li),
-                    true,
+                    idName to li,
                 ),
                 typeMap
             )
@@ -258,7 +257,7 @@ fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationCon
         val fieldList = visitFieldList(ctx.fieldList())
         val members = mutableMapOf<String, Identifier>()
         fieldList.forEach { members[it.name] = it }
-        val type = RecordType(idName, members, null)
+        val type = RecordType(idName, members)
         addType(type)
         val constructorType = FunctionType(fieldList.map { it.type }, type)
         addIdentifier(Identifier(idName, constructorType, IdentifierKind.Immutable))
@@ -432,9 +431,8 @@ fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarat
                 InterfaceType(
                     "${idName}[${joinString(li) { it.name }}]",
                     members,
-                    "${idName}<${joinString(li) { it.generateTypeName() }}>",
                     generateGenericsUniqueName(idName, typeParameter),
-                    true,
+                    idName to li,
                 ), typeMap
             )
         }
@@ -454,7 +452,7 @@ fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarat
         popScope()
         GlobalInterfaceDeclarationNode(type, typeParameter, methods)
     } else {
-        val type = InterfaceType(idName, members, null)
+        val type = InterfaceType(idName, members)
         addType(type)
         val methods = if (ctx.virtualMethodList() != null) {
             val methods = visitVirtualMethodList(ctx.virtualMethodList())

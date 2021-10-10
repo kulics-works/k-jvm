@@ -71,12 +71,12 @@ class KotlinCodeGenerator : CodeGenerator<String> {
             if (typeParameter.isEmpty()) {
                 "class ${type.name}(${
                     joinString(fields) {
-                        "${if (it.kind == IdentifierKind.Immutable) "val" else "var"} ${it.name}: ${it.type.generateTypeName()}"
+                        "${if (it.kind == IdentifierKind.Immutable) "val" else "var"} ${it.name}: ${it.type.generateName()}"
                     }
                 }) ${
                     if (implements.isEmpty()) "" else ": ${
                         joinString(implements) {
-                            it.generateTypeName()
+                            it.generateName()
                         }
                     }"
                 } { $Wrap${
@@ -89,21 +89,21 @@ class KotlinCodeGenerator : CodeGenerator<String> {
                     joinString(typeParameter) {
                         "${it.name}: ${
                             when (val constraintType = it.constraint) {
-                                is GenericsType -> constraintType.typeConstructor(listOf(it)).generateTypeName()
-                                is InterfaceType -> constraintType.generateTypeName()
+                                is GenericsType -> constraintType.typeConstructor(listOf(it)).generateName()
+                                is InterfaceType -> constraintType.generateName()
                             }
                         }"
                     }
                 }>(${
                     joinString(fields) {
-                        "${if (it.kind == IdentifierKind.Immutable) "val" else "var"} ${it.name}: ${it.type.generateTypeName()}"
+                        "${if (it.kind == IdentifierKind.Immutable) "val" else "var"} ${it.name}: ${it.type.generateName()}"
                     }
                 }) ${
                     if (implements.isEmpty()) "" else ": ${
                         joinString(implements) {
                             when (val interfaceType = it) {
-                                is GenericsType -> interfaceType.typeConstructor(listOf(it)).generateTypeName()
-                                is InterfaceType -> interfaceType.generateTypeName()
+                                is GenericsType -> interfaceType.typeConstructor(listOf(it)).generateName()
+                                is InterfaceType -> interfaceType.generateName()
                                 else -> throw CompilingCheckException()
                             }
                         }
@@ -126,8 +126,8 @@ class KotlinCodeGenerator : CodeGenerator<String> {
                     joinString(node.typeParameter) {
                         "${it.name}: ${
                             when (val constraintType = it.constraint) {
-                                is GenericsType -> constraintType.typeConstructor(listOf(it)).generateTypeName()
-                                is InterfaceType -> constraintType.generateTypeName()
+                                is GenericsType -> constraintType.typeConstructor(listOf(it)).generateName()
+                                is InterfaceType -> constraintType.generateName()
                             }
                         }"
                     }
@@ -136,20 +136,20 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         } ${
             joinString(node.parameterTypes) { visit(it) }
         }): ${
-            node.returnType.generateTypeName()
+            node.returnType.generateName()
         } {${Wrap}return (${
             visit(node.body)
         });$Wrap}$Wrap"
     }
 
     override fun visit(node: ParameterDeclarationNode): String {
-        return "${node.id.name}: ${node.paramType.generateTypeName()}"
+        return "${node.id.name}: ${node.paramType.generateName()}"
     }
 
     override fun visit(node: GlobalVariableDeclarationNode): String {
         return "${
             if (node.id.kind == IdentifierKind.Immutable) "val" else "var"
-        } ${node.id.name}: ${node.id.type.generateTypeName()} = ${
+        } ${node.id.name}: ${node.id.type.generateName()} = ${
             visit(
                 node.initValue
             )
@@ -158,7 +158,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
 
     override fun visit(node: GlobalInterfaceDeclarationNode): String {
         return if (node.typeParameter.isEmpty()) {
-            "interface ${node.type.generateTypeName()} {${
+            "interface ${node.type.generateName()} {${
                 joinString(node.methods, Wrap) {
                     generate(it)
                 }
@@ -169,9 +169,9 @@ class KotlinCodeGenerator : CodeGenerator<String> {
                     when (val constraintType = it.constraint) {
                         is GenericsType -> {
                             val ty = constraintType.typeConstructor(listOf(it))
-                            "${it.name}: ${ty.generateTypeName()}"
+                            "${it.name}: ${ty.generateName()}"
                         }
-                        is InterfaceType -> "${it.name}: ${constraintType.generateTypeName()}"
+                        is InterfaceType -> "${it.name}: ${constraintType.generateName()}"
                     }
                 }
             }> {${
@@ -195,14 +195,14 @@ class KotlinCodeGenerator : CodeGenerator<String> {
 
     private fun generate(node: MethodNode): String {
         return "${if (node.isOverride) "override" else ""} fun ${node.id.name}(${
-            joinString(node.params) { "${it.name}: ${it.type.generateTypeName()}" }
-        }): ${node.returnType.generateTypeName()} { return run{ ${visit(node.body)} } }"
+            joinString(node.params) { "${it.name}: ${it.type.generateName()}" }
+        }): ${node.returnType.generateName()} { return run{ ${visit(node.body)} } }"
     }
 
     private fun generate(node: VirtualMethodNode): String {
         return "fun ${node.id.name}(${
-            joinString(node.params) { "${it.name}: ${it.type.generateTypeName()}" }
-        }): ${node.returnType.generateTypeName()} ${
+            joinString(node.params) { "${it.name}: ${it.type.generateName()}" }
+        }): ${node.returnType.generateName()} ${
             if (node.body != null) {
                 "{ return run{ ${visit(node.body)} } }"
             } else {
@@ -223,7 +223,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
     }
 
     override fun visit(node: VariableStatementNode): String {
-        return "var ${node.id.name}: ${node.id.type.generateTypeName()} = ${visit(node.initValue)}"
+        return "var ${node.id.name}: ${node.id.type.generateName()} = ${visit(node.initValue)}"
     }
 
     override fun visit(node: ExpressionStatementNode): String {
@@ -237,9 +237,9 @@ class KotlinCodeGenerator : CodeGenerator<String> {
     override fun visit(node: FunctionStatementNode): String {
         return "fun ${node.id.name}(${
             joinString(node.parameterTypes) {
-                "${it.id.name}: ${it.paramType.generateTypeName()}"
+                "${it.id.name}: ${it.paramType.generateName()}"
             }
-        }): ${node.returnType.generateTypeName()} {${Wrap}return (${visit(node.body)});$Wrap}$Wrap"
+        }): ${node.returnType.generateName()} {${Wrap}return (${visit(node.body)});$Wrap}$Wrap"
     }
 
     private fun generateStatements(branch: List<StatementNode>): String {
@@ -272,7 +272,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
             is TypePattern -> {
                 val matchCode =
                     "val ${pattern.identifier.name} = ${visit(node.cond)}.castOrNull<${
-                        pattern.type.generateTypeName()
+                        pattern.type.generateName()
                     }>();$Wrap"
                 val condCode = "${pattern.identifier.name} != null"
                 val elseBranch = node.elseBranch
@@ -393,8 +393,8 @@ class KotlinCodeGenerator : CodeGenerator<String> {
 
     override fun visit(node: LambdaExpressionNode): String {
         return "fun (${
-            joinString(node.parameterTypes) { "${it.id.name}: ${it.paramType.generateTypeName()}" }
-        }): ${node.returnType.generateTypeName()} {${Wrap}return (${visit(node.body)});$Wrap}$Wrap "
+            joinString(node.parameterTypes) { "${it.id.name}: ${it.paramType.generateName()}" }
+        }): ${node.returnType.generateName()} {${Wrap}return (${visit(node.body)});$Wrap}$Wrap "
     }
 
     override fun visit(node: CallExpressionNode): String {
@@ -405,7 +405,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
 
     override fun visit(node: GenericsCallExpressionNode): String {
         return "${visit(node.expr)}<${
-            joinString(node.types) { it.generateTypeName() }
+            joinString(node.types) { it.generateName() }
         }> (${
             joinString(node.args) { visit(it) }
         })"
@@ -424,7 +424,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
             is TypePattern -> {
                 val matchCode =
                     "val ${node.pattern.identifier.name} = ${visit(node.condExpr)}.castOrNull<${
-                        node.pattern.type.generateTypeName()
+                        node.pattern.type.generateName()
                     }>();$Wrap"
                 "run{${matchCode}if (${
                     node.pattern.identifier.name
@@ -451,6 +451,31 @@ class KotlinCodeGenerator : CodeGenerator<String> {
     }
 
     override fun visit(node: CastExpressionNode): String {
-        return "${visit(node.expr)}.castOrThrow<${node.targetType.generateTypeName()}>()"
+        return "${visit(node.expr)}.castOrThrow<${node.targetType.generateName()}>()"
+    }
+
+    private fun Type.generateName(): String {
+        return when (this) {
+            is FunctionType -> "(${joinString(parameterTypes) { it.generateName() }})->${returnType.generateName()}"
+            is RecordType -> if (rawGenericsType != null) {
+                "${rawGenericsType.first}<${joinString(rawGenericsType.second) { it.generateName() }}>"
+            } else {
+                when (this) {
+                    builtinTypeVoid -> "Unit"
+                    builtinTypeInt -> "Int"
+                    builtinTypeFloat -> "Double"
+                    builtinTypeBool -> "Boolean"
+                    builtinTypeChar -> "Char"
+                    builtinTypeString -> "String"
+                    else -> name
+                }
+            }
+            is InterfaceType -> if (rawGenericsType != null) {
+                "${rawGenericsType.first}<${joinString(rawGenericsType.second) { it.generateName() }}>"
+            } else {
+                name
+            }
+            else -> name
+        }
     }
 }

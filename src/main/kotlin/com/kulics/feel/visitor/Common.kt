@@ -52,37 +52,6 @@ class ArrayStack<T> : Collection<T> {
     }
 }
 
-val builtinTypeAny = InterfaceType("Any", mutableMapOf(), "Any")
-val builtinTypeVoid = RecordType("Void", mutableMapOf(), "Unit")
-val builtinTypeInt = RecordType("Int", mutableMapOf(), "Int")
-val builtinTypeFloat = RecordType("Float", mutableMapOf(), "Double")
-val builtinTypeBool = RecordType("Bool", mutableMapOf(), "Boolean")
-val builtinTypeChar = RecordType("Char", mutableMapOf(), "Char")
-val builtinTypeString = RecordType("String", mutableMapOf(), "String")
-val builtinTypeArray = run {
-    val typeParameter = TypeParameter("T", builtinTypeAny)
-    val members = mutableMapOf<String, Identifier>()
-    val get = "get"
-    members[get] = Identifier(get, FunctionType(listOf(builtinTypeInt), typeParameter))
-    val set = "set"
-    members[set] = Identifier(set, FunctionType(listOf(builtinTypeInt, typeParameter), builtinTypeVoid))
-    GenericsType("Array", listOf(typeParameter)) { li ->
-        val typeMap = mutableMapOf<String, Type>()
-        for (i in li.indices) {
-            typeMap[typeParameter.name] = li[i]
-        }
-        typeSubstitution(
-            RecordType(
-                "Array[${joinString(li) { it.name }}]",
-                members,
-                "Array<${joinString(li) { it.generateTypeName() }}>",
-                generateGenericsUniqueName("Array", li),
-                true
-            ), typeMap
-        )
-    }
-}
-
 val builtinIdentifierTrue = Identifier("true", builtinTypeBool)
 val builtinIdentifierFalse = Identifier("false", builtinTypeBool)
 val builtinIdentifierNewArray = run {

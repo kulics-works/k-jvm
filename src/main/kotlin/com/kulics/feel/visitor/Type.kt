@@ -4,7 +4,6 @@ import com.kulics.feel.grammar.FeelParser.*
 
 sealed class Type {
     abstract val name: String
-    open fun generateTypeName(): String = name
     open fun getMember(name: String): Identifier? = null
     abstract val uniqueName: String
 
@@ -22,12 +21,39 @@ sealed class Type {
     }
 }
 
-class FunctionType(val parameterTypes: List<Type>, val returnType: Type, val isGenericType: Boolean = false) : Type() {
+val builtinTypeAny = InterfaceType("Any", mutableMapOf(), "Any")
+val builtinTypeVoid = RecordType("Void", mutableMapOf(), "Unit")
+val builtinTypeInt = RecordType("Int", mutableMapOf(), "Int")
+val builtinTypeFloat = RecordType("Float", mutableMapOf(), "Double")
+val builtinTypeBool = RecordType("Bool", mutableMapOf(), "Boolean")
+val builtinTypeChar = RecordType("Char", mutableMapOf(), "Char")
+val builtinTypeString = RecordType("String", mutableMapOf(), "String")
+val builtinTypeArray = run {
+    val typeParameter = TypeParameter("T", builtinTypeAny)
+    val members = mutableMapOf<String, Identifier>()
+    val get = "get"
+    members[get] = Identifier(get, FunctionType(listOf(builtinTypeInt), typeParameter))
+    val set = "set"
+    members[set] = Identifier(set, FunctionType(listOf(builtinTypeInt, typeParameter), builtinTypeVoid))
+    GenericsType("Array", listOf(typeParameter)) { li ->
+        val typeMap = mutableMapOf<String, Type>()
+        for (i in li.indices) {
+            typeMap[typeParameter.name] = li[i]
+        }
+        typeSubstitution(
+            RecordType(
+                "Array[${joinString(li) { it.name }}]",
+                members,
+                generateGenericsUniqueName("Array", li),
+                "Array" to li
+            ), typeMap
+        )
+    }
+}
+
+class FunctionType(val parameterTypes: List<Type>, val returnType: Type) : Type() {
     override val name: String =
         "fn(${joinString(parameterTypes) { it.name }}) ${returnType.name}"
-
-    override fun generateTypeName(): String =
-        "(${joinString(parameterTypes) { it.generateTypeName() }})->${returnType.generateTypeName()}"
 
     override val uniqueName: String =
         generateGenericsUniqueName("Func", parameterTypes.plus(returnType))
@@ -36,32 +62,22 @@ class FunctionType(val parameterTypes: List<Type>, val returnType: Type, val isG
 class RecordType(
     override val name: String,
     val member: MutableMap<String, Identifier>,
-    val backendName: String?,
     override val uniqueName: String = name,
-    val isGenericType: Boolean = false
+    val rawGenericsType: Pair<String, List<Type>>? = null
 ) : Type() {
     override fun getMember(name: String): Identifier? {
         return member[name]
-    }
-
-    override fun generateTypeName(): String {
-        return backendName ?: name
     }
 }
 
 class InterfaceType(
     override val name: String,
     val member: MutableMap<String, VirtualIdentifier>,
-    val backendName: String?,
     override val uniqueName: String = name,
-    val isGenericType: Boolean = false
+    val rawGenericsType: Pair<String, List<Type>>? = null
 ) : Type(), ConstraintType {
     override fun getMember(name: String): Identifier? {
         return member[name]
-    }
-
-    override fun generateTypeName(): String {
-        return backendName ?: name
     }
 }
 
@@ -101,7 +117,7 @@ fun typeSubstitutionImplement(type: Type, typeMap: Map<String, Type>): Type {
             typeSubstitutionImplement(type.returnType, typeMap)
         )
         is RecordType ->
-            if (type.isGenericType) RecordType(
+            if (type.rawGenericsType != null) RecordType(
                 type.name,
                 type.member.mapValues {
                     Identifier(
@@ -110,12 +126,12 @@ fun typeSubstitutionImplement(type: Type, typeMap: Map<String, Type>): Type {
                         it.value.kind
                     )
                 }.toMutableMap(),
-                type.backendName,
-                type.uniqueName
+                type.uniqueName,
+                type.rawGenericsType
             )
             else type
         is InterfaceType ->
-            if (type.isGenericType) InterfaceType(
+            if (type.rawGenericsType != null) InterfaceType(
                 type.name,
                 type.member.mapValues {
                     VirtualIdentifier(
@@ -125,8 +141,8 @@ fun typeSubstitutionImplement(type: Type, typeMap: Map<String, Type>): Type {
                         it.value.hasImplement
                     )
                 }.toMutableMap(),
-                type.backendName,
-                type.uniqueName
+                type.uniqueName,
+                type.rawGenericsType
             )
             else type
         else -> type
@@ -209,6 +225,17 @@ fun DelegateVisitor.canAssignTo(rightValue: Type, leftValue: Type): Boolean {
                 is InterfaceType -> ty
                 is GenericsType -> ty.typeConstructor(listOf(rightValue))
             } else rightValue, leftValue
+        )
+    } else if (leftValue is TypeParameter) {
+        val leftType = when (val leftTy = leftValue.constraint) {
+            is InterfaceType -> leftTy
+            is GenericsType -> leftTy.typeConstructor(listOf(leftTy))
+        }
+        return checkSubtype(
+            if (rightValue is TypeParameter) when (val ty = rightValue.constraint) {
+                is InterfaceType -> ty
+                is GenericsType -> ty.typeConstructor(listOf(rightValue))
+            } else rightValue, leftType
         )
     }
     return false
