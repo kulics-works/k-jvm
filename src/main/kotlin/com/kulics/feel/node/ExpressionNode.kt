@@ -63,7 +63,8 @@ class LogicExpressionNode(
     }
 }
 
-class BlockExpressionNode(val stats: List<StatementNode>, val expr: ExpressionNode?) : ExpressionNode(expr?.type ?: builtinTypeVoid) {
+class BlockExpressionNode(val stats: List<StatementNode>, val expr: ExpressionNode?) :
+    ExpressionNode(expr?.type ?: builtinTypeVoid) {
     override fun <T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)
     }
@@ -97,6 +98,12 @@ class GenericsCallExpressionNode(
 }
 
 class MemberExpressionNode(val expr: ExpressionNode, val member: Identifier) : ExpressionNode(member.type) {
+    override fun <T> accept(visitor: NodeVisitor<T>) {
+        visitor.visit(this)
+    }
+}
+
+class CastExpressionNode(val expr: ExpressionNode, val targetType: Type) : ExpressionNode(targetType) {
     override fun <T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)
     }

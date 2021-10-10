@@ -40,4 +40,5 @@ interface NodeVisitor<T> {
     fun visit(node: MemberExpressionNode): T
     fun visit(node: IfExpressionNode): T
     fun visit(node: IfPatternExpressionNode): T
+    fun visit(node: CastExpressionNode): T
 }

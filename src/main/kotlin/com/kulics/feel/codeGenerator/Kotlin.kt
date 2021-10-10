@@ -345,6 +345,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
             is MemberExpressionNode -> visit(node)
             is IfExpressionNode -> visit(node)
             is IfPatternExpressionNode -> visit(node)
+            is CastExpressionNode -> visit(node)
         }
     }
 
@@ -447,5 +448,9 @@ class KotlinCodeGenerator : CodeGenerator<String> {
                 "run{${visit(node.condExpr)};$Wrap${visit(node.thenExpr)}}"
             }
         }
+    }
+
+    override fun visit(node: CastExpressionNode): String {
+        return "${visit(node.expr)}.castOrThrow<${node.targetType.generateTypeName()}>()"
     }
 }

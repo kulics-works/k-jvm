@@ -81,7 +81,11 @@ fun generateGenericsUniqueName(name: String, typeArgs: List<Type>): String {
 
 sealed interface ConstraintType
 
-class TypeParameter(override val name: String, var constraint: ConstraintType) : Type() {
+class TypeParameter(
+    override val name: String,
+    var constraint: ConstraintType,
+    var isFromExtension: Boolean = false
+) : Type() {
     override val uniqueName: String = "For_All_${name}"
 }
 

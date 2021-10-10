@@ -45,7 +45,11 @@ fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
         println("the type '${type.name}' have not member '${memberIdentifier}'")
         throw CompilingCheckException()
     }
-    val memberAccessExpr = MemberExpressionNode(expr, member)
+    val memberAccessExpr = if (expr.type is TypeParameter && expr.type.isFromExtension) {
+        MemberExpressionNode(CastExpressionNode(expr, type), member)
+    } else {
+        MemberExpressionNode(expr, member)
+    }
     val callExprNode = when (val memberType = memberAccessExpr.type) {
         is FunctionType -> processFunctionCall(memberAccessExpr, typeArgs to args, memberType)
         is GenericsType -> processGenericsFunctionCall(memberAccessExpr, typeArgs to args, memberType)
@@ -54,11 +58,7 @@ fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
             throw CompilingCheckException()
         }
     }
-    return if (expr.type !is TypeParameter) {
-        callExprNode
-    } else {
-        callExprNode
-    }
+    return callExprNode
 }
 
 fun DelegateVisitor.visitFunctionCallExpression(

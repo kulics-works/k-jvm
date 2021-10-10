@@ -157,11 +157,16 @@ fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter
                         throw CompilingCheckException()
                     }
                     val list = mutableListOf<Type>()
-                    for (v in typeNode.typeArguments) {
-                        list.add(checkTypeNode(v))
+                    for ((i, v) in typeNode.typeArguments.withIndex()) {
+                        val typeArg = checkTypeNode(v)
+                        if (cannotAssign(targetType.typeParameter[i], typeArg)) {
+                            println("the type '${typeArg.name}' not confirm ${targetType.typeParameter[i].name}")
+                            throw CompilingCheckException()
+                        }
+                        list.add(typeArg)
                     }
                     GenericsType(targetType.name, listOf(typeParameter), list) { li ->
-                        val typeMap = mutableMapOf<String, Type>(typeParameter.name to li[0])
+                        val typeMap = mutableMapOf(typeParameter.name to li[0])
                         val instanceType = targetType.typeConstructor(list.map { typeSubstitution(it, typeMap) })
                         getImplementType(targetType)?.forEach {
                             addImplementType(instanceType, if (it is GenericsType) it.typeConstructor(list) else it)
@@ -513,7 +518,9 @@ fun DelegateVisitor.visitGlobalExtensionDeclaration(ctx: GlobalExtensionDeclarat
             println("the type '${type.name}' is not a generics type")
             throw CompilingCheckException()
         }
-        val typeParameters = visitTypeParameterList(typeParameterList)
+        val typeParameters = visitTypeParameterList(typeParameterList).map {
+            TypeParameter(it.name, it.constraint, true)
+        }
         val instanceType = type.typeConstructor(typeParameters)
         if (instanceType !is RecordType) {
             println("the type '${type.name}' is not a record type")
@@ -549,6 +556,9 @@ fun DelegateVisitor.visitGlobalExtensionDeclaration(ctx: GlobalExtensionDeclarat
             throw CompilingCheckException()
         }
         pushScope()
+        for ((_, id) in type.member) {
+            addIdentifier(id)
+        }
         val methods = if (ctx.methodList() != null) {
             val methods = visitMethodList(ctx.methodList())
             for (v in methods) {
