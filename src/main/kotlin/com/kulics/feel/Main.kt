@@ -1,5 +1,6 @@
 package com.kulics.feel
 
+import com.kulics.feel.codeGenerator.BackendKind
 import com.kulics.feel.codeGenerator.codeGenerate
 import com.kulics.feel.grammar.FeelLexer
 import com.kulics.feel.grammar.FeelParser
@@ -7,7 +8,6 @@ import com.kulics.feel.visitor.FeelErrorListener
 import com.kulics.feel.visitor.FeelLangVisitor
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import java.io.File
 
 fun main(arg: Array<String>) {
     val input = CharStreams.fromFileName("./src/test/example.feel")
@@ -19,11 +19,11 @@ fun main(arg: Array<String>) {
     parser.addErrorListener(FeelErrorListener())
     val tree = parser.program() // parse
     val vt = FeelLangVisitor()
-    val result = codeGenerate(vt.visitProgram(tree))
-    val output = File("./src/test/kotlin/example.kt")
-    output.bufferedWriter().use {
-        it.write(result)
+    val backendKind = if (arg.isNotEmpty() && arg[0] == "jvm") {
+        BackendKind.JavaByteCode
+    } else {
+        BackendKind.Kotlin
     }
-
+    codeGenerate(vt.visitProgram(tree), "./src/test/build/example", backendKind)
     println("feel compile completed")
 }

@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     antlr("org.antlr:antlr4:4.9.2")
+    implementation("org.javassist:javassist:3.28.0-GA")
 }
 
 tasks.withType<KotlinCompile>() {

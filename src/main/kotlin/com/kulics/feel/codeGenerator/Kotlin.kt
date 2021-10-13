@@ -2,6 +2,7 @@ package com.kulics.feel.codeGenerator
 
 import com.kulics.feel.node.*
 import com.kulics.feel.visitor.*
+import java.io.File
 
 class KotlinCodeGenerator : CodeGenerator<String> {
     private val codeBuilder = StringBuilder()
@@ -19,11 +20,14 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         val implements: MutableList<Type>
     )
 
-    override fun generateCode(): String {
+    override fun generateCode(filePath: String) {
         records.forEach {
             append(generate(it.value))
         }
-        return codeBuilder.toString()
+        val output = File("${filePath}.kt")
+        output.bufferedWriter().use {
+            it.write(codeBuilder.toString())
+        }
     }
 
     override fun visit(node: ProgramNode): String {
