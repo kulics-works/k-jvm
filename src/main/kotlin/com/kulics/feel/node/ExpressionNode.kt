@@ -24,7 +24,7 @@ enum class CalculativeOperator {
     Add, Sub, Mul, Div, Mod
 }
 
-class MultiplicativeExpressionNode(
+class CalculativeExpressionNode(
     val lhs: ExpressionNode,
     val rhs: ExpressionNode,
     val operator: CalculativeOperator,

@@ -30,7 +30,7 @@ interface NodeVisitor<T> {
     fun visit(node: ExpressionNode): T
     fun visit(node: IdentifierExpressionNode): T
     fun visit(node: LiteralExpressionNode): T
-    fun visit(node: MultiplicativeExpressionNode): T
+    fun visit(node: CalculativeExpressionNode): T
     fun visit(node: CompareExpressionNode): T
     fun visit(node: LogicExpressionNode): T
     fun visit(node: BlockExpressionNode): T

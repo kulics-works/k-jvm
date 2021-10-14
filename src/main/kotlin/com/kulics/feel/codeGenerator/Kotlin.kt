@@ -339,7 +339,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         return when (node) {
             is IdentifierExpressionNode -> visit(node)
             is LiteralExpressionNode -> visit(node)
-            is MultiplicativeExpressionNode -> visit(node)
+            is CalculativeExpressionNode -> visit(node)
             is CompareExpressionNode -> visit(node)
             is LogicExpressionNode -> visit(node)
             is BlockExpressionNode -> visit(node)
@@ -361,7 +361,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         return node.text
     }
 
-    override fun visit(node: MultiplicativeExpressionNode): String {
+    override fun visit(node: CalculativeExpressionNode): String {
         return when (node.operator) {
             CalculativeOperator.Add -> "(${visit(node.lhs)} + ${visit(node.rhs)})"
             CalculativeOperator.Sub -> "(${visit(node.lhs)} - ${visit(node.rhs)})"

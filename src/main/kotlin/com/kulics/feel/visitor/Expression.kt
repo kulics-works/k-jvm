@@ -176,14 +176,14 @@ fun DelegateVisitor.visitBinaryExpression(
             checkCalculateExpressionType(lhsExpr, rhsExpr)
             val symbol = if (op.Add() != null) CalculativeOperator.Add
             else CalculativeOperator.Sub
-            MultiplicativeExpressionNode(lhsExpr, rhsExpr, symbol, lhsExpr.type)
+            CalculativeExpressionNode(lhsExpr, rhsExpr, symbol, lhsExpr.type)
         }
         is MultiplicativeOperatorContext -> {
             checkCalculateExpressionType(lhsExpr, rhsExpr)
             val symbol = if (op.Mul() != null) CalculativeOperator.Mul
             else if (op.Div() != null) CalculativeOperator.Div
             else CalculativeOperator.Mod
-            MultiplicativeExpressionNode(lhsExpr, rhsExpr, symbol, lhsExpr.type)
+            CalculativeExpressionNode(lhsExpr, rhsExpr, symbol, lhsExpr.type)
         }
         is CompareOperatorContext -> {
             checkCompareExpressionType(lhsExpr, rhsExpr)
