@@ -17,6 +17,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         builtinBoolTypeGenerate()
         builtinCharTypeGenerate()
         builtinStringTypeGenerate()
+        builtinVoidTypeGenerate()
     }
 
     private fun builtinTypeGenerate(name: String, targetName: String) {
@@ -85,6 +86,14 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         feelType.writeFile("./src/test/build/example")
     }
 
+    private fun builtinVoidTypeGenerate() {
+        val feelType = pool.makeClass("com.feel.Void")
+        val cons = CtConstructor(arrayOf(), feelType)
+        cons.setBody("{}");
+        feelType.addConstructor(cons)
+        feelType.writeFile("./src/test/build/example")
+    }
+
     override fun generateCode(filePath: String) {
         cc.writeFile(filePath)
     }
@@ -109,18 +118,25 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         TODO("Not yet implemented")
     }
 
-    override fun visit(node: GlobalFunctionDeclarationNode): Any {
-        TODO("Not yet implemented")
+    override fun visit(node: GlobalFunctionDeclarationNode) {
+        val method = CtMethod.make(
+            "public static ${
+                node.returnType.generateName()
+            } ${node.id.name}(${joinString(node.parameterTypes) { visit(it) }}) { return ${visit(node.body)};}", cc
+        )
+        cc.addMethod(method)
     }
 
-    override fun visit(node: ParameterDeclarationNode): Any {
-        TODO("Not yet implemented")
+    override fun visit(node: ParameterDeclarationNode): String {
+        return "${node.paramType.generateName()} ${node.id.name}"
     }
 
     override fun visit(node: GlobalVariableDeclarationNode) {
         val initValue = visit(node.initValue)
         val field = CtField.make(
-            "public static ${if (node.id.kind == IdentifierKind.Immutable) "final" else ""} ${node.id.type.generateName()} ${node.id.name} = ${initValue};",
+            "public static ${
+                if (node.id.kind == IdentifierKind.Immutable) "final" else ""
+            } ${node.id.type.generateName()} ${node.id.name} = ${initValue};",
             cc
         )
         cc.addField(field)
@@ -259,7 +275,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         return when (this) {
             is FunctionType -> "(${joinString(parameterTypes) { it.generateName() }})->${returnType.generateName()}"
             is RecordType -> when (this) {
-                builtinTypeVoid -> "void"
+                builtinTypeVoid -> "com.feel.Void"
                 builtinTypeInt -> "com.feel.Int"
                 builtinTypeFloat -> "com.feel.Float"
                 builtinTypeBool -> "com.feel.Bool"
