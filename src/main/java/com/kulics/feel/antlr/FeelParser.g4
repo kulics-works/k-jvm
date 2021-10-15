@@ -133,6 +133,7 @@ literalExpression
     | floatExpression
     | characterExpression
     | stringExpression
+    | boolExpression
     ;
 
 type
@@ -151,6 +152,8 @@ stringExpression: StringLiteral;
 characterExpression: CharLiteral;
 
 floatExpression: FloatLiteral;
+
+boolExpression: True | False;
 
 integerExpression: DecimalLiteral | BinaryLiteral | OctalLiteral | HexLiteral;
 

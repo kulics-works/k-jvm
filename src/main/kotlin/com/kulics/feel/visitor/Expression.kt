@@ -296,6 +296,8 @@ fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContext): Expre
         LiteralExpressionNode(ctx.floatExpression().text, builtinTypeFloat)
     } else if (ctx.characterExpression() != null) {
         LiteralExpressionNode(ctx.characterExpression().text, builtinTypeChar)
+    } else if (ctx.boolExpression() != null) {
+        LiteralExpressionNode(ctx.boolExpression().text, builtinTypeBool)
     } else {
         LiteralExpressionNode(ctx.stringExpression().text, builtinTypeString)
     }

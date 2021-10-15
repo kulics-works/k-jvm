@@ -8,12 +8,15 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
 
     private val pool = ClassPool(true)
 
-    // class
+    // root class
     private val cc = pool.makeClass("example")
 
     init {
         builtinTypeGenerate("Int", "int")
         builtinTypeGenerate("Float", "double")
+        builtinBoolTypeGenerate()
+        builtinCharTypeGenerate()
+        builtinStringTypeGenerate()
     }
 
     private fun builtinTypeGenerate(name: String, targetName: String) {
@@ -52,6 +55,33 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
                 feelType
             )
         )
+        feelType.writeFile("./src/test/build/example")
+    }
+
+    private fun builtinBoolTypeGenerate() {
+        val feelType = pool.makeClass("com.feel.Bool")
+        feelType.addField(CtField.make("private boolean value;", feelType))
+        val cons = CtConstructor(arrayOf(pool.get("boolean")), feelType)
+        cons.setBody("{ $0.value = $1; }");
+        feelType.addConstructor(cons)
+        feelType.writeFile("./src/test/build/example")
+    }
+
+    private fun builtinCharTypeGenerate() {
+        val feelType = pool.makeClass("com.feel.Char")
+        feelType.addField(CtField.make("private char value;", feelType))
+        val cons = CtConstructor(arrayOf(pool.get("char")), feelType)
+        cons.setBody("{ $0.value = $1; }");
+        feelType.addConstructor(cons)
+        feelType.writeFile("./src/test/build/example")
+    }
+
+    private fun builtinStringTypeGenerate() {
+        val feelType = pool.makeClass("com.feel.String")
+        feelType.addField(CtField.make("private java.lang.String value;", feelType))
+        val cons = CtConstructor(arrayOf(pool.get("java.lang.String")), feelType)
+        cons.setBody("{ $0.value = $1; }");
+        feelType.addConstructor(cons)
         feelType.writeFile("./src/test/build/example")
     }
 
@@ -151,7 +181,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
     }
 
     override fun visit(node: IdentifierExpressionNode): Any {
-        return "${node.id.name}"
+        return node.id.name
     }
 
     override fun visit(node: LiteralExpressionNode): Any {

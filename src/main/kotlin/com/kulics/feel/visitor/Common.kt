@@ -52,8 +52,6 @@ class ArrayStack<T> : Collection<T> {
     }
 }
 
-val builtinIdentifierTrue = Identifier("true", builtinTypeBool)
-val builtinIdentifierFalse = Identifier("false", builtinTypeBool)
 val builtinIdentifierNewArray = run {
     val typeParameter = TypeParameter("T", builtinTypeAny)
     val funcType = GenericsType("NewArray", listOf(typeParameter)) { li ->

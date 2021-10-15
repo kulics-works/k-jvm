@@ -13,8 +13,6 @@ class DelegateVisitor {
             addType(builtinTypeChar)
             addType(builtinTypeString)
             addType(builtinTypeArray)
-            addIdentifier(builtinIdentifierTrue)
-            addIdentifier(builtinIdentifierFalse)
             addIdentifier(builtinIdentifierNewArray)
             addIdentifier(builtinIdentifierEmptyArray)
             addImplementType(builtinTypeVoid, builtinTypeAny)
