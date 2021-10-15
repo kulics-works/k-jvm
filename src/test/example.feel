@@ -16,7 +16,7 @@ let T Bool = true;
 
 let F Bool = false;
 
-let char Char = 'c';
+let chr Char = 'c';
 
 let str String = "Hello, world!";
 
@@ -24,8 +24,7 @@ let g() Int = 1 + 2 + 3 + b;
 
 let add(a Int, b Int) Int = a + b;
 
-let double(x Int) Int = add(x, x) + x + 1;
-
+let calc(x Int) Int = add(x, x) + x + 1;
 let id[T Any](id T) T = id;
 
 let call_id() Void = {
