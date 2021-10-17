@@ -32,10 +32,15 @@ fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclaratio
         throw CompilingCheckException()
     }
     val expr = visitExpression(ctx.expression())
-    val type = checkTypeNode(visitType(ctx.type()))
-    if (cannotAssign(expr.type, type)) {
-        println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
-        throw CompilingCheckException()
+    val type = if (ctx.type() == null) {
+        expr.type
+    } else {
+        val type = checkTypeNode(visitType(ctx.type()))
+        if (cannotAssign(expr.type, type)) {
+            println("the type of init value '${expr.type.name}' is not confirm '${type.name}'")
+            throw CompilingCheckException()
+        }
+        type
     }
     val id = Identifier(idName, type, if (ctx.Mut() != null) IdentifierKind.Mutable else IdentifierKind.Immutable)
     addIdentifier(id)
@@ -50,75 +55,141 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
     }
     val typeParameterList = ctx.typeParameterList()
     return if (typeParameterList != null) {
-        pushScope()
-        val typeParameter = visitTypeParameterList(typeParameterList)
-        val returnType = checkTypeNode(visitType(ctx.type()))
-        val params = visitParameterList(ctx.parameterList())
-        val type = GenericsType(idName, typeParameter) { li ->
-            val typeMap = mutableMapOf<String, Type>()
-            for (i in li.indices) {
-                typeMap[typeParameter[i].name] = li[i]
+        if (ctx.type() == null) {
+            pushScope()
+            val typeParameter = visitTypeParameterList(typeParameterList)
+            val params = visitParameterList(ctx.parameterList())
+            popScope()
+            pushScope()
+            for (v in typeParameter) {
+                if (isRedefineType(v.name)) {
+                    println("type: '${v.name}' is redefined")
+                    throw CompilingCheckException()
+                }
+                addType(v)
             }
-            typeSubstitution(FunctionType(params.map { it.type }, returnType), typeMap)
-        }
-        popScope()
-        val id = Identifier(idName, type, IdentifierKind.Immutable)
-        addIdentifier(id)
-        pushScope()
-        for (v in typeParameter) {
-            if (isRedefineType(v.name)) {
-                println("type: '${v.name}' is redefined")
+            for (v in params) {
+                if (isRedefineIdentifier(v.name)) {
+                    println("identifier: '${v.name}' is redefined")
+                    throw CompilingCheckException()
+                }
+                addIdentifier(v)
+            }
+            val expr = visitExpression(ctx.expression())
+            val returnType = expr.type
+            popScope()
+            val type = GenericsType(idName, typeParameter) { li ->
+                val typeMap = mutableMapOf<String, Type>()
+                for (i in li.indices) {
+                    typeMap[typeParameter[i].name] = li[i]
+                }
+                typeSubstitution(FunctionType(params.map { it.type }, returnType), typeMap)
+            }
+            val id = Identifier(idName, type, IdentifierKind.Immutable)
+            addIdentifier(id)
+            GlobalFunctionDeclarationNode(
+                id,
+                typeParameter,
+                params.map { ParameterDeclarationNode(it, it.type) },
+                returnType,
+                expr
+            )
+        } else {
+            pushScope()
+            val typeParameter = visitTypeParameterList(typeParameterList)
+            val returnType = checkTypeNode(visitType(ctx.type()))
+            val params = visitParameterList(ctx.parameterList())
+            val type = GenericsType(idName, typeParameter) { li ->
+                val typeMap = mutableMapOf<String, Type>()
+                for (i in li.indices) {
+                    typeMap[typeParameter[i].name] = li[i]
+                }
+                typeSubstitution(FunctionType(params.map { it.type }, returnType), typeMap)
+            }
+            popScope()
+            val id = Identifier(idName, type, IdentifierKind.Immutable)
+            addIdentifier(id)
+            pushScope()
+            for (v in typeParameter) {
+                if (isRedefineType(v.name)) {
+                    println("type: '${v.name}' is redefined")
+                    throw CompilingCheckException()
+                }
+                addType(v)
+            }
+            for (v in params) {
+                if (isRedefineIdentifier(v.name)) {
+                    println("identifier: '${v.name}' is redefined")
+                    throw CompilingCheckException()
+                }
+                addIdentifier(v)
+            }
+            val expr = visitExpression(ctx.expression())
+            if (cannotAssign(expr.type, returnType)) {
+                println("the return is '${returnType.name}', but find '${expr.type.name}'")
                 throw CompilingCheckException()
             }
-            addType(v)
+            popScope()
+            GlobalFunctionDeclarationNode(
+                id,
+                typeParameter,
+                params.map { ParameterDeclarationNode(it, it.type) },
+                returnType,
+                expr
+            )
         }
-        for (v in params) {
-            if (isRedefineIdentifier(v.name)) {
-                println("identifier: '${v.name}' is redefined")
-                throw CompilingCheckException()
-            }
-            addIdentifier(v)
-        }
-        val expr = visitExpression(ctx.expression())
-        if (cannotAssign(expr.type, returnType)) {
-            println("the return is '${returnType.name}', but find '${expr.type.name}'")
-            throw CompilingCheckException()
-        }
-        popScope()
-        GlobalFunctionDeclarationNode(
-            id,
-            typeParameter,
-            params.map { ParameterDeclarationNode(it, it.type) },
-            returnType,
-            expr
-        )
     } else {
-        val returnType = checkTypeNode(visitType(ctx.type()))
-        val params = visitParameterList(ctx.parameterList())
-        val type = FunctionType(params.map { it.type }, returnType)
-        val id = Identifier(idName, type, IdentifierKind.Immutable)
-        addIdentifier(id)
-        pushScope()
-        for (v in params) {
-            if (isRedefineIdentifier(v.name)) {
-                println("identifier: '${v.name}' is redefined")
+        if (ctx.type() == null) {
+            val params = visitParameterList(ctx.parameterList())
+            pushScope()
+            for (v in params) {
+                if (isRedefineIdentifier(v.name)) {
+                    println("identifier: '${v.name}' is redefined")
+                    throw CompilingCheckException()
+                }
+                addIdentifier(v)
+            }
+            val expr = visitExpression(ctx.expression())
+            val returnType = expr.type
+            popScope()
+            val type = FunctionType(params.map { it.type }, returnType)
+            val id = Identifier(idName, type, IdentifierKind.Immutable)
+            addIdentifier(id)
+            GlobalFunctionDeclarationNode(
+                id,
+                listOf(),
+                params.map { ParameterDeclarationNode(it, it.type) },
+                returnType,
+                expr
+            )
+        } else {
+            val returnType = checkTypeNode(visitType(ctx.type()))
+            val params = visitParameterList(ctx.parameterList())
+            val type = FunctionType(params.map { it.type }, returnType)
+            val id = Identifier(idName, type, IdentifierKind.Immutable)
+            addIdentifier(id)
+            pushScope()
+            for (v in params) {
+                if (isRedefineIdentifier(v.name)) {
+                    println("identifier: '${v.name}' is redefined")
+                    throw CompilingCheckException()
+                }
+                addIdentifier(v)
+            }
+            val expr = visitExpression(ctx.expression())
+            if (cannotAssign(expr.type, returnType)) {
+                println("the return is '${returnType.name}', but find '${expr.type.name}'")
                 throw CompilingCheckException()
             }
-            addIdentifier(v)
+            popScope()
+            GlobalFunctionDeclarationNode(
+                id,
+                listOf(),
+                params.map { ParameterDeclarationNode(it, it.type) },
+                returnType,
+                expr
+            )
         }
-        val expr = visitExpression(ctx.expression())
-        if (cannotAssign(expr.type, returnType)) {
-            println("the return is '${returnType.name}', but find '${expr.type.name}'")
-            throw CompilingCheckException()
-        }
-        popScope()
-        GlobalFunctionDeclarationNode(
-            id,
-            listOf(),
-            params.map { ParameterDeclarationNode(it, it.type) },
-            returnType,
-            expr
-        )
     }
 }
 

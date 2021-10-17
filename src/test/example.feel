@@ -10,6 +10,8 @@ let mut b Int = 321 - 300;
 
 let c Int = 2 * 2;
 
+let c2 = 2 * 2;
+
 let mut d Int = b + c * 2;
 
 let T Bool = true;
@@ -22,10 +24,15 @@ let str String = "Hello, world!";
 
 let g() Int = 1 + 2 + 3 + b;
 
+let g2() = 1 + 2 + 3 + b;
+
 let add(a Int, b Int) Int = a + b;
 
 let calc(x Int) Int = add(x, x) + x + 1;
+
 let id[T Any](id T) T = id;
+
+let id2[T Any](id T) = id;
 
 let call_id() Void = {
     let a = id[Int](1);

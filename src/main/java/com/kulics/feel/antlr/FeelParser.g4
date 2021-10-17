@@ -15,8 +15,8 @@ globalDeclaration
     ) Semi
     ;
 
-globalVariableDeclaration: Let Mut? identifier type Equal expression;
-globalFunctionDeclaration: Let identifier typeParameterList? parameterList type Equal expression;
+globalVariableDeclaration: Let Mut? identifier type? Equal expression;
+globalFunctionDeclaration: Let identifier typeParameterList? parameterList type? Equal expression;
 globalRecordDeclaration: Def identifier typeParameterList? fieldList type? methodList?;
 globalInterfaceDeclaration: Def identifier typeParameterList? virtualMethodList?;
 globalExtensionDeclaration: Ext identifier typeParameterList? type? methodList?;
