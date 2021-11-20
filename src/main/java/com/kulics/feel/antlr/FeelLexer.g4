@@ -63,16 +63,17 @@ DecimalLiteral: Digit;
 BinaryLiteral: '0' [bB] [0-1_]* [0-1];
 OctalLiteral: '0' [oO] [0-7_]* [0-7];
 HexLiteral: '0' [xX] [a-fA-F0-9_]* [a-fA-F0-9];
-fragment Digit: [0-9] | [0-9] [0-9_]* [0-9];   // 单个数字
+fragment Digit: [0-9] | [0-9] [0-9_]* [0-9];
 fragment Exponent: [eE] [+-]? [0-9]+;
 
-CharLiteral: '\'' ('\\\'' | '\\' [btnfr\\] | .)*? '\''; // 单字符
-StringLiteral: '"' ('\\' [btnfr"\\] | ~('\\' | '"' )+)* '"'; // 字符串
-Identifier: [a-zA-Z] [0-9a-zA-Z_]*; // 标识符
-Discard: '_'; // 匿名变量
+CharLiteral: '\'' ('\\\'' | '\\' [btnfr\\] | .)*? '\'';
+StringLiteral: '"' ('\\' [btnfr"\\] | ~('\\' | '"' )+)* '"';
+UpperIdentifier: [A-Z] [0-9a-zA-Z_]*;
+LowerIdentifier: [a-z] [0-9a-zA-Z_]*;
+Discard: '_';
 
-CommentBlock: '/*' .*? '*/' -> skip; // 块注释
-CommentLine: '//' ~[\r\n]* -> skip; // 行注释
+CommentBlock: '/*' .*? '*/' -> skip;
+CommentLine: '//' ~[\r\n]* -> skip;
 
 WhiteSpace: (' ' |'\t' |'\n' |'\r' )+ -> skip ;
 

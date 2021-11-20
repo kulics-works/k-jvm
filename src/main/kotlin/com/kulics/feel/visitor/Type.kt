@@ -194,7 +194,7 @@ fun DelegateVisitor.visitType(ctx: TypeContext): TypeNode {
     if (ctx.functionType() != null) {
         return visitFunctionType(ctx.functionType())
     }
-    return NominalTypeNode(visitIdentifier(ctx.identifier()), ctx.type().map { visitType(it) })
+    return NominalTypeNode(visitIdentifier(ctx.typeIdentifier()), ctx.type().map { visitType(it) })
 }
 
 fun DelegateVisitor.visitFunctionType(ctx: FunctionTypeContext): FunctionTypeNode {

@@ -14,9 +14,9 @@ let c2 = 2 * 2;
 
 let mut d Int = b + c * 2;
 
-let T Bool = true;
+let myTrue Bool = true;
 
-let F Bool = false;
+let myFalse Bool = false;
 
 let chr Char = 'c';
 

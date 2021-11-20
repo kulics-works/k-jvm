@@ -16,7 +16,7 @@ fun DelegateVisitor.visitStatement(ctx: StatementContext): StatementNode {
 }
 
 fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationContext): VariableStatementNode {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.variableIdentifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
@@ -38,7 +38,7 @@ fun DelegateVisitor.visitVariableDeclaration(ctx: VariableDeclarationContext): V
 }
 
 fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): FunctionStatementNode {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.variableIdentifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
@@ -85,7 +85,7 @@ fun DelegateVisitor.visitFunctionDeclaration(ctx: FunctionDeclarationContext): F
 }
 
 fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): AssignmentStatementNode {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.variableIdentifier())
     val id = getIdentifier(idName)
     if (id == null) {
         println("the identifier '${idName}' is not defined")

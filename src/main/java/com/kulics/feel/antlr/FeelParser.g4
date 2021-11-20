@@ -4,7 +4,7 @@ options { tokenVocab=FeelLexer; }
 
 program: moduleDeclaration globalDeclaration*;
 
-moduleDeclaration: Module identifier Semi;
+moduleDeclaration: Module variableIdentifier Semi;
 
 globalDeclaration
     : (globalVariableDeclaration
@@ -15,31 +15,31 @@ globalDeclaration
     ) Semi
     ;
 
-globalVariableDeclaration: Let Mut? identifier type? Equal expression;
-globalFunctionDeclaration: Let identifier typeParameterList? parameterList type? Equal expression;
-globalRecordDeclaration: Def identifier typeParameterList? fieldList type? methodList?;
-globalInterfaceDeclaration: Def identifier typeParameterList? virtualMethodList?;
-globalExtensionDeclaration: Ext identifier typeParameterList? type? methodList?;
+globalVariableDeclaration: Let Mut? variableIdentifier type? Equal expression;
+globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList type? Equal expression;
+globalRecordDeclaration: Def typeIdentifier typeParameterList? fieldList type? methodList?;
+globalInterfaceDeclaration: Def typeIdentifier typeParameterList? virtualMethodList?;
+globalExtensionDeclaration: Ext typeIdentifier typeParameterList? type? methodList?;
 
 typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
 
-typeParameter: identifier type;
+typeParameter: typeIdentifier type;
 
 parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
 
-parameter: identifier type;
+parameter: variableIdentifier type;
 
 fieldList: LeftParen (field (Comma field)*)? RightParen;
 
-field: Mut? identifier type;
+field: Mut? variableIdentifier type;
 
 methodList: LeftBrace (method Semi)* RightBrace;
 
-method: identifier parameterList type Equal expression;
+method: variableIdentifier parameterList type Equal expression;
 
 virtualMethodList: LeftBrace (virtualMethod Semi)* RightBrace;
 
-virtualMethod: identifier parameterList type (Equal expression)?;
+virtualMethod: variableIdentifier parameterList type (Equal expression)?;
 
 block: LeftBrace (statement Semi)* RightBrace;
 
@@ -66,16 +66,16 @@ expression
     | lambdaExpression
     ;
 
-variableDeclaration: Let Mut? identifier type? Equal expression;
-functionDeclaration: Let identifier parameterList type? Equal expression;
+variableDeclaration: Let Mut? variableIdentifier type? Equal expression;
+functionDeclaration: Let variableIdentifier parameterList type? Equal expression;
 
-memberAccessCallSuffix: Dot identifier (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
+memberAccessCallSuffix: Dot variableIdentifier (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
 
 callSuffix: (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
 
-memberAccess: Dot identifier;
+memberAccess: Dot variableIdentifier;
 
-assignment: identifier Equal expression;
+assignment: variableIdentifier Equal expression;
 
 lambdaExpression: Fn parameterList type? Equal expression;
 
@@ -112,7 +112,7 @@ deconstructPattern
     ;
 
 identifierPattern
-    : identifier
+    : variableIdentifier
     ;
 
 wildcardPattern
@@ -125,7 +125,8 @@ literalPattern
 
 primaryExpression
     : literalExpression
-    | identifier
+    | variableIdentifier
+    | typeIdentifier
     ;
 
 literalExpression
@@ -137,7 +138,7 @@ literalExpression
     ;
 
 type
-    : identifier (LeftBrack type (Comma type)* RightBrack)?
+    : typeIdentifier (LeftBrack type (Comma type)* RightBrack)?
     | functionType
     ;
 
@@ -145,7 +146,9 @@ functionType: Fn LeftParen parameterTypeList? RightParen type;
 
 parameterTypeList: type (Comma type)*;
 
-identifier: Identifier;
+typeIdentifier: UpperIdentifier;
+
+variableIdentifier: LowerIdentifier;
 
 stringExpression: StringLiteral;
 

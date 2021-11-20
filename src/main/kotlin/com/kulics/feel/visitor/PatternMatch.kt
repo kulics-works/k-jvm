@@ -18,7 +18,7 @@ fun DelegateVisitor.visitPattern(ctx: PatternContext): Pattern {
         is LiteralPatternContext ->
             LiteralPattern(visitLiteralExpression(pattern.literalExpression()))
         is IdentifierPatternContext ->
-            IdentifierPattern(visitIdentifier(pattern.identifier()))
+            IdentifierPattern(visitIdentifier(pattern.variableIdentifier()))
         is WildcardPatternContext ->
             WildcardPattern
         else -> {

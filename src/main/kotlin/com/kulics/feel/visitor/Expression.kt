@@ -254,7 +254,7 @@ fun checkLogicExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
 
 fun DelegateVisitor.visitMemberAccessCallSuffix(ctx: MemberAccessCallSuffixContext): MemberAccessCallSuffix {
     return MemberAccessCallSuffix(
-        visitIdentifier(ctx.identifier()),
+        visitIdentifier(ctx.variableIdentifier()),
         ctx.type().map {
             checkTypeNode(visitType(it))
         },
@@ -271,14 +271,23 @@ fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): Pair<List<Type>, Li
 }
 
 fun DelegateVisitor.visitMemberAccess(ctx: MemberAccessContext): String {
-    return visitIdentifier(ctx.identifier())
+    return visitIdentifier(ctx.variableIdentifier())
 }
 
 fun DelegateVisitor.visitPrimaryExpression(ctx: PrimaryExpressionContext): ExpressionNode {
     return if (ctx.literalExpression() != null) {
         visitLiteralExpression(ctx.literalExpression())
+    } else if (ctx.variableIdentifier() != null) {
+        val name = visitIdentifier(ctx.variableIdentifier())
+        val id = getIdentifier(name)
+        if (id == null) {
+            println("the identifier '${name}' is not define")
+            throw CompilingCheckException()
+        } else {
+            IdentifierExpressionNode(id)
+        }
     } else {
-        val name = visitIdentifier(ctx.identifier())
+        val name = visitIdentifier(ctx.typeIdentifier())
         val id = getIdentifier(name)
         if (id == null) {
             println("the identifier '${name}' is not define")
@@ -358,7 +367,7 @@ private fun DelegateVisitor.processIfPattern(
 }
 
 fun DelegateVisitor.visitIdentifierPattern(ctx: IdentifierPatternContext): String {
-    return visitIdentifier(ctx.identifier())
+    return visitIdentifier(ctx.variableIdentifier())
 }
 
 fun DelegateVisitor.visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {

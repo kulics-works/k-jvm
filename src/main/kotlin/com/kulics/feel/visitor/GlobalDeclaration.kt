@@ -11,7 +11,7 @@ fun DelegateVisitor.visitProgram(ctx: ProgramContext): ProgramNode {
 }
 
 fun DelegateVisitor.visitModuleDeclaration(ctx: ModuleDeclarationContext): ModuleDeclarationNode {
-    return ModuleDeclarationNode(visitIdentifier(ctx.identifier()))
+    return ModuleDeclarationNode(visitIdentifier(ctx.variableIdentifier()))
 }
 
 fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): DeclarationNode {
@@ -26,7 +26,7 @@ fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): Decla
 }
 
 fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclarationContext): GlobalVariableDeclarationNode {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.variableIdentifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
@@ -48,7 +48,7 @@ fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclaratio
 }
 
 fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclarationContext): GlobalFunctionDeclarationNode {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.variableIdentifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
@@ -198,7 +198,7 @@ fun DelegateVisitor.visitParameterList(ctx: ParameterListContext): List<Identifi
 }
 
 fun DelegateVisitor.visitParameter(ctx: ParameterContext): Identifier {
-    val id = visitIdentifier(ctx.identifier())
+    val id = visitIdentifier(ctx.variableIdentifier())
     val type = checkTypeNode(visitType(ctx.type()))
     return Identifier(id, type, IdentifierKind.Immutable)
 }
@@ -208,7 +208,7 @@ fun DelegateVisitor.visitTypeParameterList(ctx: TypeParameterListContext): List<
 }
 
 fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.typeIdentifier())
     val typeParameter = TypeParameter(idName, builtinTypeAny)
     addType(typeParameter)
     return when (val typeNode = visitType(ctx.type())) {
@@ -262,7 +262,7 @@ fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter
 }
 
 fun DelegateVisitor.visitGlobalRecordDeclaration(ctx: GlobalRecordDeclarationContext): GlobalRecordDeclarationNode {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.typeIdentifier())
     if (isRedefineIdentifier(idName) || isRedefineType(idName)) {
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
@@ -444,7 +444,7 @@ fun DelegateVisitor.visitFieldList(ctx: FieldListContext): List<Identifier> {
 
 fun DelegateVisitor.visitField(ctx: FieldContext): Identifier {
     return Identifier(
-        visitIdentifier(ctx.identifier()),
+        visitIdentifier(ctx.variableIdentifier()),
         checkTypeNode(visitType(ctx.type())),
         if (ctx.Mut() == null) IdentifierKind.Immutable else IdentifierKind.Mutable
     )
@@ -455,7 +455,7 @@ fun DelegateVisitor.visitMethodList(ctx: MethodListContext): List<MethodNode> {
 }
 
 fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.variableIdentifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
@@ -483,7 +483,7 @@ fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
 }
 
 fun DelegateVisitor.visitGlobalInterfaceDeclaration(ctx: GlobalInterfaceDeclarationContext): GlobalInterfaceDeclarationNode {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.typeIdentifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
@@ -541,7 +541,7 @@ fun DelegateVisitor.visitVirtualMethodList(ctx: VirtualMethodListContext): List<
 }
 
 fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): VirtualMethodNode {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.variableIdentifier())
     if (isRedefineIdentifier(idName)) {
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
@@ -575,7 +575,7 @@ fun DelegateVisitor.visitVirtualMethod(ctx: VirtualMethodContext): VirtualMethod
 }
 
 fun DelegateVisitor.visitGlobalExtensionDeclaration(ctx: GlobalExtensionDeclarationContext): GlobalExtensionDeclarationNode {
-    val idName = visitIdentifier(ctx.identifier())
+    val idName = visitIdentifier(ctx.typeIdentifier())
     val type = getType(idName)
     if (type == null) {
         println("identifier: '$idName' is not defined")
