@@ -77,7 +77,7 @@ memberAccess: Dot variableIdentifier;
 
 assignment: variableIdentifier Equal expression;
 
-lambdaExpression: Fn parameterList type? Equal expression;
+lambdaExpression: parameterList type? Arrow expression;
 
 ifStatement
     : If expression (Is pattern)? Then block (Else (block | ifStatement))?
@@ -142,7 +142,7 @@ type
     | functionType
     ;
 
-functionType: Fn LeftParen parameterTypeList? RightParen type;
+functionType: LeftParen parameterTypeList? RightParen Arrow type;
 
 parameterTypeList: type (Comma type)*;
 

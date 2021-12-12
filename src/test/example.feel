@@ -308,6 +308,6 @@ let complicatedGenericsType2() Void = {
     let c Eq[EqPair2[EqBar, EqBar]] = EqPair2[EqBar, EqBar](EqBar(), EqBar());
 };
 
-let functionType(x Int, f fn(Int) Int) Int = f(x);
-let lambdaExpression() Int = functionType(1, fn(a Int) = a);
-let lambdaExpression2() Int = functionType(1, fn(b Int) Int = b);
+let functionType(x Int, f (Int)-> Int) Int = f(x);
+let lambdaExpression() Int = functionType(1, (a Int) -> a);
+let lambdaExpression2() Int = functionType(1, (b Int) Int -> b);

@@ -1,5 +1,7 @@
 lexer grammar FeelLexer;
 
+Arrow: '->';
+
 EqualEqual: '==';
 LessEqual: '<=';
 GreaterEqual: '>=';
@@ -54,7 +56,6 @@ Then: 'then';
 Else: 'else';
 While: 'while';
 Is: 'is';
-Fn: 'fn';
 True: 'true';
 False: 'false';
 
