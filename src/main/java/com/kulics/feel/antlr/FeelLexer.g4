@@ -1,6 +1,7 @@
 lexer grammar FeelLexer;
 
 Arrow: '->';
+FatArrow: '=>';
 
 EqualEqual: '==';
 LessEqual: '<=';

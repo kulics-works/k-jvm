@@ -16,7 +16,7 @@ globalDeclaration
     ;
 
 globalVariableDeclaration: Let Mut? variableIdentifier type? Equal expression;
-globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList type? Equal expression;
+globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList type? FatArrow expression;
 globalRecordDeclaration: Def typeIdentifier typeParameterList? fieldList type? methodList?;
 globalInterfaceDeclaration: Def typeIdentifier typeParameterList? virtualMethodList?;
 globalExtensionDeclaration: Ext typeIdentifier typeParameterList? type? methodList?;
@@ -35,11 +35,11 @@ field: Mut? variableIdentifier type;
 
 methodList: LeftBrace (method Semi)* RightBrace;
 
-method: variableIdentifier parameterList type Equal expression;
+method: variableIdentifier parameterList type FatArrow expression;
 
 virtualMethodList: LeftBrace (virtualMethod Semi)* RightBrace;
 
-virtualMethod: variableIdentifier parameterList type (Equal expression)?;
+virtualMethod: variableIdentifier parameterList type (FatArrow expression)?;
 
 block: LeftBrace (statement Semi)* RightBrace;
 
@@ -67,7 +67,7 @@ expression
     ;
 
 variableDeclaration: Let Mut? variableIdentifier type? Equal expression;
-functionDeclaration: Let variableIdentifier parameterList type? Equal expression;
+functionDeclaration: Let variableIdentifier parameterList type? FatArrow expression;
 
 memberAccessCallSuffix: Dot variableIdentifier (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
 
@@ -77,7 +77,7 @@ memberAccess: Dot variableIdentifier;
 
 assignment: variableIdentifier Equal expression;
 
-lambdaExpression: parameterList type? Arrow expression;
+lambdaExpression: parameterList type? FatArrow expression;
 
 ifStatement
     : If expression (Is pattern)? Then block (Else (block | ifStatement))?

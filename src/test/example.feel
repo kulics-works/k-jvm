@@ -1,6 +1,6 @@
 mod demo;
 
-let main() Void = {
+let main() Void => {
 
 };
 
@@ -22,19 +22,19 @@ let chr Char = 'c';
 
 let str String = "Hello, world!";
 
-let g() Int = 1 + 2 + 3 + b;
+let g() Int => 1 + 2 + 3 + b;
 
-let g2() = 1 + 2 + 3 + b;
+let g2() => 1 + 2 + 3 + b;
 
-let add(a Int, b Int) Int = a + b;
+let add(a Int, b Int) Int => a + b;
 
-let calc(x Int) Int = add(x, x) + x + 1;
+let calc(x Int) Int => add(x, x) + x + 1;
 
-let id[T Any](id T) T = id;
+let id[T Any](id T) T => id;
 
-let id2[T Any](id T) = id;
+let id2[T Any](id T) => id;
 
-let call_id() Void = {
+let call_id() Void => {
     let a = id[Int](1);
     let b = id[Float](1.0);
 };
@@ -45,7 +45,7 @@ let blockExpr1 Int = {
     a + b
 };
 
-let blockExpr2() Int = {
+let blockExpr2() Int => {
     let a = 0;
     let b = 0;
     a + b
@@ -88,25 +88,25 @@ let assignment Void = {
     a = 1;
 };
 
-let whileStat() Void = {
+let whileStat() Void => {
     let mut i = 0;
     while i <= 10 then {
         i = i + 1;
     };
 };
 
-let localFunction() Int = {
-    let f() = 123;
+let localFunction() Int => {
+    let f() => 123;
     let a = f();
     a
 };
 
 def Point(x Int, y Int) {
-    copy() Point = Point(x, y);
-    plus(other Point) Point = Point(x + other.x, y + other.y);
+    copy() Point => Point(x, y);
+    plus(other Point) Point => Point(x + other.x, y + other.y);
 };
 let somePoint Point = Point(1, 2);
-let memberAccess(a Point, b Point) Point = Point(a.x+b.x, a.y+b.y).copy();
+let memberAccess(a Point, b Point) Point => Point(a.x+b.x, a.y+b.y).copy();
 
 def Color;
 def Red() Color;
@@ -116,28 +116,28 @@ def Blue() Color;
 let red Color = Red();
 
 def IntList {
-    defaultValue() Int = 0;
+    defaultValue() Int => 0;
     value() Int;
 };
 def Nil() IntList {
-    value() Int = 0;
+    value() Int => 0;
 };
 def Cons(head Int, tail IntList) IntList {
-    value() Int = head;
+    value() Int => head;
 };
 
-let makeIntList() IntList = {
+let makeIntList() IntList => {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
     li.value();
     li
 };
-let sumIntList(li IntList) Int = if li is Cons v then {
+let sumIntList(li IntList) Int => if li is Cons v then {
     v.head + sumIntList(v.tail)
 } else {
     0
 };
 
-let typePattern() Void = {
+let typePattern() Void => {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
     let i = if li is Cons v then {
         v.head
@@ -146,7 +146,7 @@ let typePattern() Void = {
     };
 };
 
-let typePattern2() Void = {
+let typePattern2() Void => {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
     if li is Cons v then {
         v.head;
@@ -155,12 +155,12 @@ let typePattern2() Void = {
     };
 };
 
-let identifierPattern() Int = {
+let identifierPattern() Int => {
     let a = 1;
     if a is a then 123 else 123
 };
 
-let identifierPattern2() Void = {
+let identifierPattern2() Void => {
     let a = 1;
     if a is a then {
         localFunction();
@@ -171,12 +171,12 @@ let identifierPattern2() Void = {
     };
 };
 
-let wildcardPattern() Int = {
+let wildcardPattern() Int => {
     let a = 1;
     if a is _ then 123 else 123
 };
 
-let wildcardPattern2() Void = {
+let wildcardPattern2() Void => {
     let a = 1;
     if a is _ then {
         localFunction();
@@ -187,12 +187,12 @@ let wildcardPattern2() Void = {
     };
 };
 
-let literalPattern() Int = {
+let literalPattern() Int => {
     let a = 1;
     if a is 1 then 123 else 123
 };
 
-let literalPattern2() Void = {
+let literalPattern2() Void => {
     let a = 1;
     if a is 1 then {
         localFunction();
@@ -203,15 +203,15 @@ let literalPattern2() Void = {
     };
 };
 
-let genericsFunction[T Any](a T) T = {
+let genericsFunction[T Any](a T) T => {
     let b T = genericsFunction[T](a);
     b;
     a
 };
-let callGenericsFunction() Int = genericsFunction[Int](1);
+let callGenericsFunction() Int => genericsFunction[Int](1);
 
 def Pair[T1 Any, T2 Any](first T1, second T2);
-let genericsRecord() Void = {
+let genericsRecord() Void => {
     let a Pair[Int, Int] = Pair[Int, Int](1, 2);
     a.first + a.second;
 };
@@ -220,7 +220,7 @@ def Option[T Any];
 def Some[T Any](value T) Option[T];
 def None[T Any]() Option[T];
 
-let genericsEnum() Int = {
+let genericsEnum() Int => {
     let x Option[Int] = Some[Int](123);
     let y Option[Int] = Some[Int](123);
     if x is Some[Int] v then v.value else 0
@@ -230,16 +230,16 @@ def GenericsInterface[T1 Any, T2 Any];
 def ImplementType[T Any]() GenericsInterface[T, Int];
 def ImplementType2[T Any, R Any]() GenericsInterface[R, T];
 
-let genericsSubtyping() Void = {
+let genericsSubtyping() Void => {
     let i GenericsInterface[Int, Int] = ImplementType[Int]();
     let j GenericsInterface[Int, Float] = ImplementType2[Float, Int]();
 };
 
-let genericsSubtyping2[E Any]() Void = {
+let genericsSubtyping2[E Any]() Void => {
     let i GenericsInterface[E, E] = ImplementType2[E, E]();
 };
 
-let array() Void = {
+let array() Void => {
     let mut a = emptyArray[Int]();
     a = newArray[Int](5, 5);
     let b = a.get(2);
@@ -253,24 +253,24 @@ def I2 {
 };
 
 def C1() I2 {
-    f() Void = {};
-    f2(a Int) Int = a;
+    f() Void => {};
+    f2(a Int) Int => a;
 };
 
-let interfaceInstance() I2 = {
+let interfaceInstance() I2 => {
     let i I2 = C1();
-    let f(x I2) = 123;
+    let f(x I2) => 123;
     f(C1());
     C1()
 };
 
-let interfaceConstraint[T I2](v T) Void = {
+let interfaceConstraint[T I2](v T) Void => {
     v.f();
     let x = v.f2(1);
     let i I2 = v;
 };
 
-let instanceConstraint() Void = {
+let instanceConstraint() Void => {
     interfaceConstraint[C1](C1());
 };
 
@@ -279,28 +279,28 @@ def Eq[T Any] {
 };
 
 def EqFoo() Eq[EqFoo] {
-    eq(other EqFoo) Bool = true;
+    eq(other EqFoo) Bool => true;
 };
 
 def EqBar() I1;
 
 ext EqBar Eq[EqBar] {
-    eq(other EqBar) Bool = true;
+    eq(other EqBar) Bool => true;
 };
 
 def EqPair[T1 Eq[T1], T2 Eq[T2]](first T1, second T2) Eq[EqPair[T1, T2]] {
-    eq(other EqPair[T1, T2]) Bool = first.eq(other.first) && second.eq(other.second);
+    eq(other EqPair[T1, T2]) Bool => first.eq(other.first) && second.eq(other.second);
 };
 
 def EqPair2[T1 Any, T2 Any](first T1, second T2);
 
 ext EqPair2[T1 Eq[T1], T2 Eq[T2]] Eq[EqPair2[T1, T2]] {
-    eq(other EqPair2[T1, T2]) Bool = first.eq(other.first) && second.eq(other.second);
+    eq(other EqPair2[T1, T2]) Bool => first.eq(other.first) && second.eq(other.second);
 };
 
-let complicatedGenericsType[T Eq[T]](a T, b T) Bool = a.eq(b);
+let complicatedGenericsType[T Eq[T]](a T, b T) Bool => a.eq(b);
 
-let complicatedGenericsType2() Void = {
+let complicatedGenericsType2() Void => {
     complicatedGenericsType[EqFoo](EqFoo(), EqFoo());
     let a = EqPair[EqFoo, EqFoo](EqFoo(), EqFoo());
     complicatedGenericsType[EqPair[EqFoo, EqFoo]](a, a);
@@ -308,6 +308,6 @@ let complicatedGenericsType2() Void = {
     let c Eq[EqPair2[EqBar, EqBar]] = EqPair2[EqBar, EqBar](EqBar(), EqBar());
 };
 
-let functionType(x Int, f (Int)-> Int) Int = f(x);
-let lambdaExpression() Int = functionType(1, (a Int) -> a);
-let lambdaExpression2() Int = functionType(1, (b Int) Int -> b);
+let functionType(x Int, f (Int)-> Int) Int => f(x);
+let lambdaExpression() Int => functionType(1, (a Int) => a);
+let lambdaExpression2() Int => functionType(1, (b Int) Int => b);
