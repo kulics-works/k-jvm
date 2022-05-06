@@ -16,6 +16,7 @@ repositories {
 dependencies {
     antlr("org.antlr:antlr4:4.9.2")
     implementation("org.javassist:javassist:3.28.0-GA")
+    implementation(kotlin("stdlib-jdk8"))
 }
 
 tasks.withType<KotlinCompile>() {
@@ -24,4 +25,12 @@ tasks.withType<KotlinCompile>() {
 
 application {
     mainClass
+}
+val compileKotlin: KotlinCompile by tasks
+compileKotlin.kotlinOptions {
+    jvmTarget = "1.8"
+}
+val compileTestKotlin: KotlinCompile by tasks
+compileTestKotlin.kotlinOptions {
+    jvmTarget = "1.8"
 }

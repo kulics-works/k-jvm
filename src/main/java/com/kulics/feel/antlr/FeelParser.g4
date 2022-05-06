@@ -15,31 +15,31 @@ globalDeclaration
     ) Semi
     ;
 
-globalVariableDeclaration: Let Mut? variableIdentifier type? Equal expression;
-globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList type? FatArrow expression;
-globalRecordDeclaration: Def typeIdentifier typeParameterList? fieldList type? methodList?;
+globalVariableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expression;
+globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList (Colon type)? FatArrow expression;
+globalRecordDeclaration: Def typeIdentifier typeParameterList? fieldList (Colon type)? methodList?;
 globalInterfaceDeclaration: Def typeIdentifier typeParameterList? virtualMethodList?;
-globalExtensionDeclaration: Ext typeIdentifier typeParameterList? type? methodList?;
+globalExtensionDeclaration: Ext typeIdentifier typeParameterList? (Colon type)? methodList?;
 
 typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
 
-typeParameter: typeIdentifier type;
+typeParameter: typeIdentifier (Colon type)?;
 
 parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
 
-parameter: variableIdentifier type;
+parameter: variableIdentifier (Colon type)?;
 
 fieldList: LeftParen (field (Comma field)*)? RightParen;
 
-field: Mut? variableIdentifier type;
+field: Mut? variableIdentifier (Colon type)?;
 
 methodList: LeftBrace (method Semi)* RightBrace;
 
-method: variableIdentifier parameterList type FatArrow expression;
+method: variableIdentifier parameterList (Colon type)? FatArrow expression;
 
 virtualMethodList: LeftBrace (virtualMethod Semi)* RightBrace;
 
-virtualMethod: variableIdentifier parameterList type (FatArrow expression)?;
+virtualMethod: variableIdentifier parameterList Colon type (FatArrow expression)?;
 
 block: LeftBrace (statement Semi)* RightBrace;
 
@@ -66,8 +66,8 @@ expression
     | lambdaExpression
     ;
 
-variableDeclaration: Let Mut? variableIdentifier type? Equal expression;
-functionDeclaration: Let variableIdentifier parameterList type? FatArrow expression;
+variableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expression;
+functionDeclaration: Let variableIdentifier parameterList (Colon type)? FatArrow expression;
 
 memberAccessCallSuffix: Dot variableIdentifier (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
 
@@ -77,7 +77,7 @@ memberAccess: Dot variableIdentifier;
 
 assignment: variableIdentifier Equal expression;
 
-lambdaExpression: parameterList type? FatArrow expression;
+lambdaExpression: parameterList (Colon type)? FatArrow expression;
 
 ifStatement
     : If expression (Is pattern)? Then block (Else (block | ifStatement))?
