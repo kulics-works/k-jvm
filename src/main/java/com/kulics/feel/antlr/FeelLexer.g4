@@ -49,7 +49,6 @@ Sharp: '#';
 
 Mut: 'mut';
 Let: 'let';
-Def: 'def';
 Ext: 'ext';
 Module: 'mod';
 If: 'if';

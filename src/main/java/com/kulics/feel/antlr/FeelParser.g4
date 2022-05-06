@@ -17,8 +17,8 @@ globalDeclaration
 
 globalVariableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expression;
 globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList (Colon type)? FatArrow expression;
-globalRecordDeclaration: Def typeIdentifier typeParameterList? fieldList (Colon type)? methodList?;
-globalInterfaceDeclaration: Def typeIdentifier typeParameterList? virtualMethodList?;
+globalRecordDeclaration: Let typeIdentifier typeParameterList? fieldList (Colon type)? methodList?;
+globalInterfaceDeclaration: Let typeIdentifier typeParameterList? virtualMethodList?;
 globalExtensionDeclaration: Ext typeIdentifier typeParameterList? (Colon type)? methodList?;
 
 typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
