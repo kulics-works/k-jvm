@@ -21,7 +21,7 @@ globalRecordDeclaration: Let typeIdentifier typeParameterList? fieldList (Colon 
 globalInterfaceDeclaration: Let typeIdentifier typeParameterList? virtualMethodList?;
 globalExtensionDeclaration: Ext typeIdentifier typeParameterList? (Colon type)? methodList?;
 
-typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
+typeParameterList: LeftParen typeParameter (Comma typeParameter)* RightParen;
 
 typeParameter: typeIdentifier (Colon type)?;
 
@@ -69,9 +69,9 @@ expression
 variableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expression;
 functionDeclaration: Let variableIdentifier parameterList (Colon type)? FatArrow expression;
 
-memberAccessCallSuffix: Dot variableIdentifier (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
+memberAccessCallSuffix: Dot variableIdentifier (LeftParen type (Comma type)* RightParen)? LeftParen (expression (Comma expression)*)? RightParen;
 
-callSuffix: (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
+callSuffix: (LeftParen type (Comma type)* RightParen)? LeftParen (expression (Comma expression)*)? RightParen;
 
 memberAccess: Dot variableIdentifier;
 
@@ -138,7 +138,7 @@ literalExpression
     ;
 
 type
-    : typeIdentifier (LeftBrack type (Comma type)* RightBrack)?
+    : typeIdentifier (LeftParen type (Comma type)* RightParen)?
     | functionType
     ;
 
