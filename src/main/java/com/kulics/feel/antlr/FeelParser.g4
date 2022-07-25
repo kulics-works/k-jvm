@@ -16,9 +16,9 @@ globalDeclaration
     ;
 
 globalVariableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expression;
-globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList (Colon type)? FatArrow expression;
-globalRecordDeclaration: Let typeIdentifier typeParameterList? fieldList (Colon type)? methodList?;
-globalInterfaceDeclaration: Let typeIdentifier typeParameterList? virtualMethodList?;
+globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList (Colon type)? Equal expression;
+globalRecordDeclaration: Type typeIdentifier typeParameterList? fieldList (Colon type)? methodList?;
+globalInterfaceDeclaration: Type typeIdentifier typeParameterList? virtualMethodList?;
 globalExtensionDeclaration: Ext typeIdentifier typeParameterList? (Colon type)? methodList?;
 
 typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
@@ -35,11 +35,11 @@ field: Mut? variableIdentifier (Colon type)?;
 
 methodList: LeftBrace (method Semi)* RightBrace;
 
-method: variableIdentifier parameterList (Colon type)? FatArrow expression;
+method: variableIdentifier parameterList (Colon type)? Equal expression;
 
 virtualMethodList: LeftBrace (virtualMethod Semi)* RightBrace;
 
-virtualMethod: variableIdentifier parameterList Colon type (FatArrow expression)?;
+virtualMethod: variableIdentifier parameterList Colon type (Equal expression)?;
 
 block: LeftBrace (statement Semi)* RightBrace;
 
@@ -67,7 +67,7 @@ expression
     ;
 
 variableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expression;
-functionDeclaration: Let variableIdentifier parameterList (Colon type)? FatArrow expression;
+functionDeclaration: Let variableIdentifier parameterList (Colon type)? Equal expression;
 
 memberAccessCallSuffix: Dot variableIdentifier (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
 
@@ -77,7 +77,7 @@ memberAccess: Dot variableIdentifier;
 
 assignment: variableIdentifier Equal expression;
 
-lambdaExpression: parameterList (Colon type)? FatArrow expression;
+lambdaExpression: parameterList (Colon type)? Arrow expression;
 
 ifStatement
     : If expression (Is pattern)? Then block (Else (block | ifStatement))?
