@@ -55,6 +55,8 @@ If: 'if';
 Then: 'then';
 Else: 'else';
 While: 'while';
+For: 'for';
+Do: 'do';
 Is: 'is';
 True: 'true';
 False: 'false';

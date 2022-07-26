@@ -90,7 +90,7 @@ let assignment: Void = {
 
 let whileStat(): Void = {
     let mut i = 0;
-    while i <= 10 then {
+    while i <= 10 do {
         i = i + 1;
     };
 };

@@ -88,7 +88,7 @@ ifExpression
     ;
 
 whileStatement
-    : While expression Then block
+    : While expression Do block
     ;
 
 blockExpression: LeftBrace (statement Semi)* expression? RightBrace;
