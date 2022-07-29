@@ -58,6 +58,7 @@ While: 'while';
 For: 'for';
 Do: 'do';
 Is: 'is';
+As: 'as';
 True: 'true';
 False: 'false';
 Type: 'type';

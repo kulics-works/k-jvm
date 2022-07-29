@@ -18,7 +18,7 @@ globalDeclaration
 globalVariableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expression;
 globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList (Colon type)? Equal expression;
 globalRecordDeclaration: Type typeIdentifier typeParameterList? fieldList (Colon type)? methodList?;
-globalInterfaceDeclaration: Type typeIdentifier typeParameterList? virtualMethodList?;
+globalInterfaceDeclaration: Type typeIdentifier typeParameterList? (Equal virtualMethodList)?;
 globalExtensionDeclaration: Ext typeIdentifier typeParameterList? (Colon type)? methodList?;
 
 typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
@@ -80,11 +80,11 @@ assignment: variableIdentifier Equal expression;
 lambdaExpression: parameterList (Colon type)? Arrow expression;
 
 ifStatement
-    : If expression (Is pattern)? Then block (Else (block | ifStatement))?
+    : If expression (As pattern)? Then block (Else (block | ifStatement))?
     ;
 
 ifExpression
-    : If expression (Is pattern)? Then expression Else expression
+    : If expression (As pattern)? Then expression Else expression
     ;
 
 whileStatement

@@ -115,7 +115,7 @@ type Blue(): Color;
 
 let red: Color = Red();
 
-type IntList {
+type IntList = {
     defaultValue() : Int = 0;
     value() : Int;
 };
@@ -132,7 +132,7 @@ let makeIntList(): IntList = {
     li
 };
 let sumIntList(li: IntList): Int =
-    if li is Cons v then {
+    if li as Cons v then {
         v.head + sumIntList(v.tail)
     } else {
         0
@@ -141,7 +141,7 @@ let sumIntList(li: IntList): Int =
 let typePattern(): Void = {
     let li : IntList = Cons(1, Cons(2, Cons(3, Nil())));
     let i =
-        if li is Cons v then {
+        if li as Cons v then {
             v.head
         } else {
             0
@@ -150,7 +150,7 @@ let typePattern(): Void = {
 
 let typePattern2(): Void = {
     let li : IntList = Cons(1, Cons(2, Cons(3, Nil())));
-    if li is Cons v then {
+    if li as Cons v then {
         v.head;
     } else {
         0;
@@ -159,14 +159,14 @@ let typePattern2(): Void = {
 
 let identifierPattern(): Int = {
     let a = 1;
-    if a is a then 123 else 123
+    if a as a then 123 else 123
 };
 
 let identifierPattern2(): Void = {
     let a = 1;
-    if a is a then {
+    if a as a then {
         localFunction();
-    } else if a is b then {
+    } else if a as b then {
         localFunction();
     } else {
         localFunction();
@@ -175,14 +175,14 @@ let identifierPattern2(): Void = {
 
 let wildcardPattern(): Int = {
     let a = 1;
-    if a is _ then 123 else 123
+    if a as _ then 123 else 123
 };
 
 let wildcardPattern2(): Void = {
     let a = 1;
-    if a is _ then {
+    if a as _ then {
         localFunction();
-    } else if a is _ then {
+    } else if a as _ then {
         localFunction();
     } else {
         localFunction();
@@ -191,14 +191,14 @@ let wildcardPattern2(): Void = {
 
 let literalPattern(): Int = {
     let a = 1;
-    if a is 1 then 123 else 123
+    if a as 1 then 123 else 123
 };
 
 let literalPattern2(): Void = {
     let a = 1;
-    if a is 1 then {
+    if a as 1 then {
         localFunction();
-    } else if a is 1 then {
+    } else if a as 1 then {
         localFunction();
     } else {
         localFunction();
@@ -225,7 +225,7 @@ type None[T: Any](): Option[T];
 let genericsEnum(): Int = {
     let x: Option[Int] = Some[Int](123);
     let y: Option[Int] = Some[Int](123);
-    if x is Some[Int] v then v.value else 0
+    if x as Some[Int] v then v.value else 0
 };
 
 type GenericsInterface[T1: Any, T2: Any];
@@ -249,7 +249,7 @@ let array(): Void = {
 };
 
 type I1;
-type I2 {
+type I2 = {
     f(): Void;
     f2(a: Int): Int;
 };
@@ -276,7 +276,7 @@ let instanceConstraint(): Void = {
     interfaceConstraint[C1](C1());
 };
 
-type Eq[T: Any] {
+type Eq[T: Any] = {
     eq(other: T): Bool;
 };
 
