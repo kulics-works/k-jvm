@@ -170,10 +170,6 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         TODO("Not yet implemented")
     }
 
-    override fun visit(node: IfStatementNode): Any {
-        TODO("Not yet implemented")
-    }
-
     override fun visit(node: WhileStatementNode): Any {
         TODO("Not yet implemented")
     }
@@ -190,8 +186,10 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
             is CallExpressionNode -> visit(node)
             is GenericsCallExpressionNode -> visit(node)
             is MemberExpressionNode -> visit(node)
-            is IfExpressionNode -> visit(node)
-            is IfPatternExpressionNode -> visit(node)
+            is IfThenElseExpressionNode -> visit(node)
+            is IfThenElsePatternExpressionNode -> visit(node)
+            is IfDoExpressionNode -> visit(node)
+            is IfDoPatternExpressionNode -> visit(node)
             is CastExpressionNode -> visit(node)
         }
     }
@@ -261,11 +259,11 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         TODO("Not yet implemented")
     }
 
-    override fun visit(node: IfExpressionNode): Any {
+    override fun visit(node: IfThenElseExpressionNode): Any {
         TODO("Not yet implemented")
     }
 
-    override fun visit(node: IfPatternExpressionNode): Any {
+    override fun visit(node: IfThenElsePatternExpressionNode): Any {
         TODO("Not yet implemented")
     }
 
@@ -288,5 +286,13 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
             is InterfaceType -> name
             else -> name
         }
+    }
+
+    override fun visit(node: IfDoExpressionNode): Any {
+        TODO("Not yet implemented")
+    }
+
+    override fun visit(node: IfDoPatternExpressionNode): Any {
+        TODO("Not yet implemented")
     }
 }

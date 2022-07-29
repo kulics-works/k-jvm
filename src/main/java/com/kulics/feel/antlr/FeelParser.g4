@@ -47,7 +47,6 @@ statement
     : variableDeclaration
     | functionDeclaration
     | assignment
-    | ifStatement
     | whileStatement
     | expression
     ;
@@ -55,7 +54,8 @@ statement
 expression
     : primaryExpression
     | blockExpression
-    | ifExpression
+    | ifDoExpression
+    | ifThenElseExpression
     | expression memberAccessCallSuffix
     | expression callSuffix
     | expression memberAccess
@@ -79,11 +79,11 @@ assignment: variableIdentifier Equal expression;
 
 lambdaExpression: parameterList (Colon type)? Arrow expression;
 
-ifStatement
-    : If expression (As pattern)? Then block (Else (block | ifStatement))?
+ifDoExpression
+    : If expression (As pattern)? Do expression
     ;
 
-ifExpression
+ifThenElseExpression
     : If expression (As pattern)? Then expression Else expression
     ;
 

@@ -111,12 +111,12 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitAssignment(ctx)
     }
 
-    override fun visitIfStatement(ctx: IfStatementContext): IfStatementNode {
-        return delegate.visitIfStatement(ctx)
+    override fun visitIfDoExpression(ctx: IfDoExpressionContext): ExpressionNode {
+        return delegate.visitIfDoExpression(ctx)
     }
 
-    override fun visitIfExpression(ctx: IfExpressionContext): ExpressionNode {
-        return delegate.visitIfExpression(ctx)
+    override fun visitIfThenElseExpression(ctx: IfThenElseExpressionContext): ExpressionNode {
+        return delegate.visitIfThenElseExpression(ctx)
     }
 
     override fun visitWhileStatement(ctx: WhileStatementContext): WhileStatementNode {

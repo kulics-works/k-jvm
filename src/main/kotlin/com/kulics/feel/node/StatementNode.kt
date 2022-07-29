@@ -41,21 +41,6 @@ class FunctionStatementNode(
     }
 }
 
-class IfStatementNode(
-    val cond: ExpressionNode,
-    val pattern: Pattern?,
-    val thenBranch: List<StatementNode>,
-    val elseBranch: IElseBranch?
-) : StatementNode(), IElseBranch {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
-    }
-}
-
-sealed interface IElseBranch
-
-class ElseBranch(val branch: List<StatementNode>) : IElseBranch
-
 class WhileStatementNode(val cond: ExpressionNode, val stats: List<StatementNode>) : StatementNode() {
     override fun <T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)

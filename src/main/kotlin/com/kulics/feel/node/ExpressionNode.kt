@@ -109,7 +109,7 @@ class CastExpressionNode(val expr: ExpressionNode, val targetType: Type) : Expre
     }
 }
 
-class IfExpressionNode(
+class IfThenElseExpressionNode(
     val condExpr: ExpressionNode,
     val thenExpr: ExpressionNode,
     val elseExpr: ExpressionNode,
@@ -120,13 +120,32 @@ class IfExpressionNode(
     }
 }
 
-class IfPatternExpressionNode(
+class IfThenElsePatternExpressionNode(
     val condExpr: ExpressionNode,
     val pattern: Pattern,
     val thenExpr: ExpressionNode,
     val elseExpr: ExpressionNode,
     ty: Type
 ) : ExpressionNode(ty) {
+    override fun <T> accept(visitor: NodeVisitor<T>) {
+        visitor.visit(this)
+    }
+}
+
+class IfDoExpressionNode(
+    val condExpr: ExpressionNode,
+    val doExpr: ExpressionNode,
+) : ExpressionNode(builtinTypeVoid) {
+    override fun <T> accept(visitor: NodeVisitor<T>) {
+        visitor.visit(this)
+    }
+}
+
+class IfDoPatternExpressionNode(
+    val condExpr: ExpressionNode,
+    val pattern: Pattern,
+    val doExpr: ExpressionNode,
+) : ExpressionNode(builtinTypeVoid) {
     override fun <T> accept(visitor: NodeVisitor<T>) {
         visitor.visit(this)
     }

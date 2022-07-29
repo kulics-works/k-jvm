@@ -24,7 +24,6 @@ interface NodeVisitor<T> {
     fun visit(node: ExpressionStatementNode): T
     fun visit(node: AssignmentStatementNode): T
     fun visit(node: FunctionStatementNode): T
-    fun visit(node: IfStatementNode): T
     fun visit(node: WhileStatementNode): T
 
     fun visit(node: ExpressionNode): T
@@ -38,7 +37,9 @@ interface NodeVisitor<T> {
     fun visit(node: CallExpressionNode): T
     fun visit(node: GenericsCallExpressionNode): T
     fun visit(node: MemberExpressionNode): T
-    fun visit(node: IfExpressionNode): T
-    fun visit(node: IfPatternExpressionNode): T
+    fun visit(node: IfThenElseExpressionNode): T
+    fun visit(node: IfThenElsePatternExpressionNode): T
+    fun visit(node: IfDoExpressionNode): T
+    fun visit(node: IfDoPatternExpressionNode): T
     fun visit(node: CastExpressionNode): T
 }

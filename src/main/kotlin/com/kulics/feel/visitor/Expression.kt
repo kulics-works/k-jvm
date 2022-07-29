@@ -21,7 +21,8 @@ fun DelegateVisitor.visitSingleExpression(expr: ParseTree): ExpressionNode {
     return when (expr) {
         is PrimaryExpressionContext -> visitPrimaryExpression(expr)
         is BlockExpressionContext -> visitBlockExpression(expr)
-        is IfExpressionContext -> visitIfExpression(expr)
+        is IfThenElseExpressionContext -> visitIfThenElseExpression(expr)
+        is IfDoExpressionContext -> visitIfDoExpression(expr)
         is LambdaExpressionContext -> visitLambdaExpression(expr)
         else -> throw CompilingCheckException()
     }
@@ -312,7 +313,7 @@ fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContext): Expre
     }
 }
 
-fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): ExpressionNode {
+fun DelegateVisitor.visitIfThenElseExpression(ctx: IfThenElseExpressionContext): ExpressionNode {
     val cond = visitExpression(ctx.expression(0))
     return if (ctx.pattern() == null) {
         processIf(ctx, cond)
@@ -321,10 +322,40 @@ fun DelegateVisitor.visitIfExpression(ctx: IfExpressionContext): ExpressionNode 
     }
 }
 
+fun DelegateVisitor.visitIfDoExpression(ctx: IfDoExpressionContext): ExpressionNode {
+    val cond = visitExpression(ctx.expression(0))
+    return if (ctx.pattern() == null) {
+        if (cond.type != builtinTypeBool) {
+            println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
+            throw CompilingCheckException()
+        }
+        val doBranch = visitExpression(ctx.expression(1))
+        IfDoExpressionNode(cond, doBranch)
+    } else {
+        pushScope()
+        val pattern = visitPattern(ctx.pattern())
+        if (pattern is IdentifierPattern) {
+            val identifier = Identifier(pattern.identifier, cond.type)
+            addIdentifier(identifier)
+        }
+        val doBranch = visitExpression(ctx.expression(1))
+        popScope()
+        when (pattern) {
+            is TypePattern -> if (cond.type !is InterfaceType) {
+                println("the type of condition is not interface, only interface type can use type pattern")
+                throw CompilingCheckException()
+            }
+            is LiteralPattern -> checkCompareExpressionType(cond, pattern.expr)
+            else -> Unit
+        }
+        IfDoPatternExpressionNode(cond, pattern, doBranch)
+    }
+}
+
 private fun DelegateVisitor.processIf(
-    ctx: IfExpressionContext,
+    ctx: IfThenElseExpressionContext,
     cond: ExpressionNode
-): IfExpressionNode {
+): IfThenElseExpressionNode {
     if (cond.type != builtinTypeBool) {
         println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
         throw CompilingCheckException()
@@ -335,13 +366,13 @@ private fun DelegateVisitor.processIf(
         println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
         throw CompilingCheckException()
     }
-    return IfExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
+    return IfThenElseExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
 }
 
 private fun DelegateVisitor.processIfPattern(
-    ctx: IfExpressionContext,
+    ctx: IfThenElseExpressionContext,
     cond: ExpressionNode
-): IfPatternExpressionNode {
+): IfThenElsePatternExpressionNode {
     pushScope()
     val pattern = visitPattern(ctx.pattern())
     if (pattern is IdentifierPattern) {
@@ -363,7 +394,7 @@ private fun DelegateVisitor.processIfPattern(
         is LiteralPattern -> checkCompareExpressionType(cond, pattern.expr)
         else -> Unit
     }
-    return IfPatternExpressionNode(cond, pattern, thenBranch, elseBranch, thenBranch.type)
+    return IfThenElsePatternExpressionNode(cond, pattern, thenBranch, elseBranch, thenBranch.type)
 }
 
 fun DelegateVisitor.visitIdentifierPattern(ctx: IdentifierPatternContext): String {

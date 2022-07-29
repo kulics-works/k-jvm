@@ -221,7 +221,6 @@ class KotlinCodeGenerator : CodeGenerator<String> {
             is ExpressionStatementNode -> visit(node)
             is AssignmentStatementNode -> visit(node)
             is FunctionStatementNode -> visit(node)
-            is IfStatementNode -> visit(node)
             is WhileStatementNode -> visit(node)
         }
     }
@@ -250,83 +249,6 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         return joinString(branch, ";$Wrap") { visit(it) }
     }
 
-    override fun visit(node: IfStatementNode): String {
-        val pattern = node.pattern
-        return if (pattern == null) {
-            val elseBranch = node.elseBranch
-            if (elseBranch == null) {
-                "if (${visit(node.cond)}) { ${
-                    generateStatements(node.thenBranch)
-                } }"
-            } else when (elseBranch) {
-                is IfStatementNode ->
-                    "if (${visit(node.cond)}) { ${
-                        generateStatements(node.thenBranch)
-                    } } else {${
-                        visit(elseBranch)
-                    }}"
-                is ElseBranch ->
-                    "if (${visit(node.cond)}) { ${
-                        generateStatements(node.thenBranch)
-                    } } else { ${
-                        generateStatements(elseBranch.branch)
-                    } }"
-            }
-        } else when (pattern) {
-            is TypePattern -> {
-                val matchCode =
-                    "val ${pattern.identifier.name} = ${visit(node.cond)}.castOrNull<${
-                        pattern.type.generateName()
-                    }>();$Wrap"
-                val condCode = "${pattern.identifier.name} != null"
-                val elseBranch = node.elseBranch
-                if (elseBranch == null) {
-                    "$matchCode if (${condCode}) { ${generateStatements(node.thenBranch)} }"
-                } else when (elseBranch) {
-                    is IfStatementNode ->
-                        "$matchCode if (${condCode}) { ${
-                            generateStatements(node.thenBranch)
-                        } } else {${visit(elseBranch)}}"
-                    is ElseBranch ->
-                        "$matchCode if (${condCode}) { ${
-                            generateStatements(node.thenBranch)
-                        } } else { ${
-                            generateStatements(elseBranch.branch)
-                        } }"
-                }
-            }
-            is IdentifierPattern ->
-                "run{val ${pattern.identifier} = ${
-                    visit(node.cond)
-                };$Wrap ${generateStatements(node.thenBranch)}${Wrap}};Unit;$Wrap"
-            is LiteralPattern -> {
-                val elseBranch = node.elseBranch
-                if (elseBranch == null) {
-                    "if (${visit(node.cond)} == ${visit(pattern.expr)}) { ${
-                        generateStatements(node.thenBranch)
-                    } }"
-                } else when (elseBranch) {
-                    is IfStatementNode ->
-                        "if (${visit(node.cond)} == ${visit(pattern.expr)}) { ${
-                            generateStatements(node.thenBranch)
-                        } } else {${
-                            visit(elseBranch)
-                        }}"
-                    is ElseBranch ->
-                        "if (${visit(node.cond)} == ${visit(pattern.expr)}) { ${
-                            generateStatements(node.thenBranch)
-                        } } else {${
-                            generateStatements(elseBranch.branch)
-                        }}"
-                }
-            }
-            is WildcardPattern ->
-                "run{${
-                    visit(node.cond)
-                };$Wrap ${generateStatements(node.thenBranch)}${Wrap}};Unit;$Wrap"
-        }
-    }
-
     override fun visit(node: WhileStatementNode): String {
         return "while (${visit(node.cond)}) { ${
             joinString(node.stats, Wrap) {
@@ -347,8 +269,10 @@ class KotlinCodeGenerator : CodeGenerator<String> {
             is CallExpressionNode -> visit(node)
             is GenericsCallExpressionNode -> visit(node)
             is MemberExpressionNode -> visit(node)
-            is IfExpressionNode -> visit(node)
-            is IfPatternExpressionNode -> visit(node)
+            is IfThenElseExpressionNode -> visit(node)
+            is IfThenElsePatternExpressionNode -> visit(node)
+            is IfDoExpressionNode -> visit(node)
+            is IfDoPatternExpressionNode -> visit(node)
             is CastExpressionNode -> visit(node)
         }
     }
@@ -419,11 +343,11 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         return "${visit(node.expr)}.${node.member.name}"
     }
 
-    override fun visit(node: IfExpressionNode): String {
+    override fun visit(node: IfThenElseExpressionNode): String {
         return "if (${visit(node.condExpr)}) { ${visit(node.thenExpr)} } else { ${visit(node.elseExpr)} }"
     }
 
-    override fun visit(node: IfPatternExpressionNode): String {
+    override fun visit(node: IfThenElsePatternExpressionNode): String {
         return when (node.pattern) {
             is TypePattern -> {
                 val matchCode =
@@ -450,6 +374,37 @@ class KotlinCodeGenerator : CodeGenerator<String> {
             }
             is WildcardPattern -> {
                 "run{${visit(node.condExpr)};$Wrap${visit(node.thenExpr)}}"
+            }
+        }
+    }
+
+    override fun visit(node: IfDoExpressionNode): String {
+        return "if (${visit(node.condExpr)}) { ${visit(node.doExpr)} } else { }"
+    }
+
+    override fun visit(node: IfDoPatternExpressionNode): String {
+        return when (node.pattern) {
+            is TypePattern -> {
+                val matchCode =
+                    "val ${node.pattern.identifier.name} = ${visit(node.condExpr)}.castOrNull<${
+                        node.pattern.type.generateName()
+                    }>();$Wrap"
+                "run{${matchCode}if (${
+                    node.pattern.identifier.name
+                } != null) { ${
+                    visit(node.doExpr)
+                } } else { }}"
+            }
+            is IdentifierPattern -> {
+                "run{val ${node.pattern.identifier} = ${visit(node.condExpr)};$Wrap${visit(node.doExpr)}}"
+            }
+            is LiteralPattern -> {
+                "if (${visit(node.condExpr)}==${visit(node.pattern.expr)}) { ${
+                    visit(node.doExpr)
+                } } else { }"
+            }
+            is WildcardPattern -> {
+                "run{${visit(node.condExpr)};$Wrap${visit(node.doExpr)}}"
             }
         }
     }

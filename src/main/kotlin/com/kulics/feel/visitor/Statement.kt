@@ -8,7 +8,6 @@ fun DelegateVisitor.visitStatement(ctx: StatementContext): StatementNode {
         is VariableDeclarationContext -> visitVariableDeclaration(stat)
         is FunctionDeclarationContext -> visitFunctionDeclaration(stat)
         is AssignmentContext -> visitAssignment(stat)
-        is IfStatementContext -> visitIfStatement(stat)
         is WhileStatementContext -> visitWhileStatement(stat)
         is ExpressionContext -> ExpressionStatementNode(visitExpression(stat))
         else -> throw CompilingCheckException()
@@ -102,53 +101,6 @@ fun DelegateVisitor.visitAssignment(ctx: AssignmentContext): AssignmentStatement
         throw CompilingCheckException()
     }
     return AssignmentStatementNode(id, expr)
-}
-
-fun DelegateVisitor.visitIfStatement(ctx: IfStatementContext): IfStatementNode {
-    val cond = visitExpression(ctx.expression())
-    if (ctx.pattern() == null) {
-        if (cond.type != builtinTypeBool) {
-            println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
-            throw CompilingCheckException()
-        }
-        val thenBranch = visitBlock(ctx.block(0))
-        return ifStatementNode(ctx, cond, null, thenBranch)
-    } else {
-        pushScope()
-        val pattern = visitPattern(ctx.pattern())
-        if (pattern is IdentifierPattern) {
-            val identifier = Identifier(pattern.identifier, cond.type)
-            addIdentifier(identifier)
-        }
-        when (pattern) {
-            is TypePattern -> if (cond.type !is InterfaceType) {
-                println("the type of condition is not interface, only interface type can use type pattern")
-                throw CompilingCheckException()
-            }
-            is LiteralPattern ->
-                checkCompareExpressionType(cond, pattern.expr)
-            else -> {
-            }
-        }
-        val thenBranch = visitBlock(ctx.block(0))
-        popScope()
-        return ifStatementNode(ctx, cond, pattern, thenBranch)
-    }
-}
-
-private fun DelegateVisitor.ifStatementNode(
-    ctx: IfStatementContext,
-    cond: ExpressionNode,
-    pattern: Pattern?,
-    thenBranch: List<StatementNode>
-): IfStatementNode {
-    return if (ctx.ifStatement() != null) {
-        IfStatementNode(cond, pattern, thenBranch, visitIfStatement(ctx.ifStatement()))
-    } else if (ctx.block().size == 1) {
-        IfStatementNode(cond, pattern, thenBranch, null)
-    } else {
-        IfStatementNode(cond, pattern, thenBranch, ElseBranch(visitBlock(ctx.block(1))))
-    }
 }
 
 fun DelegateVisitor.visitWhileStatement(ctx: WhileStatementContext): WhileStatementNode {

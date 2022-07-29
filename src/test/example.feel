@@ -73,13 +73,11 @@ let ifExpr2: Int = if true then { 0 } else { 1 };
 
 let ifExpr3: Void = if true then {} else {};
 
-let ifStat: Void = {
+let ifExpr4: Void = {
+    if true do {};
     if true then {
-        0;
-    } else if true then {
-        1;
-    } else {
-        2;
+    } else if true do {
+        1
     };
 };
 
