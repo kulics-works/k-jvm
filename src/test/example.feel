@@ -58,7 +58,7 @@ let compareExpr: Void = {
     let b = 1;
     let c = a == b;
     let d = a > b;
-    let e = a <> b;
+    let e = a != b;
     let f = a < b;
 };
 

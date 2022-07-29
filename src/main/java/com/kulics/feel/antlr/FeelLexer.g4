@@ -1,12 +1,11 @@
 lexer grammar FeelLexer;
 
 Arrow: '->';
-FatArrow: '=>';
 
 EqualEqual: '==';
+NotEqual: '!=';
 LessEqual: '<=';
 GreaterEqual: '>=';
-NotEqual: '<>';
 
 AndAnd: '&&';
 OrOr: '||';
