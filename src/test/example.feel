@@ -130,7 +130,7 @@ let makeIntList(): IntList = {
     li
 };
 let sumIntList(li: IntList): Int =
-    if li as Cons v then {
+    if li as v: Cons then {
         v.head + sumIntList(v.tail)
     } else {
         0
@@ -139,7 +139,7 @@ let sumIntList(li: IntList): Int =
 let typePattern(): Void = {
     let li : IntList = Cons(1, Cons(2, Cons(3, Nil())));
     let i =
-        if li as Cons v then {
+        if li as v: Cons then {
             v.head
         } else {
             0
@@ -148,7 +148,7 @@ let typePattern(): Void = {
 
 let typePattern2(): Void = {
     let li : IntList = Cons(1, Cons(2, Cons(3, Nil())));
-    if li as Cons v then {
+    if li as v: Cons then {
         v.head;
     } else {
         0;
@@ -223,7 +223,7 @@ type None[T: Any](): Option[T];
 let genericsEnum(): Int = {
     let x: Option[Int] = Some[Int](123);
     let y: Option[Int] = Some[Int](123);
-    if x as Some[Int] v then v.value else 0
+    if x as v: Some[Int] then v.value else 0
 };
 
 type GenericsInterface[T1: Any, T2: Any];

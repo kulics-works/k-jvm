@@ -102,8 +102,8 @@ pattern
     ;
 
 typePattern
-    : type identifierPattern
-    | type wildcardPattern
+    : identifierPattern Colon type
+    | wildcardPattern Colon type
     | type deconstructPattern
     ;
 
