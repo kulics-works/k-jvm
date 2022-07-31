@@ -21,6 +21,7 @@ fun DelegateVisitor.visitGlobalDeclaration(ctx: GlobalDeclarationContext): Decla
         is GlobalRecordDeclarationContext -> visitGlobalRecordDeclaration(declaration)
         is GlobalInterfaceDeclarationContext -> visitGlobalInterfaceDeclaration(declaration)
         is GlobalExtensionDeclarationContext -> visitGlobalExtensionDeclaration(declaration)
+        is GlobalSumTypeDeclarationContext -> visitGlobalSumTypeDeclaration(declaration)
         else -> throw CompilingCheckException()
     }
 }
@@ -216,12 +217,14 @@ fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter
             println("the constraint type is not interface")
             throw CompilingCheckException()
         }
+
         is NominalTypeNode -> {
             val type = when (val targetType = getType(typeNode.id)) {
                 null -> {
                     println("type: '${typeNode.id}' is undefined")
                     throw CompilingCheckException()
                 }
+
                 is GenericsType -> {
                     if (typeNode.typeArguments.isEmpty() || targetType.typeParameter.size != typeNode.typeArguments.size) {
                         println("the type args size need '${targetType.typeParameter.size}', but found '${typeNode.typeArguments.size}'")
@@ -245,6 +248,7 @@ fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter
                         instanceType
                     }
                 }
+
                 else -> if (typeParameter == targetType) {
                     println("the constraint of '${idName}' can not be it self")
                     throw CompilingCheckException()
@@ -366,11 +370,13 @@ private fun DelegateVisitor.checkImplementInterface(
             println("the implements type is not interface")
             throw CompilingCheckException()
         }
+
         is NominalTypeNode -> when (val targetInterfaceType = getType(typeNode.id)) {
             null -> {
                 println("type: '${typeNode.id}' is undefined")
                 throw CompilingCheckException()
             }
+
             is GenericsType -> {
                 if (typeNode.typeArguments.isEmpty() ||
                     targetInterfaceType.typeParameter.size != typeNode.typeArguments.size
@@ -402,6 +408,7 @@ private fun DelegateVisitor.checkImplementInterface(
                 addImplementType(implementType, mapType)
                 instanceType to overrideMember
             }
+
             else -> {
                 val overrideMember = checkMemberImplement(targetInterfaceType, members)
                 addImplementType(implementType, targetInterfaceType)
@@ -648,5 +655,45 @@ fun DelegateVisitor.visitGlobalExtensionDeclaration(ctx: GlobalExtensionDeclarat
                 it
             }
         }, interfaceType)
+    }
+}
+
+fun DelegateVisitor.visitGlobalSumTypeDeclaration(ctx: GlobalSumTypeDeclarationContext): GlobalSumTypeDeclarationNode {
+    val idName = visitIdentifier(ctx.typeIdentifier())
+    if (isRedefineIdentifier(idName) || isRedefineType(idName)) {
+        println("identifier: '$idName' is redefined")
+        throw CompilingCheckException()
+    }
+    val typeParameterList = ctx.typeParameterList()
+    return if (typeParameterList != null) {
+        TODO("sum type generics")
+    } else {
+        val members = mutableMapOf<String, Identifier>()
+        val type = SumType(idName, members)
+        addType(type)
+        val constructors = visitValueConstructorList(ctx.recordConstructor(), type)
+        GlobalSumTypeDeclarationNode(type, listOf(), constructors)
+    }
+}
+
+fun DelegateVisitor.visitValueConstructorList(ctx: List<RecordConstructorContext>, targetInterfaceType: Type): List<ValueConstructorNode> {
+    return ctx.map { ItemCtx ->
+        val idName = visitIdentifier(ItemCtx.typeIdentifier())
+        if (isRedefineIdentifier(idName) || isRedefineType(idName)) {
+            println("identifier: '$idName' is redefined")
+            throw CompilingCheckException()
+        }
+        val fieldList = visitFieldList(ItemCtx.fieldList())
+        val members = mutableMapOf<String, Identifier>()
+        fieldList.forEach { members[it.name] = it }
+        val type = RecordType(idName, members)
+        addType(type)
+        val constructorType = FunctionType(fieldList.map { it.type }, type)
+        addIdentifier(Identifier(idName, constructorType, IdentifierKind.Immutable))
+        pushScope()
+        fieldList.forEach { addIdentifier(it) }
+        addImplementType(type, targetInterfaceType)
+        popScope()
+        ValueConstructorNode(type, listOf(), fieldList, targetInterfaceType)
     }
 }

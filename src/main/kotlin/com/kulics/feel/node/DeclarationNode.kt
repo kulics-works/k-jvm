@@ -66,6 +66,23 @@ open class GlobalExtensionDeclarationNode(
     }
 }
 
+class GlobalSumTypeDeclarationNode(
+    val type: Type,
+    val typeParameter: List<TypeParameter>,
+    val valueConstructor: List<ValueConstructorNode>,
+) : DeclarationNode() {
+    override fun <T> accept(visitor: NodeVisitor<T>) {
+        visitor.visit(this)
+    }
+}
+
+class ValueConstructorNode(
+    val type: Type,
+    val typeParameter: List<TypeParameter>,
+    val fields: List<Identifier>,
+    val implements: Type
+) : MemberNode()
+
 sealed class MemberNode : Node()
 
 class MethodNode(

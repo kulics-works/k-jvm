@@ -106,10 +106,7 @@ type Point(x: Int, y: Int) {
 let somePoint: Point = Point(1, 2);
 let memberAccess(a: Point, b: Point): Point = Point(a.x+b.x, a.y+b.y).copy();
 
-type Color;
-type Red(): Color;
-type Green(): Color;
-type Blue(): Color;
+type Color = Red() | Green() | Blue();
 
 let red: Color = Red();
 

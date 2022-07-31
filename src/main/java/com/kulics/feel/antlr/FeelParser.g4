@@ -10,6 +10,7 @@ globalDeclaration
     : (globalVariableDeclaration
     | globalFunctionDeclaration
     | globalRecordDeclaration
+    | globalSumTypeDeclaration
     | globalInterfaceDeclaration
     | globalExtensionDeclaration
     ) Semi
@@ -20,6 +21,9 @@ globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterLi
 globalRecordDeclaration: Type typeIdentifier typeParameterList? fieldList (Colon type)? methodList?;
 globalInterfaceDeclaration: Type typeIdentifier typeParameterList? (Equal virtualMethodList)?;
 globalExtensionDeclaration: Ext typeIdentifier typeParameterList? (Colon type)? methodList?;
+globalSumTypeDeclaration: Type typeIdentifier typeParameterList? Equal recordConstructor (Or recordConstructor)*;
+
+recordConstructor: typeIdentifier fieldList;
 
 typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
 

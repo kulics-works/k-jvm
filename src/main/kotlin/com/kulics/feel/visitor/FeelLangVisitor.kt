@@ -31,6 +31,10 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitGlobalExtensionDeclaration(ctx)
     }
 
+    override fun visitGlobalSumTypeDeclaration(ctx: GlobalSumTypeDeclarationContext): GlobalSumTypeDeclarationNode {
+        return delegate.visitGlobalSumTypeDeclaration(ctx)
+    }
+
     override fun visitParameterList(ctx: ParameterListContext): List<Identifier> {
         return delegate.visitParameterList(ctx)
     }

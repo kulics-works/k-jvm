@@ -18,6 +18,7 @@ interface NodeVisitor<T> {
     fun visit(node: GlobalVariableDeclarationNode): T
     fun visit(node: GlobalInterfaceDeclarationNode): T
     fun visit(node: GlobalExtensionDeclarationNode): T
+    fun visit(node: GlobalSumTypeDeclarationNode): T
 
     fun visit(node: StatementNode): T
     fun visit(node: VariableStatementNode): T

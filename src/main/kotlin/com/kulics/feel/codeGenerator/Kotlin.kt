@@ -25,6 +25,9 @@ class KotlinCodeGenerator : CodeGenerator<String> {
             append(generate(it.value))
         }
         val output = File("${filePath}.kt")
+        if (!output.exists()) {
+            output.createNewFile()
+        }
         output.bufferedWriter().use {
             it.write(codeBuilder.toString())
         }
@@ -48,6 +51,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
                     is GlobalInterfaceDeclarationNode -> visit(it)
                     is GlobalRecordDeclarationNode -> visit(it)
                     is GlobalExtensionDeclarationNode -> visit(it)
+                    is GlobalSumTypeDeclarationNode -> visit(it)
                 }
             )
         }
@@ -195,6 +199,21 @@ class KotlinCodeGenerator : CodeGenerator<String> {
             }
         }
         return ""
+    }
+
+    override fun visit(node: GlobalSumTypeDeclarationNode): String {
+        return if (node.typeParameter.isEmpty()) {
+            "sealed class ${node.type.generateName()} {}$Wrap ${
+                joinString(node.valueConstructor, Wrap) { it ->
+                    "class ${it.type.generateName()} (${
+                        joinString(it.fields) {field ->
+                            "${if (field.kind == IdentifierKind.Immutable) "val" else "var"} ${field.name}: ${field.type.generateName()}"
+                        }
+                    }): ${it.implements.generateName()}()"
+            }}"
+        } else {
+            TODO()
+        }
     }
 
     private fun generate(node: MethodNode): String {

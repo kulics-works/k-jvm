@@ -107,6 +107,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
                 is GlobalInterfaceDeclarationNode -> visit(it)
                 is GlobalRecordDeclarationNode -> visit(it)
                 is GlobalExtensionDeclarationNode -> visit(it)
+                is GlobalSumTypeDeclarationNode -> visit(it)
             }
         }
     }
@@ -147,6 +148,10 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
     }
 
     override fun visit(node: GlobalExtensionDeclarationNode): Any {
+        TODO("Not yet implemented")
+    }
+
+    override fun visit(node: GlobalSumTypeDeclarationNode): Any {
         TODO("Not yet implemented")
     }
 

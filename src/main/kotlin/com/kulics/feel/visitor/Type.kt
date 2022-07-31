@@ -81,6 +81,17 @@ class InterfaceType(
     }
 }
 
+class SumType(
+    override val name: String,
+    val member: MutableMap<String, Identifier>,
+    override val uniqueName: String = name,
+    val rawGenericsType: Pair<String, List<Type>>? = null
+) : Type() {
+    override fun getMember(name: String): Identifier? {
+        return member[name]
+    }
+}
+
 class GenericsType(
     override val name: String,
     val typeParameter: List<TypeParameter>,
@@ -116,6 +127,7 @@ fun typeSubstitutionImplement(type: Type, typeMap: Map<String, Type>): Type {
             type.parameterTypes.map { typeSubstitutionImplement(it, typeMap) },
             typeSubstitutionImplement(type.returnType, typeMap)
         )
+
         is RecordType ->
             if (type.rawGenericsType != null) RecordType(
                 type.name,
@@ -130,6 +142,7 @@ fun typeSubstitutionImplement(type: Type, typeMap: Map<String, Type>): Type {
                 type.rawGenericsType
             )
             else type
+
         is InterfaceType ->
             if (type.rawGenericsType != null) InterfaceType(
                 type.name,
@@ -145,6 +158,7 @@ fun typeSubstitutionImplement(type: Type, typeMap: Map<String, Type>): Type {
                 type.rawGenericsType
             )
             else type
+
         else -> type
     }
 }
@@ -154,6 +168,7 @@ fun DelegateVisitor.checkTypeNode(node: TypeNode): Type {
         is FunctionTypeNode -> FunctionType(node.parameterTypes.map {
             checkTypeNode(it)
         }, checkTypeNode(node.returnType))
+
         is NominalTypeNode -> checkNominalTypeNode(node)
     }
 }
@@ -164,6 +179,7 @@ fun DelegateVisitor.checkNominalTypeNode(node: NominalTypeNode): Type {
             println("type: '${node.id}' is undefined")
             throw CompilingCheckException()
         }
+
         is GenericsType -> {
             if (node.typeArguments.isEmpty() || targetType.typeParameter.size != node.typeArguments.size) {
                 println("the type args size need '${targetType.typeParameter.size}', but found '${node.typeArguments.size}'")
@@ -179,6 +195,7 @@ fun DelegateVisitor.checkNominalTypeNode(node: NominalTypeNode): Type {
             }
             instanceType
         }
+
         else -> targetType
     }
 }
@@ -236,6 +253,13 @@ fun DelegateVisitor.canAssignTo(rightValue: Type, leftValue: Type): Boolean {
                 is InterfaceType -> ty
                 is GenericsType -> ty.typeConstructor(listOf(rightValue))
             } else rightValue, leftType
+        )
+    } else if (leftValue is SumType) {
+        return checkSubtype(
+            if (rightValue is TypeParameter) when (val ty = rightValue.constraint) {
+                is InterfaceType -> ty
+                is GenericsType -> ty.typeConstructor(listOf(rightValue))
+            } else rightValue, leftValue
         )
     }
     return false
