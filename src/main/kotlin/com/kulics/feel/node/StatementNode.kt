@@ -10,14 +10,14 @@ class VariableStatementNode(
     val id: Identifier,
     val initValue: ExpressionNode
 ) : StatementNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
 class ExpressionStatementNode(val expr: ExpressionNode) : StatementNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
@@ -25,8 +25,8 @@ class AssignmentStatementNode(
     val id: Identifier,
     val newValue: ExpressionNode
 ) : StatementNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
@@ -36,13 +36,13 @@ class FunctionStatementNode(
     val returnType: Type,
     val body: ExpressionNode
 ) : StatementNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
 class WhileStatementNode(val cond: ExpressionNode, val stats: List<StatementNode>) : StatementNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }

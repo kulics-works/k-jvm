@@ -3,7 +3,7 @@ package com.kulics.feel.node
 import com.kulics.feel.visitor.CompilingCheckException
 
 sealed class Node {
-    open fun <T> accept(visitor: NodeVisitor<T>) {
+    open fun <T> accept(visitor: NodeVisitor<T>): T {
         throw CompilingCheckException()
     }
 }

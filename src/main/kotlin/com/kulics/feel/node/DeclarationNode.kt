@@ -5,8 +5,8 @@ import com.kulics.feel.visitor.*
 sealed class DeclarationNode : Node()
 
 class ModuleDeclarationNode(val name: String) : Node() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
@@ -17,20 +17,20 @@ class GlobalFunctionDeclarationNode(
     val returnType: Type,
     val body: ExpressionNode
 ) : DeclarationNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
 class ParameterDeclarationNode(val id: Identifier, val paramType: Type) : Node() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
 class GlobalVariableDeclarationNode(val id: Identifier, val initValue: ExpressionNode) : DeclarationNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
@@ -41,8 +41,8 @@ open class GlobalRecordDeclarationNode(
     val methods: List<MethodNode>,
     val implements: Type?
 ) : DeclarationNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
@@ -51,8 +51,8 @@ class GlobalInterfaceDeclarationNode(
     val typeParameter: List<TypeParameter>,
     val methods: List<VirtualMethodNode>
 ) : DeclarationNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
@@ -61,8 +61,8 @@ open class GlobalExtensionDeclarationNode(
     val typeParameter: List<TypeParameter>,
     val methods: List<MethodNode>, val implements: Type?
 ) : DeclarationNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 
@@ -71,8 +71,8 @@ class GlobalSumTypeDeclarationNode(
     val typeParameter: List<TypeParameter>,
     val valueConstructor: List<ValueConstructorNode>,
 ) : DeclarationNode() {
-    override fun <T> accept(visitor: NodeVisitor<T>) {
-        visitor.visit(this)
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
     }
 }
 

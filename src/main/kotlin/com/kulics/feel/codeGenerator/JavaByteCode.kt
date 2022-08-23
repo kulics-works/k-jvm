@@ -100,16 +100,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
 
     override fun visit(node: ProgramNode) {
         visit(node.module)
-        node.declarations.forEach {
-            when (it) {
-                is GlobalVariableDeclarationNode -> visit(it)
-                is GlobalFunctionDeclarationNode -> visit(it)
-                is GlobalInterfaceDeclarationNode -> visit(it)
-                is GlobalRecordDeclarationNode -> visit(it)
-                is GlobalExtensionDeclarationNode -> visit(it)
-                is GlobalSumTypeDeclarationNode -> visit(it)
-            }
-        }
+        node.declarations.forEach { it.accept(this) }
     }
 
     override fun visit(node: ModuleDeclarationNode) {
@@ -180,23 +171,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
     }
 
     override fun visit(node: ExpressionNode): Any {
-        return when (node) {
-            is IdentifierExpressionNode -> visit(node)
-            is LiteralExpressionNode -> visit(node)
-            is CalculativeExpressionNode -> visit(node)
-            is CompareExpressionNode -> visit(node)
-            is LogicExpressionNode -> visit(node)
-            is BlockExpressionNode -> visit(node)
-            is LambdaExpressionNode -> visit(node)
-            is CallExpressionNode -> visit(node)
-            is GenericsCallExpressionNode -> visit(node)
-            is MemberExpressionNode -> visit(node)
-            is IfThenElseExpressionNode -> visit(node)
-            is IfThenElsePatternExpressionNode -> visit(node)
-            is IfDoExpressionNode -> visit(node)
-            is IfDoPatternExpressionNode -> visit(node)
-            is CastExpressionNode -> visit(node)
-        }
+        return node.accept(this)
     }
 
     override fun visit(node: IdentifierExpressionNode): Any {

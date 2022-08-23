@@ -44,16 +44,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
     """.trimIndent()
         )
         node.declarations.forEach {
-            append(
-                when (it) {
-                    is GlobalVariableDeclarationNode -> visit(it)
-                    is GlobalFunctionDeclarationNode -> visit(it)
-                    is GlobalInterfaceDeclarationNode -> visit(it)
-                    is GlobalRecordDeclarationNode -> visit(it)
-                    is GlobalExtensionDeclarationNode -> visit(it)
-                    is GlobalSumTypeDeclarationNode -> visit(it)
-                }
-            )
+            append( it.accept(this))
         }
         return ""
     }
@@ -235,13 +226,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
     }
 
     override fun visit(node: StatementNode): String {
-        return when (node) {
-            is VariableStatementNode -> visit(node)
-            is ExpressionStatementNode -> visit(node)
-            is AssignmentStatementNode -> visit(node)
-            is FunctionStatementNode -> visit(node)
-            is WhileStatementNode -> visit(node)
-        }
+        return node.accept(this)
     }
 
     override fun visit(node: VariableStatementNode): String {
@@ -277,23 +262,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
     }
 
     override fun visit(node: ExpressionNode): String {
-        return when (node) {
-            is IdentifierExpressionNode -> visit(node)
-            is LiteralExpressionNode -> visit(node)
-            is CalculativeExpressionNode -> visit(node)
-            is CompareExpressionNode -> visit(node)
-            is LogicExpressionNode -> visit(node)
-            is BlockExpressionNode -> visit(node)
-            is LambdaExpressionNode -> visit(node)
-            is CallExpressionNode -> visit(node)
-            is GenericsCallExpressionNode -> visit(node)
-            is MemberExpressionNode -> visit(node)
-            is IfThenElseExpressionNode -> visit(node)
-            is IfThenElsePatternExpressionNode -> visit(node)
-            is IfDoExpressionNode -> visit(node)
-            is IfDoPatternExpressionNode -> visit(node)
-            is CastExpressionNode -> visit(node)
-        }
+        return node.accept(this)
     }
 
     override fun visit(node: IdentifierExpressionNode): String {
