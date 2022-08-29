@@ -1,310 +1,315 @@
-mod demo;
+mod demo
 
 let main(): Void = {
 
-};
+}
 
-let a: Float = 0.1 + 0.3;
+let a: Float = 0.1 + 0.3
 
-let mut b: Int = 321 - 300;
+let mut b: Int = 321 - 300
 
-let c: Int = 2 * 2;
+let c: Int = 2 * 2
 
-let c2 = 2 * 2;
+let c2 = 2 * 2
 
-let mut d: Int = b + c * 2;
+let mut d: Int = b + c * 2
 
-let myTrue: Bool = true;
+let myTrue: Bool = true
 
-let myFalse: Bool = false;
+let myFalse: Bool = false
 
-let chr: Char = 'c';
+let chr: Char = 'c'
 
-let str: String = "Hello, world!";
+let str: String = "Hello, world!"
 
-let g(): Int = 1 + 2 + 3 + b;
+let g(): Int = 1 + 2 + 3 + b
 
-let g2() = 1 + 2 + 3 + b;
+let g2() = 1 + 2 + 3 + b
 
-let add(a: Int, b: Int): Int = a + b;
+let add(a: Int, b: Int): Int = a + b
 
-let calc(x: Int): Int = add(x, x) + x + 1;
+let calc(x: Int): Int = add(x, x) + x + 1
 
-let id[T: Any](id: T): T = id;
+let id[T: Any](id: T): T = id
 
-let id2[T: Any](id: T) = id;
+let id2[T: Any](id: T) = id
+
+let semicolon(): Void = {
+    let a = 1;
+    let b = 2;
+}
 
 let call_id(): Void = {
-    let a = id[Int](1);
-    let b = id[Float](1.0);
-};
+    let a = id[Int](1)
+    let b = id[Float](1.0)
+}
 
 let blockExpr1: Int = {
-    let a = 0;
-    let b = 0;
+    let a = 0
+    let b = 0
     a + b
-};
+}
 
 let blockExpr2(): Int = {
-    let a = 0;
-    let b = 0;
+    let a = 0
+    let b = 0
     a + b
-};
+}
 
-let blockExpr3: Void = {};
+let blockExpr3: Void = {}
 
 let compareExpr: Void = {
-    let a = 1;
-    let b = 1;
-    let c = a == b;
-    let d = a > b;
-    let e = a != b;
-    let f = a < b;
-};
+    let a = 1
+    let b = 1
+    let c = a == b
+    let d = a > b
+    let e = a != b
+    let f = a < b
+}
 
 let logicExpr: Void = {
-    let a = true && true;
-    let b = true || false;
-};
+    let a = true && true
+    let b = true || false
+}
 
-let ifExpr1: Int = if true then 0 else if true then 0 else 0;
+let ifExpr1: Int = if true then 0 else if true then 0 else 0
 
-let ifExpr2: Int = if true then { 0 } else { 1 };
+let ifExpr2: Int = if true then { 0 } else { 1 }
 
-let ifExpr3: Void = if true then {} else {};
+let ifExpr3: Void = if true then {} else {}
 
 let ifExpr4: Void = {
-    if true do {};
+    if true do {}
     if true then {
     } else if true do {
         1
-    };
-};
+    }
+}
 
 let assignment: Void = {
-    let mut a = 0;
-    a = 1;
-};
+    let mut a = 0
+    a = 1
+}
 
 let whileStat(): Void = {
-    let mut i = 0;
+    let mut i = 0
     while i <= 10 do {
-        i = i + 1;
-    };
-};
+        i = i + 1
+    }
+}
 
 let localFunction(): Int = {
-    let f() = 123;
-    let a = f();
+    let f() = 123
+    let a = f()
     a
-};
+}
 
 type Point(x: Int, y: Int) {
-    copy(): Point = Point(x, y);
-    plus(other: Point): Point = Point(x + other.x, y + other.y);
-};
-let somePoint: Point = Point(1, 2);
-let memberAccess(a: Point, b: Point): Point = Point(a.x+b.x, a.y+b.y).copy();
+    copy(): Point = Point(x, y)
+    plus(other: Point): Point = Point(x + other.x, y + other.y)
+}
+let somePoint: Point = Point(1, 2)
+let memberAccess(a: Point, b: Point): Point = Point(a.x+b.x, a.y+b.y).copy()
 
-type Color = Red() | Green() | Blue();
+type Color = Red() | Green() | Blue()
 
-let red: Color = Red();
+let red: Color = Red()
 
 type IntList = {
-    defaultValue() : Int = 0;
-    value() : Int;
-};
+    defaultValue(): Int = 0
+    value(): Int
+}
 type Nil(): IntList {
-    value(): Int = 0;
-};
+    value(): Int = 0
+}
 type Cons(head: Int, tail: IntList): IntList {
-    value(): Int = head;
-};
+    value(): Int = head
+}
 
 let makeIntList(): IntList = {
-    let li: IntList = Cons(1, Cons(2, Cons(3, Nil())));
-    li.value();
+    let li: IntList = Cons(1, Cons(2, Cons(3, Nil())))
+    li.value()
     li
-};
+}
 let sumIntList(li: IntList): Int =
     if li as v: Cons then {
         v.head + sumIntList(v.tail)
     } else {
         0
-    };
+    }
 
 let typePattern(): Void = {
-    let li : IntList = Cons(1, Cons(2, Cons(3, Nil())));
+    let li: IntList = Cons(1, Cons(2, Cons(3, Nil())))
     let i =
         if li as v: Cons then {
             v.head
         } else {
             0
-        };
-};
+        }
+}
 
 let typePattern2(): Void = {
-    let li : IntList = Cons(1, Cons(2, Cons(3, Nil())));
+    let li: IntList = Cons(1, Cons(2, Cons(3, Nil())))
     if li as v: Cons then {
-        v.head;
+        v.head
     } else {
-        0;
+        0
     };
-};
+}
 
 let identifierPattern(): Int = {
-    let a = 1;
+    let a = 1
     if a as a then 123 else 123
-};
+}
 
 let identifierPattern2(): Void = {
-    let a = 1;
+    let a = 1
     if a as a then {
-        localFunction();
+        localFunction()
     } else if a as b then {
-        localFunction();
+        localFunction()
     } else {
-        localFunction();
+        localFunction()
     };
-};
+}
 
 let wildcardPattern(): Int = {
-    let a = 1;
+    let a = 1
     if a as _ then 123 else 123
-};
+}
 
 let wildcardPattern2(): Void = {
-    let a = 1;
+    let a = 1
     if a as _ then {
-        localFunction();
+        localFunction()
     } else if a as _ then {
-        localFunction();
+        localFunction()
     } else {
-        localFunction();
+        localFunction()
     };
-};
+}
 
 let literalPattern(): Int = {
-    let a = 1;
+    let a = 1
     if a as 1 then 123 else 123
-};
+}
 
 let literalPattern2(): Void = {
-    let a = 1;
+    let a = 1
     if a as 1 then {
-        localFunction();
+        localFunction()
     } else if a as 1 then {
-        localFunction();
+        localFunction()
     } else {
-        localFunction();
+        localFunction()
     };
-};
+}
 
 let genericsFunction[T: Any](a: T): T = {
-    let b: T = genericsFunction[T](a);
-    b;
+    let b: T = genericsFunction[T](a)
+    b
     a
-};
-let callGenericsFunction(): Int = genericsFunction[Int](1);
+}
+let callGenericsFunction(): Int = genericsFunction[Int](1)
 
-type Pair[T1: Any, T2: Any](first: T1, second: T2);
+type Pair[T1: Any, T2: Any](first: T1, second: T2)
 let genericsRecord(): Void = {
-    let a: Pair[Int, Int] = Pair[Int, Int](1, 2);
+    let a: Pair[Int, Int] = Pair[Int, Int](1, 2)
     a.first + a.second;
-};
+}
 
-type Option[T: Any];
-type Some[T: Any](value: T): Option[T];
-type None[T: Any](): Option[T];
+type Option[T: Any]
+type Some[T: Any](value: T): Option[T]
+type None[T: Any](): Option[T]
 
 let genericsEnum(): Int = {
-    let x: Option[Int] = Some[Int](123);
-    let y: Option[Int] = Some[Int](123);
+    let x: Option[Int] = Some[Int](123)
+    let y: Option[Int] = Some[Int](123)
     if x as v: Some[Int] then v.value else 0
-};
+}
 
-type GenericsInterface[T1: Any, T2: Any];
-type ImplementType[T: Any]() : GenericsInterface[T, Int];
-type ImplementType2[T: Any, R: Any]() : GenericsInterface[R, T];
+type GenericsInterface[T1: Any, T2: Any]
+type ImplementType[T: Any]() : GenericsInterface[T, Int]
+type ImplementType2[T: Any, R: Any]() : GenericsInterface[R, T]
 
 let genericsSubtyping(): Void = {
-    let i: GenericsInterface[Int, Int] = ImplementType[Int]();
-    let j: GenericsInterface[Int, Float] = ImplementType2[Float, Int]();
-};
+    let i: GenericsInterface[Int, Int] = ImplementType[Int]()
+    let j: GenericsInterface[Int, Float] = ImplementType2[Float, Int]()
+}
 
 let genericsSubtyping2[E: Any](): Void = {
-    let i: GenericsInterface[E, E] = ImplementType2[E, E]();
-};
+    let i: GenericsInterface[E, E] = ImplementType2[E, E]()
+}
 
 let array(): Void = {
-    let mut a = emptyArray[Int]();
-    a = newArray[Int](5, 5);
-    let b = a.get(2);
-    a.set(2, b);
-};
+    let mut a = emptyArray[Int]()
+    a = newArray[Int](5, 5)
+    let b = a.get(2)
+    a.set(2, b)
+}
 
-type I1;
+type I1
 type I2 = {
-    f(): Void;
-    f2(a: Int): Int;
-};
+    f(): Void
+    f2(a: Int): Int
+}
 
 type C1(): I2 {
-    f(): Void = {};
-    f2(a: Int): Int = a;
-};
+    f(): Void = {}
+    f2(a: Int): Int = a
+}
 
 let interfaceInstance(): I2 = {
-    let i: I2 = C1();
-    let f(x: I2) = 123;
-    f(C1());
+    let i: I2 = C1()
+    let f(x: I2) = 123
+    f(C1())
     C1()
-};
+}
 
 let interfaceConstraint[T: I2](v: T): Void = {
-    v.f();
-    let x = v.f2(1);
-    let i: I2 = v;
-};
+    v.f()
+    let x = v.f2(1)
+    let i: I2 = v
+}
 
 let instanceConstraint(): Void = {
-    interfaceConstraint[C1](C1());
-};
+    interfaceConstraint[C1](C1())
+}
 
 type Eq[T: Any] = {
-    eq(other: T): Bool;
-};
+    eq(other: T): Bool
+}
 
 type EqFoo(): Eq[EqFoo] {
-    eq(other: EqFoo): Bool = true;
-};
+    eq(other: EqFoo): Bool = true
+}
 
-type EqBar(): I1;
+type EqBar(): I1
 
 ext EqBar: Eq[EqBar] {
-    eq(other: EqBar): Bool = true;
-};
+    eq(other: EqBar): Bool = true
+}
 
 type EqPair[T1: Eq[T1], T2: Eq[T2]](first: T1, second: T2): Eq[EqPair[T1, T2]] {
-    eq(other: EqPair[T1, T2]): Bool = first.eq(other.first) && second.eq(other.second);
-};
+    eq(other: EqPair[T1, T2]): Bool = first.eq(other.first) && second.eq(other.second)
+}
 
-type EqPair2[T1: Any, T2: Any](first: T1, second: T2);
+type EqPair2[T1: Any, T2: Any](first: T1, second: T2)
 
 ext EqPair2[T1: Eq[T1], T2: Eq[T2]]: Eq[EqPair2[T1, T2]] {
-    eq(other: EqPair2[T1, T2]): Bool = first.eq(other.first) && second.eq(other.second);
-};
+    eq(other: EqPair2[T1, T2]): Bool = first.eq(other.first) && second.eq(other.second)
+}
 
-let complicatedGenericsType[T: Eq[T]](a: T, b: T): Bool = a.eq(b);
+let complicatedGenericsType[T: Eq[T]](a: T, b: T): Bool = a.eq(b)
 
 let complicatedGenericsType2(): Void = {
-    complicatedGenericsType[EqFoo](EqFoo(), EqFoo());
-    let a = EqPair[EqFoo, EqFoo](EqFoo(), EqFoo());
-    complicatedGenericsType[EqPair[EqFoo, EqFoo]](a, a);
-    let b: Eq[EqPair[EqFoo, EqFoo]] = a;
-    let c: Eq[EqPair2[EqBar, EqBar]] = EqPair2[EqBar, EqBar](EqBar(), EqBar());
-};
+    complicatedGenericsType[EqFoo](EqFoo(), EqFoo())
+    let a = EqPair[EqFoo, EqFoo](EqFoo(), EqFoo())
+    complicatedGenericsType[EqPair[EqFoo, EqFoo]](a, a)
+    let b: Eq[EqPair[EqFoo, EqFoo]] = a
+    let c: Eq[EqPair2[EqBar, EqBar]] = EqPair2[EqBar, EqBar](EqBar(), EqBar())
+}
 
-let functionType(x: Int, f: (Int)-> Int): Int = f(x);
-let lambdaExpression(): Int = functionType(1, (a: Int) -> a);
-let lambdaExpression2(): Int = functionType(1, (b: Int): Int -> b);
+let functionType(x: Int, f: (Int)-> Int): Int = f(x)
+let lambdaExpression(): Int = functionType(1, (a: Int) -> a)
+let lambdaExpression2(): Int = functionType(1, (b: Int): Int -> b)

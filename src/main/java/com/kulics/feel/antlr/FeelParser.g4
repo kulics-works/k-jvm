@@ -4,16 +4,15 @@ options { tokenVocab=FeelLexer; }
 
 program: moduleDeclaration globalDeclaration*;
 
-moduleDeclaration: Module variableIdentifier Semi;
+moduleDeclaration: Module variableIdentifier;
 
 globalDeclaration
-    : (globalVariableDeclaration
+    : globalVariableDeclaration
     | globalFunctionDeclaration
     | globalRecordDeclaration
     | globalSumTypeDeclaration
     | globalInterfaceDeclaration
     | globalExtensionDeclaration
-    ) Semi
     ;
 
 globalVariableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expression;
@@ -37,15 +36,15 @@ fieldList: LeftParen (field (Comma field)*)? RightParen;
 
 field: Mut? variableIdentifier (Colon type)?;
 
-methodList: LeftBrace (method Semi)* RightBrace;
+methodList: LeftBrace (method)* RightBrace;
 
 method: variableIdentifier parameterList (Colon type)? Equal expression;
 
-virtualMethodList: LeftBrace (virtualMethod Semi)* RightBrace;
+virtualMethodList: LeftBrace (virtualMethod)* RightBrace;
 
 virtualMethod: variableIdentifier parameterList Colon type (Equal expression)?;
 
-block: LeftBrace (statement Semi)* RightBrace;
+block: LeftBrace (statement SemiColon?)* RightBrace;
 
 statement
     : variableDeclaration
@@ -95,7 +94,10 @@ whileStatement
     : While expression Do block
     ;
 
-blockExpression: LeftBrace (statement Semi)* expression? RightBrace;
+blockExpression
+    : LeftBrace (statement SemiColon?)* expression RightBrace
+    | LeftBrace (statement SemiColon?)* RightBrace
+    ;
 
 pattern
     : typePattern

@@ -17,7 +17,7 @@ Equal: '=';
 Less: '<';
 Greater: '>';
 
-Semi: ';';
+SemiColon: ';';
 Colon: ':';
 
 LeftParen: '(';
