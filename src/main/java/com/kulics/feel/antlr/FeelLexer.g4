@@ -48,7 +48,6 @@ Sharp: '#';
 
 Mut: 'mut';
 Let: 'let';
-Ext: 'ext';
 Module: 'mod';
 If: 'if';
 Then: 'then';
@@ -61,6 +60,7 @@ As: 'as';
 True: 'true';
 False: 'false';
 Type: 'type';
+With: 'with';
 
 FloatLiteral: Digit (Exponent | '.' Digit Exponent?);
 DecimalLiteral: Digit;

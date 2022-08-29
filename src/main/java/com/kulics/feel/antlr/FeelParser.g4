@@ -19,7 +19,7 @@ globalVariableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expre
 globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList (Colon type)? Equal expression;
 globalRecordDeclaration: Type typeIdentifier typeParameterList? fieldList (Colon type)? methodList?;
 globalInterfaceDeclaration: Type typeIdentifier typeParameterList? (Equal virtualMethodList)?;
-globalExtensionDeclaration: Ext typeIdentifier typeParameterList? (Colon type)? methodList?;
+globalExtensionDeclaration: Type typeIdentifier typeParameterList? (Colon type)? With methodList?;
 globalSumTypeDeclaration: Type typeIdentifier typeParameterList? Equal recordConstructor (Or recordConstructor)*;
 
 recordConstructor: typeIdentifier fieldList;
