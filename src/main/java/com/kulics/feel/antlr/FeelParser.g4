@@ -20,7 +20,7 @@ globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterLi
 globalRecordDeclaration: Type typeIdentifier typeParameterList? fieldList (Colon type)? methodList?;
 globalInterfaceDeclaration: Type typeIdentifier typeParameterList? (Equal virtualMethodList)?;
 globalExtensionDeclaration: Type typeIdentifier typeParameterList? (Colon type)? With methodList?;
-globalSumTypeDeclaration: Type typeIdentifier typeParameterList? Equal recordConstructor (Or recordConstructor)*;
+globalSumTypeDeclaration: Type typeIdentifier typeParameterList? Equal recordConstructor (BitOr recordConstructor)*;
 
 recordConstructor: typeIdentifier fieldList;
 
@@ -170,6 +170,6 @@ multiplicativeOperator: Mul | Div | Mod;
 
 additiveOperator: Add | Sub ;
 
-logicOperator: AndAnd | OrOr ;
+logicOperator: And | Or ;
 
 compareOperator: Less | Greater | LessEqual | GreaterEqual | EqualEqual | NotEqual;
