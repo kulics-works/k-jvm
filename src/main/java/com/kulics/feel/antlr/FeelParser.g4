@@ -28,7 +28,7 @@ globalSumTypeDeclaration
 
 recordConstructor: typeIdentifier fieldList;
 
-typeParameterList: LeftBrack NewLine* typeParameter (Comma NewLine* typeParameter)* NewLine* RightBrack;
+typeParameterList: LeftParen NewLine* typeParameter (Comma NewLine* typeParameter)* NewLine* RightParen;
 
 typeParameter: typeIdentifier (Colon type)?;
 
@@ -93,11 +93,11 @@ functionDeclaration
 
 memberAccessCallSuffix
     : NewLine? Dot variableIdentifier
-     (LeftBrack NewLine* type (Comma NewLine* type)* NewLine* RightBrack)?
+     (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)?
       LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen;
 
 callSuffix
-    : (LeftBrack NewLine* type (Comma NewLine* type)* NewLine* RightBrack)?
+    : (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)?
      LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen;
 
 memberAccess: NewLine? Dot variableIdentifier;
@@ -182,7 +182,7 @@ literalExpression
     ;
 
 type
-    : typeIdentifier (LeftBrack NewLine* type (Comma NewLine* type)* NewLine* RightBrack)?
+    : typeIdentifier (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)?
     | functionType
     ;
 
