@@ -237,8 +237,8 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         return visit(node.expr)
     }
 
-    override fun visit(node: AssignmentStatementNode): String {
-        return "${node.id.name} = ${visit(node.newValue)}"
+    override fun visit(node: AssignmentExpressionNode): String {
+        return "run{${node.id.name} = ${visit(node.newValue)}; Unit}"
     }
 
     override fun visit(node: FunctionStatementNode): String {
@@ -253,12 +253,10 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         return joinString(branch, ";$Wrap") { visit(it) }
     }
 
-    override fun visit(node: WhileStatementNode): String {
-        return "while (${visit(node.cond)}) { ${
-            joinString(node.stats, Wrap) {
-                visit(it)
-            }
-        } }"
+    override fun visit(node: WhileDoExpressionNode): String {
+        return "run { while (${visit(node.cond)}) { ${
+           visit(node.doExpr) 
+        } }}"
     }
 
     override fun visit(node: ExpressionNode): String {
@@ -335,7 +333,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         return "if (${visit(node.condExpr)}) { ${visit(node.thenExpr)} } else { ${visit(node.elseExpr)} }"
     }
 
-    override fun visit(node: IfThenElsePatternExpressionNode): String {
+    override fun visit(node: IfThenElseMatchExpressionNode): String {
         return when (node.pattern) {
             is TypePattern -> {
                 val matchCode =
@@ -370,7 +368,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         return "if (${visit(node.condExpr)}) { ${visit(node.doExpr)} } else { }"
     }
 
-    override fun visit(node: IfDoPatternExpressionNode): String {
+    override fun visit(node: IfDoMatchExpressionNode): String {
         return when (node.pattern) {
             is TypePattern -> {
                 val matchCode =

@@ -4,6 +4,14 @@ import com.kulics.feel.grammar.FeelParser.*
 import com.kulics.feel.node.*
 import org.antlr.v4.runtime.tree.ParseTree
 
+fun DelegateVisitor.visitExpressionWithTerminator(ctx: ExpressionWithTerminatorContext): ExpressionNode {
+    return if (ctx.expression() != null) {
+        visitExpression(ctx.expression())
+    } else {
+        visitExpressionWithBlock(ctx.expressionWithBlock())
+    }
+}
+
 fun DelegateVisitor.visitExpression(ctx: ExpressionContext): ExpressionNode = when (ctx.childCount) {
     1 -> visitSingleExpression(ctx.getChild(0))
     2 -> if (ctx.memberAccessCallSuffix() != null) {
@@ -13,6 +21,7 @@ fun DelegateVisitor.visitExpression(ctx: ExpressionContext): ExpressionNode = wh
     } else {
         visitMemberAccessExpression(ctx.expression(0), ctx.memberAccess())
     }
+
     3 -> visitBinaryExpression(ctx.expression(0), ctx.getChild(1), ctx.expression(1))
     else -> throw CompilingCheckException()
 }
@@ -23,14 +32,27 @@ fun DelegateVisitor.visitSingleExpression(expr: ParseTree): ExpressionNode {
         is BlockExpressionContext -> visitBlockExpression(expr)
         is IfThenElseExpressionContext -> visitIfThenElseExpression(expr)
         is IfDoExpressionContext -> visitIfDoExpression(expr)
+        is WhileDoExpressionContext -> visitWhileDoExpression(expr)
         is LambdaExpressionContext -> visitLambdaExpression(expr)
+        is ExpressionWithBlockContext -> visitExpressionWithBlock(expr)
+        is AssignmentExpressionContext -> visitAssignmentExpression(expr)
+        else -> throw CompilingCheckException()
+    }
+}
+
+fun DelegateVisitor.visitExpressionWithBlock(ctx: ExpressionWithBlockContext): ExpressionNode {
+    return when (val expr = ctx.getChild(0)) {
+        is BlockExpressionContext -> visitBlockExpression(expr)
+        is IfDoExpressionWithBlockContext -> visitIfDoExpressionWithBlock(expr)
+        is IfThenElseExpressionWithBlockContext -> visitIfThenElseExpressionWithBlock(expr)
+        is WhileDoExpressionWithBlockContext -> visitWhileDoExpressionWithBlock(expr)
+        is AssignmentExpressionWithBlockContext -> visitAssignmentExpressionWithBlock(expr)
         else -> throw CompilingCheckException()
     }
 }
 
 fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
-    exprCtx: ExpressionContext,
-    callCtx: MemberAccessCallSuffixContext
+    exprCtx: ExpressionContext, callCtx: MemberAccessCallSuffixContext
 ): ExpressionNode {
     val expr = visitExpression(exprCtx)
     val type = when (val ty = expr.type) {
@@ -38,6 +60,7 @@ fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
             is GenericsType -> constraintType.typeConstructor(listOf(ty))
             is InterfaceType -> constraintType
         }
+
         else -> ty
     }
     val (memberIdentifier, typeArgs, args) = visitMemberAccessCallSuffix(callCtx)
@@ -63,8 +86,7 @@ fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
 }
 
 fun DelegateVisitor.visitFunctionCallExpression(
-    exprCtx: ExpressionContext,
-    callCtx: CallSuffixContext
+    exprCtx: ExpressionContext, callCtx: CallSuffixContext
 ): ExpressionNode {
     val expr = visitExpression(exprCtx)
     val callArgs = visitCallSuffix(callCtx)
@@ -79,9 +101,7 @@ fun DelegateVisitor.visitFunctionCallExpression(
 }
 
 private fun DelegateVisitor.processFunctionCall(
-    expr: ExpressionNode,
-    callArgs: Pair<List<Type>, List<ExpressionNode>>,
-    type: FunctionType
+    expr: ExpressionNode, callArgs: Pair<List<Type>, List<ExpressionNode>>, type: FunctionType
 ): CallExpressionNode {
     if (callArgs.first.isNotEmpty()) {
         println("the type of expression is not a generics function")
@@ -103,9 +123,7 @@ private fun DelegateVisitor.processFunctionCall(
 }
 
 private fun DelegateVisitor.processGenericsFunctionCall(
-    expr: ExpressionNode,
-    callArgs: Pair<List<Type>, List<ExpressionNode>>,
-    type: GenericsType
+    expr: ExpressionNode, callArgs: Pair<List<Type>, List<ExpressionNode>>, type: GenericsType
 ): GenericsCallExpressionNode {
     if (type.typeParameter.size != callArgs.first.size) {
         println("the type args size need '${type.typeParameter.size}', but found '${callArgs.first.size}'")
@@ -142,8 +160,7 @@ private fun DelegateVisitor.processGenericsFunctionCall(
     if (hasType(type.name)) {
         getImplementType(type)?.forEach {
             addImplementType(
-                instanceType.returnType,
-                if (it is GenericsType) it.typeConstructor(callArgs.first) else it
+                instanceType.returnType, if (it is GenericsType) it.typeConstructor(callArgs.first) else it
             )
         }
     }
@@ -151,8 +168,7 @@ private fun DelegateVisitor.processGenericsFunctionCall(
 }
 
 fun DelegateVisitor.visitMemberAccessExpression(
-    exprCtx: ExpressionContext,
-    memberCtx: MemberAccessContext
+    exprCtx: ExpressionContext, memberCtx: MemberAccessContext
 ): ExpressionNode {
     val expr = visitExpression(exprCtx)
     val type = expr.type
@@ -166,9 +182,7 @@ fun DelegateVisitor.visitMemberAccessExpression(
 }
 
 fun DelegateVisitor.visitBinaryExpression(
-    lhs: ExpressionContext,
-    op: ParseTree,
-    rhs: ExpressionContext
+    lhs: ExpressionContext, op: ParseTree, rhs: ExpressionContext
 ): ExpressionNode {
     val lhsExpr = visitExpression(lhs)
     val rhsExpr = visitExpression(rhs)
@@ -179,6 +193,7 @@ fun DelegateVisitor.visitBinaryExpression(
             else CalculativeOperator.Sub
             CalculativeExpressionNode(lhsExpr, rhsExpr, symbol, lhsExpr.type)
         }
+
         is MultiplicativeOperatorContext -> {
             checkCalculateExpressionType(lhsExpr, rhsExpr)
             val symbol = if (op.Mul() != null) CalculativeOperator.Mul
@@ -186,6 +201,7 @@ fun DelegateVisitor.visitBinaryExpression(
             else CalculativeOperator.Mod
             CalculativeExpressionNode(lhsExpr, rhsExpr, symbol, lhsExpr.type)
         }
+
         is CompareOperatorContext -> {
             checkCompareExpressionType(lhsExpr, rhsExpr)
             val symbol = if (op.EqualEqual() != null) CompareOperator.Equal
@@ -196,12 +212,14 @@ fun DelegateVisitor.visitBinaryExpression(
             else CompareOperator.GreaterEqual
             CompareExpressionNode(lhsExpr, rhsExpr, symbol)
         }
+
         is LogicOperatorContext -> {
             checkLogicExpressionType(lhsExpr, rhsExpr)
             val symbol = if (op.And() != null) LogicOperator.And
             else LogicOperator.Or
             LogicExpressionNode(lhsExpr, rhsExpr, symbol)
         }
+
         else -> throw CompilingCheckException()
     }
 }
@@ -212,10 +230,12 @@ fun checkCalculateExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
             println("the type of right value is not '${builtinTypeInt.name}'")
             throw CompilingCheckException()
         }
+
         builtinTypeFloat -> if (rhs.type != builtinTypeFloat) {
             println("the type of right value is not '${builtinTypeFloat.name}'")
             throw CompilingCheckException()
         }
+
         else -> {
             println("the type of left value is not '${builtinTypeInt.name}' or '${builtinTypeFloat.name}'")
             throw CompilingCheckException()
@@ -229,10 +249,12 @@ fun checkCompareExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
             println("the type of right value is not '${builtinTypeInt.name}'")
             throw CompilingCheckException()
         }
+
         builtinTypeFloat -> if (rhs.type != builtinTypeFloat) {
             println("the type of right value is not '${builtinTypeFloat.name}'")
             throw CompilingCheckException()
         }
+
         else -> {
             println("the type of left value is not '${builtinTypeInt.name}' or '${builtinTypeFloat.name}'")
             throw CompilingCheckException()
@@ -246,6 +268,7 @@ fun checkLogicExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
             println("the type of right value is not '${builtinTypeBool.name}'")
             throw CompilingCheckException()
         }
+
         else -> {
             println("the type of left value is not '${builtinTypeBool.name}'")
             throw CompilingCheckException()
@@ -254,13 +277,9 @@ fun checkLogicExpressionType(lhs: ExpressionNode, rhs: ExpressionNode) {
 }
 
 fun DelegateVisitor.visitMemberAccessCallSuffix(ctx: MemberAccessCallSuffixContext): MemberAccessCallSuffix {
-    return MemberAccessCallSuffix(
-        visitIdentifier(ctx.variableIdentifier()),
-        ctx.type().map {
-            checkTypeNode(visitType(it))
-        },
-        ctx.expression().map { visitExpression(it) }
-    )
+    return MemberAccessCallSuffix(visitIdentifier(ctx.variableIdentifier()), ctx.type().map {
+        checkTypeNode(visitType(it))
+    }, ctx.expression().map { visitExpression(it) })
 }
 
 data class MemberAccessCallSuffix(val memberName: String, val typeArgs: List<Type>, val args: List<ExpressionNode>)
@@ -314,54 +333,46 @@ fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContext): Expre
 }
 
 fun DelegateVisitor.visitIfThenElseExpression(ctx: IfThenElseExpressionContext): ExpressionNode {
-    val cond = visitExpression(ctx.expression(0))
     return if (ctx.pattern() == null) {
-        processIf(ctx, cond)
+        processIfThenElseExpression(ctx.expression(0), ctx.expression(1), Either.Left(ctx.expression(2)))
     } else {
-        processIfPattern(ctx, cond)
+        processIfThenElseMatchExpression(
+            ctx.expression(0),
+            ctx.pattern(),
+            ctx.expression(1),
+            Either.Left(ctx.expression(2)),
+        )
     }
 }
 
-fun DelegateVisitor.visitIfDoExpression(ctx: IfDoExpressionContext): ExpressionNode {
-    val cond = visitExpression(ctx.expression(0))
+fun DelegateVisitor.visitIfThenElseExpressionWithBlock(ctx: IfThenElseExpressionWithBlockContext): ExpressionNode {
     return if (ctx.pattern() == null) {
-        if (cond.type != builtinTypeBool) {
-            println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
-            throw CompilingCheckException()
-        }
-        val doBranch = visitExpression(ctx.expression(1))
-        IfDoExpressionNode(cond, doBranch)
+        processIfThenElseExpression(ctx.expression(0), ctx.expression(1), Either.Right(ctx.expressionWithBlock()))
     } else {
-        pushScope()
-        val pattern = visitPattern(ctx.pattern())
-        if (pattern is IdentifierPattern) {
-            val identifier = Identifier(pattern.identifier, cond.type)
-            addIdentifier(identifier)
-        }
-        val doBranch = visitExpression(ctx.expression(1))
-        popScope()
-        when (pattern) {
-            is TypePattern -> if (cond.type !is InterfaceType) {
-                println("the type of condition is not interface, only interface type can use type pattern")
-                throw CompilingCheckException()
-            }
-            is LiteralPattern -> checkCompareExpressionType(cond, pattern.expr)
-            else -> Unit
-        }
-        IfDoPatternExpressionNode(cond, pattern, doBranch)
+        processIfThenElseMatchExpression(
+            ctx.expression(0),
+            ctx.pattern(),
+            ctx.expression(1),
+            Either.Right(ctx.expressionWithBlock()),
+        )
     }
 }
 
-private fun DelegateVisitor.processIf(
-    ctx: IfThenElseExpressionContext,
-    cond: ExpressionNode
+private fun DelegateVisitor.processIfThenElseExpression(
+    condition: ExpressionContext,
+    thenExpression: ExpressionContext,
+    elseExpression: Either<ExpressionContext, ExpressionWithBlockContext>
 ): IfThenElseExpressionNode {
+    val cond = visitExpression(condition)
     if (cond.type != builtinTypeBool) {
         println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
         throw CompilingCheckException()
     }
-    val thenBranch = visitExpression(ctx.expression(1))
-    val elseBranch = visitExpression(ctx.expression(2))
+    val thenBranch = visitExpression(thenExpression)
+    val elseBranch = when (elseExpression) {
+        is Either.Left -> visitExpression(elseExpression.value)
+        is Either.Right -> visitExpressionWithBlock(elseExpression.value)
+    }
     if (thenBranch.type != elseBranch.type) {
         println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
         throw CompilingCheckException()
@@ -369,19 +380,25 @@ private fun DelegateVisitor.processIf(
     return IfThenElseExpressionNode(cond, thenBranch, elseBranch, thenBranch.type)
 }
 
-private fun DelegateVisitor.processIfPattern(
-    ctx: IfThenElseExpressionContext,
-    cond: ExpressionNode
-): IfThenElsePatternExpressionNode {
+private fun DelegateVisitor.processIfThenElseMatchExpression(
+    condition: ExpressionContext,
+    pattern: PatternContext,
+    thenExpression: ExpressionContext,
+    elseExpression: Either<ExpressionContext, ExpressionWithBlockContext>
+): IfThenElseMatchExpressionNode {
+    val cond = visitExpression(condition)
     pushScope()
-    val pattern = visitPattern(ctx.pattern())
+    val pattern = visitPattern(pattern)
     if (pattern is IdentifierPattern) {
         val identifier = Identifier(pattern.identifier, cond.type)
         addIdentifier(identifier)
     }
-    val thenBranch = visitExpression(ctx.expression(1))
+    val thenBranch = visitExpression(thenExpression)
     popScope()
-    val elseBranch = visitExpression(ctx.expression(2))
+    val elseBranch = when (elseExpression) {
+        is Either.Left -> visitExpression(elseExpression.value)
+        is Either.Right -> visitExpressionWithBlock(elseExpression.value)
+    }
     if (thenBranch.type != elseBranch.type) {
         println("the type of then branch is '${thenBranch.type.name}', and the type of else branch is '${elseBranch.type.name}', they are not equal")
         throw CompilingCheckException()
@@ -391,10 +408,93 @@ private fun DelegateVisitor.processIfPattern(
             println("the type of condition is not interface, only interface type can use type pattern")
             throw CompilingCheckException()
         }
+
         is LiteralPattern -> checkCompareExpressionType(cond, pattern.expr)
         else -> Unit
     }
-    return IfThenElsePatternExpressionNode(cond, pattern, thenBranch, elseBranch, thenBranch.type)
+    return IfThenElseMatchExpressionNode(cond, pattern, thenBranch, elseBranch, thenBranch.type)
+}
+
+fun DelegateVisitor.visitIfDoExpression(ctx: IfDoExpressionContext): ExpressionNode {
+    return if (ctx.pattern() == null) {
+        processIfDoExpression(ctx.expression(0), Either.Left(ctx.expression(1)))
+    } else {
+        processIfDoMatchExpression(ctx.expression(0), ctx.pattern(), Either.Left(ctx.expression(1)))
+    }
+}
+
+fun DelegateVisitor.visitIfDoExpressionWithBlock(ctx: IfDoExpressionWithBlockContext): ExpressionNode {
+    return if (ctx.pattern() == null) {
+        processIfDoExpression(ctx.expression(), Either.Right(ctx.expressionWithBlock()))
+    } else {
+        processIfDoMatchExpression(ctx.expression(), ctx.pattern(), Either.Right(ctx.expressionWithBlock()))
+    }
+}
+
+fun DelegateVisitor.processIfDoExpression(
+    expr: ExpressionContext, branch: Either<ExpressionContext, ExpressionWithBlockContext>
+): ExpressionNode {
+    val cond = visitExpression(expr)
+    if (cond.type != builtinTypeBool) {
+        println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
+        throw CompilingCheckException()
+    }
+    val doBranch = when (branch) {
+        is Either.Left -> visitExpression(branch.value)
+        is Either.Right -> visitExpressionWithBlock(branch.value)
+    }
+    return IfDoExpressionNode(cond, doBranch)
+}
+
+fun DelegateVisitor.processIfDoMatchExpression(
+    expr: ExpressionContext, pattern: PatternContext, branch: Either<ExpressionContext, ExpressionWithBlockContext>
+): ExpressionNode {
+    val cond = visitExpression(expr)
+    pushScope()
+    val pattern = visitPattern(pattern)
+    if (pattern is IdentifierPattern) {
+        val identifier = Identifier(pattern.identifier, cond.type)
+        addIdentifier(identifier)
+    }
+    val doBranch = when (branch) {
+        is Either.Left -> visitExpression(branch.value)
+        is Either.Right -> visitExpressionWithBlock(branch.value)
+    }
+    popScope()
+    when (pattern) {
+        is TypePattern -> if (cond.type !is InterfaceType) {
+            println("the type of condition is not interface, only interface type can use type pattern")
+            throw CompilingCheckException()
+        }
+
+        is LiteralPattern -> checkCompareExpressionType(cond, pattern.expr)
+        else -> Unit
+    }
+    return IfDoMatchExpressionNode(cond, pattern, doBranch)
+}
+
+fun DelegateVisitor.visitWhileDoExpression(ctx: WhileDoExpressionContext): ExpressionNode {
+    return processWhileDoExpression(ctx.expression(0), Either.Left(ctx.expression(1)))
+}
+
+fun DelegateVisitor.visitWhileDoExpressionWithBlock(ctx: WhileDoExpressionWithBlockContext): ExpressionNode {
+    return processWhileDoExpression(ctx.expression(), Either.Right(ctx.expressionWithBlock()))
+}
+
+fun DelegateVisitor.processWhileDoExpression(
+    condition: ExpressionContext,
+    branch: Either<ExpressionContext, ExpressionWithBlockContext>
+): ExpressionNode {
+    val cond = visitExpression(condition)
+    if (cond.type != builtinTypeBool) {
+        println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
+        throw CompilingCheckException()
+    }
+    val doBranch = when (branch) {
+        is Either.Left -> visitExpression(branch.value)
+        is Either.Right -> visitExpressionWithBlock(branch.value)
+    }
+    return WhileDoExpressionNode(cond, doBranch)
 }
 
 fun DelegateVisitor.visitIdentifierPattern(ctx: IdentifierPatternContext): String {
@@ -408,14 +508,46 @@ fun DelegateVisitor.visitBlockExpression(ctx: BlockExpressionContext): BlockExpr
         stats.add(visitStatement(v))
     }
     val node = BlockExpressionNode(
-        stats,
-        when (val expr = ctx.expression()) {
+        stats, when (val expr = ctx.expression()) {
             null -> null
             else -> visitExpression(expr)
         }
     )
     popScope()
     return node
+}
+
+fun DelegateVisitor.visitAssignmentExpression(ctx: AssignmentExpressionContext): AssignmentExpressionNode {
+    return processAssignmentExpression(ctx.variableIdentifier(), Either.Left(ctx.expression()))
+}
+
+fun DelegateVisitor.visitAssignmentExpressionWithBlock(ctx: AssignmentExpressionWithBlockContext): AssignmentExpressionNode {
+    return processAssignmentExpression(ctx.variableIdentifier(), Either.Right(ctx.expressionWithBlock()))
+}
+
+fun DelegateVisitor.processAssignmentExpression(
+    leftValue: VariableIdentifierContext,
+    rightValue: Either<ExpressionContext, ExpressionWithBlockContext>
+): AssignmentExpressionNode {
+    val idName = visitIdentifier(leftValue)
+    val id = getIdentifier(idName)
+    if (id == null) {
+        println("the identifier '${idName}' is not defined")
+        throw CompilingCheckException()
+    }
+    if (id.kind == IdentifierKind.Immutable) {
+        println("the identifier '${idName}' is not mutable")
+        throw CompilingCheckException()
+    }
+    val expr = when (rightValue) {
+        is Either.Left -> visitExpression(rightValue.value)
+        is Either.Right -> visitExpressionWithBlock(rightValue.value)
+    }
+    if (cannotAssign(expr.type, id.type)) {
+        println("the type of assign value '${expr.type.name}' is not confirm '${id.type.name}'")
+        throw CompilingCheckException()
+    }
+    return AssignmentExpressionNode(id, expr)
 }
 
 fun DelegateVisitor.visitLambdaExpression(ctx: LambdaExpressionContext): LambdaExpressionNode {

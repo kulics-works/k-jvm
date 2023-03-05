@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.7.10"
+    kotlin("jvm") version "1.8.0"
     application
     antlr
 }
@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    antlr("org.antlr:antlr4:4.10.1")
+    antlr("org.antlr:antlr4:4.11.1")
     implementation("org.javassist:javassist:3.28.0-GA")
     implementation(kotlin("stdlib-jdk8"))
 }

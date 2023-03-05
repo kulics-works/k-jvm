@@ -158,7 +158,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         TODO("Not yet implemented")
     }
 
-    override fun visit(node: AssignmentStatementNode): Any {
+    override fun visit(node: AssignmentExpressionNode): Any {
         TODO("Not yet implemented")
     }
 
@@ -166,7 +166,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         TODO("Not yet implemented")
     }
 
-    override fun visit(node: WhileStatementNode): Any {
+    override fun visit(node: WhileDoExpressionNode): Any {
         TODO("Not yet implemented")
     }
 
@@ -243,7 +243,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         TODO("Not yet implemented")
     }
 
-    override fun visit(node: IfThenElsePatternExpressionNode): Any {
+    override fun visit(node: IfThenElseMatchExpressionNode): Any {
         TODO("Not yet implemented")
     }
 
@@ -272,7 +272,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         TODO("Not yet implemented")
     }
 
-    override fun visit(node: IfDoPatternExpressionNode): Any {
+    override fun visit(node: IfDoMatchExpressionNode): Any {
         TODO("Not yet implemented")
     }
 }

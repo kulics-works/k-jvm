@@ -48,9 +48,15 @@ class ArrayStack<T> : Collection<T> {
     }
 
     override fun isEmpty(): Boolean {
-        return size == 0
+        return data.size == 0
     }
 }
+
+sealed class Either<out L, out R> {
+    data class Left<L>(val value: L): Either<L, Nothing>()
+    data class Right<R>(val value: R): Either<Nothing, R>()
+}
+
 
 val builtinIdentifierNewArray = run {
     val typeParameter = TypeParameter("T", builtinTypeAny)

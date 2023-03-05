@@ -32,7 +32,7 @@ fun DelegateVisitor.visitGlobalVariableDeclaration(ctx: GlobalVariableDeclaratio
         println("identifier: '$idName' is redefined")
         throw CompilingCheckException()
     }
-    val expr = visitExpression(ctx.expression())
+    val expr = visitExpressionWithTerminator(ctx.expressionWithTerminator())
     val type = if (ctx.type() == null) {
         expr.type
     } else {
@@ -76,7 +76,7 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
                 }
                 addIdentifier(v)
             }
-            val expr = visitExpression(ctx.expression())
+            val expr = visitExpressionWithTerminator(ctx.expressionWithTerminator())
             val returnType = expr.type
             popScope()
             val type = GenericsType(idName, typeParameter) { li ->
@@ -125,7 +125,7 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
                 }
                 addIdentifier(v)
             }
-            val expr = visitExpression(ctx.expression())
+            val expr = visitExpressionWithTerminator(ctx.expressionWithTerminator())
             if (cannotAssign(expr.type, returnType)) {
                 println("the return is '${returnType.name}', but find '${expr.type.name}'")
                 throw CompilingCheckException()
@@ -150,7 +150,7 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
                 }
                 addIdentifier(v)
             }
-            val expr = visitExpression(ctx.expression())
+            val expr = visitExpressionWithTerminator(ctx.expressionWithTerminator())
             val returnType = expr.type
             popScope()
             val type = FunctionType(params.map { it.type }, returnType)
@@ -177,7 +177,7 @@ fun DelegateVisitor.visitGlobalFunctionDeclaration(ctx: GlobalFunctionDeclaratio
                 }
                 addIdentifier(v)
             }
-            val expr = visitExpression(ctx.expression())
+            val expr = visitExpressionWithTerminator(ctx.expressionWithTerminator())
             if (cannotAssign(expr.type, returnType)) {
                 println("the return is '${returnType.name}', but find '${expr.type.name}'")
                 throw CompilingCheckException()
@@ -480,7 +480,7 @@ fun DelegateVisitor.visitMethod(ctx: MethodContext): MethodNode {
         }
         addIdentifier(v)
     }
-    val expr = visitExpression(ctx.expression())
+    val expr = visitExpressionWithTerminator(ctx.expressionWithTerminator())
     if (expr.type != returnType) {
         println("the return is '${returnType.name}', but find '${expr.type.name}'")
         throw CompilingCheckException()

@@ -2,9 +2,9 @@ parser grammar FeelParser;
 
 options { tokenVocab=FeelLexer; }
 
-program: moduleDeclaration globalDeclaration*;
+program: moduleDeclaration NewLine* (NewLine* globalDeclaration NewLine*)* NewLine* EOF;
 
-moduleDeclaration: Module variableIdentifier;
+moduleDeclaration: Module variableIdentifier SemiColon;
 
 globalDeclaration
     : globalVariableDeclaration
@@ -15,50 +15,59 @@ globalDeclaration
     | globalExtensionDeclaration
     ;
 
-globalVariableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expression;
-globalFunctionDeclaration: Let variableIdentifier typeParameterList? parameterList (Colon type)? Equal expression;
-globalRecordDeclaration: Type typeIdentifier typeParameterList? fieldList (Colon type)? methodList?;
-globalInterfaceDeclaration: Type typeIdentifier typeParameterList? (Equal virtualMethodList)?;
-globalExtensionDeclaration: Type typeIdentifier typeParameterList? (Colon type)? With methodList?;
-globalSumTypeDeclaration: Type typeIdentifier typeParameterList? Equal recordConstructor (BitOr recordConstructor)*;
+globalVariableDeclaration
+    : Let Mut? variableIdentifier (Colon type)? Equal NewLine* expressionWithTerminator;
+globalFunctionDeclaration
+    : Let variableIdentifier typeParameterList? parameterList (Colon type)? Equal NewLine* expressionWithTerminator;
+globalRecordDeclaration: Type typeIdentifier typeParameterList? fieldList (Colon type)? (SemiColon | With methodList);
+globalInterfaceDeclaration: Type typeIdentifier typeParameterList? (SemiColon | Equal NewLine* virtualMethodList);
+globalExtensionDeclaration: Given typeIdentifier typeParameterList? (Colon type)? With methodList SemiColon?;
+globalSumTypeDeclaration
+    : Type typeIdentifier typeParameterList? Equal NewLine*
+     LeftBrace NewLine* recordConstructor (Comma NewLine* recordConstructor)* NewLine* RightBrace SemiColon?;
 
 recordConstructor: typeIdentifier fieldList;
 
-typeParameterList: LeftBrack typeParameter (Comma typeParameter)* RightBrack;
+typeParameterList: LeftBrack NewLine* typeParameter (Comma NewLine* typeParameter)* NewLine* RightBrack;
 
 typeParameter: typeIdentifier (Colon type)?;
 
-parameterList: LeftParen (parameter (Comma parameter)*)? RightParen;
+parameterList: LeftParen NewLine* (parameter (Comma NewLine* parameter)*)? NewLine* RightParen;
 
 parameter: variableIdentifier (Colon type)?;
 
-fieldList: LeftParen (field (Comma field)*)? RightParen;
+fieldList: LeftParen NewLine* (field (Comma NewLine* field)*)? NewLine* RightParen;
 
 field: Mut? variableIdentifier (Colon type)?;
 
-methodList: LeftBrace (method)* RightBrace;
+methodList: LeftBrace NewLine* (NewLine* method NewLine*)* NewLine* RightBrace;
 
-method: variableIdentifier parameterList (Colon type)? Equal expression;
+method: variableIdentifier parameterList (Colon type)? Equal NewLine* expressionWithTerminator;
 
-virtualMethodList: LeftBrace (virtualMethod)* RightBrace;
+virtualMethodList: LeftBrace NewLine* (NewLine* virtualMethod NewLine*)* NewLine* RightBrace;
 
-virtualMethod: variableIdentifier parameterList Colon type (Equal expression)?;
-
-block: LeftBrace (statement SemiColon?)* RightBrace;
+virtualMethod: variableIdentifier parameterList Colon type (Equal NewLine* expression)? SemiColon;
 
 statement
     : variableDeclaration
     | functionDeclaration
-    | assignment
-    | whileStatement
-    | expression
+    | expressionStatement
     ;
+
+expressionStatement
+    : expression SemiColon
+    | expressionWithBlock NewLine
+    ;
+
+expressionWithTerminator: expressionWithBlock NewLine | expression SemiColon;
 
 expression
     : primaryExpression
-    | blockExpression
+    | expressionWithBlock
     | ifDoExpression
     | ifThenElseExpression
+    | whileDoExpression
+    | assignmentExpression
     | expression memberAccessCallSuffix
     | expression callSuffix
     | expression memberAccess
@@ -69,34 +78,63 @@ expression
     | lambdaExpression
     ;
 
-variableDeclaration: Let Mut? variableIdentifier (Colon type)? Equal expression;
-functionDeclaration: Let variableIdentifier parameterList (Colon type)? Equal expression;
+expressionWithBlock
+    : blockExpression
+    | ifDoExpressionWithBlock
+    | ifThenElseExpressionWithBlock
+    | whileDoExpressionWithBlock
+    | assignmentExpressionWithBlock
+    ;
 
-memberAccessCallSuffix: Dot variableIdentifier (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
+variableDeclaration
+    : Let Mut? variableIdentifier (Colon type)? Equal NewLine* expressionWithTerminator;
+functionDeclaration
+    : Let variableIdentifier parameterList (Colon type)? Equal NewLine* expressionWithTerminator;
 
-callSuffix: (LeftBrack type (Comma type)* RightBrack)? LeftParen (expression (Comma expression)*)? RightParen;
+memberAccessCallSuffix
+    : NewLine? Dot variableIdentifier
+     (LeftBrack NewLine* type (Comma NewLine* type)* NewLine* RightBrack)?
+      LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen;
 
-memberAccess: Dot variableIdentifier;
+callSuffix
+    : (LeftBrack NewLine* type (Comma NewLine* type)* NewLine* RightBrack)?
+     LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen;
 
-assignment: variableIdentifier Equal expression;
+memberAccess: NewLine? Dot variableIdentifier;
 
-lambdaExpression: parameterList (Colon type)? Arrow expression;
+assignmentExpression: variableIdentifier Equal NewLine* expression;
+
+assignmentExpressionWithBlock: variableIdentifier Equal NewLine* expressionWithBlock;
+
+lambdaExpression: Fn parameterList (Colon type)? Equal NewLine* expression;
 
 ifDoExpression
-    : If expression (As pattern)? Do expression
+    : If NewLine* expression (As NewLine* pattern)? Do NewLine* expression
+    ;
+
+ifDoExpressionWithBlock
+    : If NewLine* expression (As NewLine* pattern)? Do NewLine* expressionWithBlock
     ;
 
 ifThenElseExpression
-    : If expression (As pattern)? Then expression Else expression
+    : If NewLine* expression (As NewLine* pattern)? Then NewLine* expression Else NewLine* expression
     ;
 
-whileStatement
-    : While expression Do block
+ifThenElseExpressionWithBlock
+    : If NewLine* expression (As NewLine* pattern)? Then NewLine* expression Else NewLine* expressionWithBlock
+    ;
+
+whileDoExpression
+    : While NewLine* expression Do NewLine* expression
+    ;
+
+whileDoExpressionWithBlock
+    : While NewLine* expression Do NewLine* expressionWithBlock
     ;
 
 blockExpression
-    : LeftBrace (statement SemiColon?)* expression RightBrace
-    | LeftBrace (statement SemiColon?)* RightBrace
+    : LeftBrace NewLine* (NewLine* statement)* NewLine* expression NewLine* RightBrace
+    | LeftBrace NewLine* (NewLine* statement)* NewLine* RightBrace
     ;
 
 pattern
@@ -114,7 +152,7 @@ typePattern
     ;
 
 deconstructPattern
-    : LeftParen (pattern (Comma pattern)*)? RightParen
+    : LeftParen NewLine* (pattern (Comma NewLine* pattern)*)? NewLine* RightParen
     ;
 
 identifierPattern
@@ -144,13 +182,13 @@ literalExpression
     ;
 
 type
-    : typeIdentifier (LeftBrack type (Comma type)* RightBrack)?
+    : typeIdentifier (LeftBrack NewLine* type (Comma NewLine* type)* NewLine* RightBrack)?
     | functionType
     ;
 
-functionType: LeftParen parameterTypeList? RightParen Arrow type;
+functionType: LeftParen NewLine* parameterTypeList? NewLine* RightParen Arrow type;
 
-parameterTypeList: type (Comma type)*;
+parameterTypeList: type (Comma NewLine* type)*;
 
 typeIdentifier: UpperIdentifier;
 
@@ -166,10 +204,10 @@ boolExpression: True | False;
 
 integerExpression: DecimalLiteral | BinaryLiteral | OctalLiteral | HexLiteral;
 
-multiplicativeOperator: Mul | Div | Mod;
+multiplicativeOperator: (Mul | Div | Mod) NewLine?;
 
-additiveOperator: Add | Sub ;
+additiveOperator: (Add | Sub)  NewLine?;
 
-logicOperator: And | Or ;
+logicOperator: (And | Or) NewLine?;
 
-compareOperator: Less | Greater | LessEqual | GreaterEqual | EqualEqual | NotEqual;
+compareOperator: (Less | Greater | LessEqual | GreaterEqual | EqualEqual | NotEqual) NewLine?;

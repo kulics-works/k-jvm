@@ -64,6 +64,8 @@ True: 'true';
 False: 'false';
 Type: 'type';
 With: 'with';
+Given: 'given';
+Fn: 'fn';
 
 FloatLiteral: Digit (Exponent | '.' Digit Exponent?);
 DecimalLiteral: Digit;
@@ -79,10 +81,12 @@ UpperIdentifier: [A-Z] [0-9a-zA-Z_]*;
 LowerIdentifier: [a-z] [0-9a-zA-Z_]*;
 Discard: '_';
 
-CommentBlock: '/*' .*? '*/' -> skip;
-CommentLine: '//' ~[\r\n]* -> skip;
+CommentBlock: '#*' .*? '*#' -> skip;
+CommentLine: '##' ~[\r\n]* -> skip;
 
-WhiteSpace: (' ' |'\t' |'\n' |'\r' )+ -> skip ;
+NewLine: '\r'? '\n';
+
+WhiteSpace: (' ' | '\t')+ -> skip ;
 
 
 

@@ -83,10 +83,6 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitVirtualMethod(ctx)
     }
 
-    override fun visitBlock(ctx: BlockContext): List<StatementNode> {
-        return delegate.visitBlock(ctx)
-    }
-
     override fun visitBlockExpression(ctx: BlockExpressionContext): BlockExpressionNode {
         return delegate.visitBlockExpression(ctx)
     }
@@ -111,8 +107,8 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitLambdaExpression(ctx)
     }
 
-    override fun visitAssignment(ctx: AssignmentContext): AssignmentStatementNode {
-        return delegate.visitAssignment(ctx)
+    override fun visitAssignmentExpression(ctx: AssignmentExpressionContext): AssignmentExpressionNode {
+        return delegate.visitAssignmentExpression(ctx)
     }
 
     override fun visitIfDoExpression(ctx: IfDoExpressionContext): ExpressionNode {
@@ -121,10 +117,6 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
 
     override fun visitIfThenElseExpression(ctx: IfThenElseExpressionContext): ExpressionNode {
         return delegate.visitIfThenElseExpression(ctx)
-    }
-
-    override fun visitWhileStatement(ctx: WhileStatementContext): WhileStatementNode {
-        return delegate.visitWhileStatement(ctx)
     }
 
     override fun visitExpression(ctx: ExpressionContext): ExpressionNode {

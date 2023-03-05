@@ -120,7 +120,7 @@ class IfThenElseExpressionNode(
     }
 }
 
-class IfThenElsePatternExpressionNode(
+class IfThenElseMatchExpressionNode(
     val condExpr: ExpressionNode,
     val pattern: Pattern,
     val thenExpr: ExpressionNode,
@@ -141,10 +141,25 @@ class IfDoExpressionNode(
     }
 }
 
-class IfDoPatternExpressionNode(
+class IfDoMatchExpressionNode(
     val condExpr: ExpressionNode,
     val pattern: Pattern,
     val doExpr: ExpressionNode,
+) : ExpressionNode(builtinTypeVoid) {
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
+    }
+}
+
+class WhileDoExpressionNode(val cond: ExpressionNode, val doExpr: ExpressionNode) : ExpressionNode(builtinTypeVoid) {
+    override fun <T> accept(visitor: NodeVisitor<T>): T {
+        return visitor.visit(this)
+    }
+}
+
+class AssignmentExpressionNode(
+    val id: Identifier,
+    val newValue: ExpressionNode
 ) : ExpressionNode(builtinTypeVoid) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)
