@@ -208,6 +208,6 @@ multiplicativeOperator: (Mul | Div | Mod) NewLine?;
 
 additiveOperator: (Add | Sub)  NewLine?;
 
-logicOperator: (And | Or) NewLine?;
+logicOperator: (BitAnd | BitOr) NewLine?;
 
 compareOperator: (Less | Greater | LessEqual | GreaterEqual | EqualEqual | NotEqual) NewLine?;

@@ -294,8 +294,8 @@ class KotlinCodeGenerator : CodeGenerator<String> {
 
     override fun visit(node: LogicExpressionNode): String {
         return when (node.operator) {
-            LogicOperator.And -> "(${visit(node.lhs)} && ${visit(node.rhs)})"
-            LogicOperator.Or -> "(${visit(node.lhs)} || ${visit(node.rhs)})"
+            LogicOperator.And -> "(${visit(node.lhs)} and ${visit(node.rhs)})"
+            LogicOperator.Or -> "(${visit(node.lhs)} or ${visit(node.rhs)})"
         }
     }
 
