@@ -126,11 +126,11 @@ ifThenElseExpressionWithBlock
     ;
 
 whileDoExpression
-    : While NewLine* expression Do NewLine* expression
+    : While NewLine* condition Do NewLine* expression
     ;
 
 whileDoExpressionWithBlock
-    : While NewLine* expression Do NewLine* expressionWithBlock
+    : While NewLine* condition Do NewLine* expressionWithBlock
     ;
 
 condition

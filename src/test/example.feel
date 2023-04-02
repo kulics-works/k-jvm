@@ -246,6 +246,22 @@ let ifThenElseLogical(): Void = {
     } else { localFunction() };
 }
 
+let whileDoLogical(): Void = {
+    while true and true and true do {
+        localFunction()
+    }
+    while true or true or true do {
+        localFunction()
+    }
+    while true and true and true or true do {
+        localFunction()
+    }
+    let a = 1;
+    while a as 1 and a as 1 do {
+        localFunction()
+    }
+}
+
 let genericsFunction(T: Any)(a: T): T = {
     let b: T = a;
     b;

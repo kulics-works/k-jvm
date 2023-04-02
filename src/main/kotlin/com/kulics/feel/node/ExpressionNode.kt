@@ -114,7 +114,8 @@ class IfDoExpressionNode(
     }
 }
 
-class WhileDoExpressionNode(val cond: ExpressionNode, val doExpr: ExpressionNode) : ExpressionNode(builtinTypeVoid) {
+class WhileDoExpressionNode(val condition: ConditionNode, val doExpr: ExpressionNode) :
+    ExpressionNode(builtinTypeVoid) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)
     }

@@ -439,27 +439,25 @@ fun DelegateVisitor.visitCondition(
 }
 
 fun DelegateVisitor.visitWhileDoExpression(ctx: WhileDoExpressionContext): ExpressionNode {
-    return processWhileDoExpression(ctx.expression(0), Either.Left(ctx.expression(1)))
+    return processWhileDoExpression(ctx.condition(), Either.Left(ctx.expression()))
 }
 
 fun DelegateVisitor.visitWhileDoExpressionWithBlock(ctx: WhileDoExpressionWithBlockContext): ExpressionNode {
-    return processWhileDoExpression(ctx.expression(), Either.Right(ctx.expressionWithBlock()))
+    return processWhileDoExpression(ctx.condition(), Either.Right(ctx.expressionWithBlock()))
 }
 
 fun DelegateVisitor.processWhileDoExpression(
-    condition: ExpressionContext,
+    cond: ConditionContext,
     branch: Either<ExpressionContext, ExpressionWithBlockContext>
 ): ExpressionNode {
-    val cond = visitExpression(condition)
-    if (cond.type != builtinTypeBool) {
-        println("the type of if condition is '${cond.type.name}', but want '${builtinTypeBool.name}'")
-        throw CompilingCheckException()
-    }
+    pushScope()
+    val condition = visitCondition(cond)
     val doBranch = when (branch) {
         is Either.Left -> visitExpression(branch.value)
         is Either.Right -> visitExpressionWithBlock(branch.value)
     }
-    return WhileDoExpressionNode(cond, doBranch)
+    popScope()
+    return WhileDoExpressionNode(condition, doBranch)
 }
 
 fun DelegateVisitor.visitIdentifierPattern(ctx: IdentifierPatternContext): String {

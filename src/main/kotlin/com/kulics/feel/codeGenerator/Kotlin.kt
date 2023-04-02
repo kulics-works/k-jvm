@@ -255,12 +255,6 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         return joinString(branch, ";$Wrap") { visit(it) }
     }
 
-    override fun visit(node: WhileDoExpressionNode): String {
-        return "run { while (${visit(node.cond)}) { ${
-            visit(node.doExpr)
-        } }}"
-    }
-
     override fun visit(node: ExpressionNode): String {
         return node.accept(this)
     }
@@ -342,8 +336,8 @@ class KotlinCodeGenerator : CodeGenerator<String> {
     }
 
     override fun visit(node: IfDoExpressionNode): String {
-        val elseBranch = LiteralExpressionNode("Unit", builtinTypeVoid)
         return if (node.condition.hasPattern) {
+            val elseBranch = LiteralExpressionNode("Unit", builtinTypeVoid)
             processIfThenElseExpression(node.condition, Either.Left(node.doExpr), elseBranch)
         } else {
             "if (${
@@ -509,6 +503,19 @@ class KotlinCodeGenerator : CodeGenerator<String> {
                     }
                 }
             }
+        }
+    }
+
+    override fun visit(node: WhileDoExpressionNode): String {
+        return if (node.condition.hasPattern) {
+            val elseBranch = LiteralExpressionNode("break", builtinTypeVoid)
+            "run { while (true) { ${
+                processIfThenElseExpression(node.condition, Either.Left(node.doExpr), elseBranch)
+            } }}"
+        } else {
+            "run { while (${processConditionWithoutPattern(node.condition)}) { ${
+                visit(node.doExpr)
+            } }}"
         }
     }
 
