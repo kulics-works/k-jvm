@@ -475,8 +475,32 @@ class KotlinCodeGenerator : CodeGenerator<String> {
 
             is LogicalConditionNode -> when (condition.operator) {
                 LogicOperator.Or -> {
-                    println("the or condition can not has pattern")
-                    throw CompilingCheckException()
+                    if (condition.hasPattern) {
+                        println("the or condition can not has pattern")
+                        throw CompilingCheckException()
+                    } else {
+                        when (thenBranch) {
+                            is Either.Left -> {
+                                "if (${
+                                    processConditionWithoutPattern(condition.left)
+                                } || ${
+                                    processConditionWithoutPattern(condition.right)
+                                }) { ${visit(thenBranch.value)} } else { ${visit(elseBranch)} }"
+                            }
+                            is Either.Right -> {
+                                val rightCondition = thenBranch.value.first
+                                val expr = thenBranch.value.second
+                                "if (${
+                                    processConditionWithoutPattern(condition.left)
+                                } || ${
+                                    processConditionWithoutPattern(condition.right)
+                                }) { ${
+                                    processIfThenElseExpression(rightCondition, Either.Left(expr), elseBranch)
+                                } } else { ${visit(elseBranch)} }"
+                            }
+                        }
+
+                    }
                 }
 
                 LogicOperator.And -> when (thenBranch) {

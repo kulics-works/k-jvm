@@ -28,6 +28,6 @@ fun main(arg: Array<String>) {
     } else {
         BackendKind.Kotlin
     }
-    codeGenerate(vt.visitProgram(tree), Paths.get(localPath, "src", "test", "example").toString(), backendKind)
+    codeGenerate(vt.visitProgram(tree), Paths.get(localPath, "src", "test", "kotlin", "example").toString(), backendKind)
     println("feel compile completed")
 }

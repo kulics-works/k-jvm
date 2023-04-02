@@ -228,6 +228,10 @@ let ifDoLogical(): Void = {
     if a as 1 and a as 1 do {
         localFunction()
     }
+    if a as 1 and a as 1 and (true or true and true) do {
+        localFunction()
+    }
+    if (true or false) and a as 1 do {}
 }
 
 let ifThenElseLogical(): Void = {
