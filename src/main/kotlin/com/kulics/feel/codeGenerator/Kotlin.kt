@@ -44,7 +44,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
     """.trimIndent()
         )
         node.declarations.forEach {
-            append( it.accept(this))
+            append(it.accept(this))
         }
         return ""
     }
@@ -170,6 +170,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
                             val ty = constraintType.typeConstructor(listOf(it))
                             "${it.name}: ${ty.generateName()}"
                         }
+
                         is InterfaceType -> "${it.name}: ${constraintType.generateName()}"
                     }
                 }
@@ -197,11 +198,12 @@ class KotlinCodeGenerator : CodeGenerator<String> {
             "sealed class ${node.type.generateName()} {}$Wrap ${
                 joinString(node.valueConstructor, Wrap) { it ->
                     "class ${it.type.generateName()} (${
-                        joinString(it.fields) {field ->
+                        joinString(it.fields) { field ->
                             "${if (field.kind == IdentifierKind.Immutable) "val" else "var"} ${field.name}: ${field.type.generateName()}"
                         }
                     }): ${it.implements.generateName()}()"
-            }}"
+                }
+            }"
         } else {
             TODO()
         }
@@ -255,7 +257,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
 
     override fun visit(node: WhileDoExpressionNode): String {
         return "run { while (${visit(node.cond)}) { ${
-           visit(node.doExpr) 
+            visit(node.doExpr)
         } }}"
     }
 
@@ -330,67 +332,182 @@ class KotlinCodeGenerator : CodeGenerator<String> {
     }
 
     override fun visit(node: IfThenElseExpressionNode): String {
-        return "if (${visit(node.condExpr)}) { ${visit(node.thenExpr)} } else { ${visit(node.elseExpr)} }"
-    }
-
-    override fun visit(node: IfThenElseMatchExpressionNode): String {
-        return when (node.pattern) {
-            is TypePattern -> {
-                val matchCode =
-                    "val ${node.pattern.identifier.name} = ${visit(node.condExpr)}.castOrNull<${
-                        node.pattern.type.generateName()
-                    }>();$Wrap"
-                "run{${matchCode}if (${
-                    node.pattern.identifier.name
-                } != null) { ${
-                    visit(node.thenExpr)
-                } } else { ${
-                    visit(node.elseExpr)
-                } }}"
-            }
-            is IdentifierPattern -> {
-                "run{val ${node.pattern.identifier} = ${visit(node.condExpr)};$Wrap${visit(node.thenExpr)}}"
-            }
-            is LiteralPattern -> {
-                "if (${visit(node.condExpr)}==${visit(node.pattern.expr)}) { ${
-                    visit(node.thenExpr)
-                } } else { ${
-                    visit(node.elseExpr)
-                } }"
-            }
-            is WildcardPattern -> {
-                "run{${visit(node.condExpr)};$Wrap${visit(node.thenExpr)}}"
-            }
+        return if (node.condition.hasPattern) {
+            processIfThenElseExpression(node.condition, Either.Left(node.thenExpr), node.elseExpr)
+        } else {
+            "if (${
+                processConditionWithoutPattern(node.condition)
+            }) { ${visit(node.thenExpr)} } else { ${visit(node.elseExpr)} }"
         }
     }
 
     override fun visit(node: IfDoExpressionNode): String {
-        return "if (${visit(node.condExpr)}) { ${visit(node.doExpr)} } else { }"
+        val elseBranch = LiteralExpressionNode("Unit", builtinTypeVoid)
+        return if (node.condition.hasPattern) {
+            processIfThenElseExpression(node.condition, Either.Left(node.doExpr), elseBranch)
+        } else {
+            "if (${
+                processConditionWithoutPattern(node.condition)
+            }) { ${visit(node.doExpr)} } else { }"
+        }
     }
 
-    override fun visit(node: IfDoMatchExpressionNode): String {
-        return when (node.pattern) {
-            is TypePattern -> {
-                val matchCode =
-                    "val ${node.pattern.identifier.name} = ${visit(node.condExpr)}.castOrNull<${
-                        node.pattern.type.generateName()
-                    }>();$Wrap"
-                "run{${matchCode}if (${
-                    node.pattern.identifier.name
-                } != null) { ${
-                    visit(node.doExpr)
-                } } else { }}"
+    private fun processConditionWithoutPattern(condition: ConditionNode): String {
+        return when (condition) {
+            is ExpressionConditionNode ->
+                visit(condition.expr)
+
+            is PatternMatchConditionNode -> {
+                println("the or condition can not has pattern")
+                throw CompilingCheckException()
             }
-            is IdentifierPattern -> {
-                "run{val ${node.pattern.identifier} = ${visit(node.condExpr)};$Wrap${visit(node.doExpr)}}"
+
+            is LogicalConditionNode ->
+                "(${processConditionWithoutPattern(condition.left)} ${
+                    when (condition.operator) {
+                        LogicOperator.And -> " && "
+                        LogicOperator.Or -> " || "
+                    }
+                } ${processConditionWithoutPattern(condition.right)})"
+        }
+    }
+
+    private fun processIfThenElseExpression(
+        condition: ConditionNode,
+        thenBranch: Either<ExpressionNode, Pair<ConditionNode, ExpressionNode>>,
+        elseBranch: ExpressionNode
+    ): String {
+        return when (condition) {
+            is ExpressionConditionNode -> when (thenBranch) {
+                is Either.Left ->
+                    "if (${visit(condition.expr)}) { ${
+                        visit(thenBranch.value)
+                    } } else { ${
+                        visit(elseBranch)
+                    } }"
+
+                is Either.Right -> {
+                    val rightCondition = thenBranch.value.first
+                    val expr = thenBranch.value.second
+                    "if (${visit(condition.expr)}) { ${
+                        processIfThenElseExpression(rightCondition, Either.Left(expr), elseBranch)
+                    } } else { ${
+                        visit(elseBranch)
+                    } }"
+                }
             }
-            is LiteralPattern -> {
-                "if (${visit(node.condExpr)}==${visit(node.pattern.expr)}) { ${
-                    visit(node.doExpr)
-                } } else { }"
+
+            is PatternMatchConditionNode -> when (condition.pattern) {
+                is TypePattern -> {
+                    val matchCode =
+                        "val ${condition.pattern.identifier.name} = ${visit(condition.condExpr)}.castOrNull<${
+                            condition.pattern.type.generateName()
+                        }>();$Wrap"
+                    when (thenBranch) {
+                        is Either.Left -> {
+                            "run{${matchCode}if (${
+                                condition.pattern.identifier.name
+                            } != null) { ${
+                                visit(thenBranch.value)
+                            } } else { ${
+                                visit(elseBranch)
+                            } }}"
+                        }
+
+                        is Either.Right -> {
+                            val rightCondition = thenBranch.value.first
+                            val expr = thenBranch.value.second
+                            "run{${matchCode}if (${
+                                condition.pattern.identifier.name
+                            } != null) { ${
+                                processIfThenElseExpression(rightCondition, Either.Left(expr), elseBranch)
+                            } } else { ${
+                                visit(elseBranch)
+                            } }}"
+                        }
+                    }
+                }
+
+                is IdentifierPattern -> when (thenBranch) {
+                    is Either.Left -> {
+                        "run{val ${condition.pattern.identifier} = ${visit(condition.condExpr)};$Wrap${
+                            visit(thenBranch.value)
+                        }}"
+                    }
+
+                    is Either.Right -> {
+                        val rightCondition = thenBranch.value.first
+                        val expr = thenBranch.value.second
+                        "run{val ${condition.pattern.identifier} = ${visit(condition.condExpr)};$Wrap${
+                            processIfThenElseExpression(rightCondition, Either.Left(expr), elseBranch)
+                        }}"
+                    }
+                }
+
+                is LiteralPattern -> when (thenBranch) {
+                    is Either.Left -> {
+                        "if (${visit(condition.condExpr)}==${visit(condition.pattern.expr)}) { ${
+                            visit(thenBranch.value)
+                        } } else { ${
+                            visit(elseBranch)
+                        } }"
+                    }
+
+                    is Either.Right -> {
+                        val rightCondition = thenBranch.value.first
+                        val expr = thenBranch.value.second
+                        "if (${visit(condition.condExpr)}==${visit(condition.pattern.expr)}) { ${
+                            processIfThenElseExpression(rightCondition, Either.Left(expr), elseBranch)
+                        } } else { ${
+                            visit(elseBranch)
+                        } }"
+                    }
+                }
+
+                is WildcardPattern -> when (thenBranch) {
+                    is Either.Left -> {
+                        "run{${visit(condition.condExpr)};$Wrap${visit(thenBranch.value)}}"
+                    }
+
+                    is Either.Right -> {
+                        val rightCondition = thenBranch.value.first
+                        val expr = thenBranch.value.second
+                        "run{${visit(condition.condExpr)};$Wrap${
+                            processIfThenElseExpression(rightCondition, Either.Left(expr), elseBranch)
+                        }}"
+                    }
+                }
             }
-            is WildcardPattern -> {
-                "run{${visit(node.condExpr)};$Wrap${visit(node.doExpr)}}"
+
+            is LogicalConditionNode -> when (condition.operator) {
+                LogicOperator.Or -> {
+                    println("the or condition can not has pattern")
+                    throw CompilingCheckException()
+                }
+
+                LogicOperator.And -> when (thenBranch) {
+                    is Either.Left -> {
+                        processIfThenElseExpression(
+                            condition.left,
+                            Either.Right(condition.right to thenBranch.value),
+                            elseBranch,
+                        )
+                    }
+
+                    is Either.Right -> {
+                        val rightCondition = thenBranch.value.first
+                        val expr = thenBranch.value.second
+                        processIfThenElseExpression(
+                            condition.left,
+                            Either.Right(
+                                LogicalConditionNode(
+                                    condition.right, rightCondition, condition.operator
+                                ) to expr
+                            ),
+                            elseBranch,
+                        )
+                    }
+                }
             }
         }
     }
@@ -415,11 +532,13 @@ class KotlinCodeGenerator : CodeGenerator<String> {
                     else -> name
                 }
             }
+
             is InterfaceType -> if (rawGenericsType != null) {
                 "${rawGenericsType.first}<${joinString(rawGenericsType.second) { it.generateName() }}>"
             } else {
                 name
             }
+
             else -> name
         }
     }

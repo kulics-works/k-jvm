@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    antlr("org.antlr:antlr4:4.11.1")
+    antlr("org.antlr:antlr4:4.12.0")
     implementation("org.javassist:javassist:3.28.0-GA")
     implementation(kotlin("stdlib-jdk8"))
 }

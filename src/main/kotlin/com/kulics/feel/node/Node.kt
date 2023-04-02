@@ -38,9 +38,7 @@ interface NodeVisitor<T> {
     fun visit(node: GenericsCallExpressionNode): T
     fun visit(node: MemberExpressionNode): T
     fun visit(node: IfThenElseExpressionNode): T
-    fun visit(node: IfThenElseMatchExpressionNode): T
     fun visit(node: IfDoExpressionNode): T
-    fun visit(node: IfDoMatchExpressionNode): T
     fun visit(node: CastExpressionNode): T
     fun visit(node: AssignmentExpressionNode): T
 }

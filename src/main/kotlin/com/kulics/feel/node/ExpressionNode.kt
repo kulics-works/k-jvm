@@ -25,10 +25,7 @@ enum class CalculativeOperator {
 }
 
 class CalculativeExpressionNode(
-    val lhs: ExpressionNode,
-    val rhs: ExpressionNode,
-    val operator: CalculativeOperator,
-    ty: Type
+    val lhs: ExpressionNode, val rhs: ExpressionNode, val operator: CalculativeOperator, ty: Type
 ) : ExpressionNode(ty) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)
@@ -40,9 +37,7 @@ enum class CompareOperator {
 }
 
 class CompareExpressionNode(
-    val lhs: ExpressionNode,
-    val rhs: ExpressionNode,
-    val operator: CompareOperator
+    val lhs: ExpressionNode, val rhs: ExpressionNode, val operator: CompareOperator
 ) : ExpressionNode(builtinTypeBool) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)
@@ -54,9 +49,7 @@ enum class LogicOperator {
 }
 
 class LogicExpressionNode(
-    val lhs: ExpressionNode,
-    val rhs: ExpressionNode,
-    val operator: LogicOperator
+    val lhs: ExpressionNode, val rhs: ExpressionNode, val operator: LogicOperator
 ) : ExpressionNode(builtinTypeBool) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)
@@ -71,9 +64,7 @@ class BlockExpressionNode(val stats: List<StatementNode>, val expr: ExpressionNo
 }
 
 class LambdaExpressionNode(
-    val parameterTypes: List<ParameterDeclarationNode>,
-    val returnType: Type,
-    val body: ExpressionNode
+    val parameterTypes: List<ParameterDeclarationNode>, val returnType: Type, val body: ExpressionNode
 ) : ExpressionNode(FunctionType(parameterTypes.map { it.paramType }, returnType)) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)
@@ -87,10 +78,7 @@ class CallExpressionNode(val expr: ExpressionNode, val args: List<ExpressionNode
 }
 
 class GenericsCallExpressionNode(
-    val expr: ExpressionNode,
-    val types: List<Type>,
-    val args: List<ExpressionNode>,
-    type: Type
+    val expr: ExpressionNode, val types: List<Type>, val args: List<ExpressionNode>, type: Type
 ) : ExpressionNode(type) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)
@@ -110,22 +98,7 @@ class CastExpressionNode(val expr: ExpressionNode, val targetType: Type) : Expre
 }
 
 class IfThenElseExpressionNode(
-    val condExpr: ExpressionNode,
-    val thenExpr: ExpressionNode,
-    val elseExpr: ExpressionNode,
-    ty: Type
-) : ExpressionNode(ty) {
-    override fun <T> accept(visitor: NodeVisitor<T>): T {
-        return visitor.visit(this)
-    }
-}
-
-class IfThenElseMatchExpressionNode(
-    val condExpr: ExpressionNode,
-    val pattern: Pattern,
-    val thenExpr: ExpressionNode,
-    val elseExpr: ExpressionNode,
-    ty: Type
+    val condition: ConditionNode, val thenExpr: ExpressionNode, val elseExpr: ExpressionNode, ty: Type
 ) : ExpressionNode(ty) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)
@@ -133,17 +106,7 @@ class IfThenElseMatchExpressionNode(
 }
 
 class IfDoExpressionNode(
-    val condExpr: ExpressionNode,
-    val doExpr: ExpressionNode,
-) : ExpressionNode(builtinTypeVoid) {
-    override fun <T> accept(visitor: NodeVisitor<T>): T {
-        return visitor.visit(this)
-    }
-}
-
-class IfDoMatchExpressionNode(
-    val condExpr: ExpressionNode,
-    val pattern: Pattern,
+    val condition: ConditionNode,
     val doExpr: ExpressionNode,
 ) : ExpressionNode(builtinTypeVoid) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
@@ -157,9 +120,18 @@ class WhileDoExpressionNode(val cond: ExpressionNode, val doExpr: ExpressionNode
     }
 }
 
+sealed class ConditionNode(val hasPattern: Boolean)
+
+class ExpressionConditionNode(val expr: ExpressionNode) : ConditionNode(false)
+
+class PatternMatchConditionNode(val condExpr: ExpressionNode, val pattern: Pattern) : ConditionNode(true)
+
+class LogicalConditionNode(
+    val left: ConditionNode, val right: ConditionNode, val operator: LogicOperator
+) : ConditionNode(left.hasPattern || right.hasPattern)
+
 class AssignmentExpressionNode(
-    val id: Identifier,
-    val newValue: ExpressionNode
+    val id: Identifier, val newValue: ExpressionNode
 ) : ExpressionNode(builtinTypeVoid) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)

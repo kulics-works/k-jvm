@@ -214,6 +214,38 @@ let literalPattern2(): Void = {
     };
 }
 
+let ifDoLogical(): Void = {
+    if true and true and true do {
+        localFunction()
+    }
+    if true or true or true do {
+        localFunction()
+    }
+    if true and true and true or true do {
+        localFunction()
+    }
+    let a = 1;
+    if a as 1 and a as 1 do {
+        localFunction()
+    }
+}
+
+let ifThenElseLogical(): Void = {
+    if true and true and true then {
+        localFunction()
+    } else { localFunction() }
+    if true or true or true then {
+        localFunction()
+    } else { localFunction() }
+    if true and true and true or true then {
+        localFunction()
+    } else { localFunction() }
+    let a = 1;
+    if a as 1 and a as 1 then {
+        localFunction()
+    } else { localFunction() };
+}
+
 let genericsFunction(T: Any)(a: T): T = {
     let b: T = a;
     b;

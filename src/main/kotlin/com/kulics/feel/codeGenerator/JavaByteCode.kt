@@ -243,10 +243,6 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         TODO("Not yet implemented")
     }
 
-    override fun visit(node: IfThenElseMatchExpressionNode): Any {
-        TODO("Not yet implemented")
-    }
-
     override fun visit(node: CastExpressionNode): Any {
         TODO("Not yet implemented")
     }
@@ -269,10 +265,6 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
     }
 
     override fun visit(node: IfDoExpressionNode): Any {
-        TODO("Not yet implemented")
-    }
-
-    override fun visit(node: IfDoMatchExpressionNode): Any {
         TODO("Not yet implemented")
     }
 }

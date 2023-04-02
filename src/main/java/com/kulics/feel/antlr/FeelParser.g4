@@ -74,7 +74,8 @@ expression
     | expression multiplicativeOperator expression
     | expression additiveOperator expression
     | expression compareOperator expression
-    | expression logicOperator expression
+    | expression logicAndOperator expression
+    | expression logicOrOperator expression
     | lambdaExpression
     ;
 
@@ -109,19 +110,19 @@ assignmentExpressionWithBlock: variableIdentifier Equal NewLine* expressionWithB
 lambdaExpression: Fn parameterList (Colon type)? Equal NewLine* expression;
 
 ifDoExpression
-    : If NewLine* expression (As NewLine* pattern)? Do NewLine* expression
+    : If NewLine* condition Do NewLine* expression
     ;
 
 ifDoExpressionWithBlock
-    : If NewLine* expression (As NewLine* pattern)? Do NewLine* expressionWithBlock
+    : If NewLine* condition Do NewLine* expressionWithBlock
     ;
 
 ifThenElseExpression
-    : If NewLine* expression (As NewLine* pattern)? Then NewLine* expression Else NewLine* expression
+    : If NewLine* condition Then NewLine* expression Else NewLine* expression
     ;
 
 ifThenElseExpressionWithBlock
-    : If NewLine* expression (As NewLine* pattern)? Then NewLine* expression Else NewLine* expressionWithBlock
+    : If NewLine* condition Then NewLine* expression Else NewLine* expressionWithBlock
     ;
 
 whileDoExpression
@@ -130,6 +131,13 @@ whileDoExpression
 
 whileDoExpressionWithBlock
     : While NewLine* expression Do NewLine* expressionWithBlock
+    ;
+
+condition
+    : expression (As NewLine* pattern)?
+    | condition And condition
+    | condition Or condition
+    | LeftParen NewLine* condition NewLine* RightParen
     ;
 
 blockExpression
@@ -208,6 +216,8 @@ multiplicativeOperator: (Mul | Div | Mod) NewLine?;
 
 additiveOperator: (Add | Sub)  NewLine?;
 
-logicOperator: (BitAnd | BitOr) NewLine?;
+logicAndOperator: BitAnd NewLine?;
+
+logicOrOperator: BitOr NewLine?;
 
 compareOperator: (Less | Greater | LessEqual | GreaterEqual | EqualEqual | NotEqual) NewLine?;
