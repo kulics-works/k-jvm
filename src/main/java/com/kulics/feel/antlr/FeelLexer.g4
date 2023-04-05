@@ -7,9 +7,6 @@ NotEqual: '!=';
 LessEqual: '<=';
 GreaterEqual: '>=';
 
-AndAnd: '&&';
-OrOr: '||';
-
 Dot: '.';
 Comma: ',';
 

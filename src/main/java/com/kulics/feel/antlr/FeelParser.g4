@@ -18,12 +18,12 @@ globalDeclaration
 globalVariableDeclaration
     : Let Mut? variableIdentifier (Colon type)? Equal NewLine* expressionWithTerminator;
 globalFunctionDeclaration
-    : Let variableIdentifier typeParameterList? parameterList (Colon type)? Equal NewLine* expressionWithTerminator;
-globalRecordDeclaration: Type typeIdentifier typeParameterList? fieldList (Colon type)? (SemiColon | With methodList);
-globalInterfaceDeclaration: Type typeIdentifier typeParameterList? (SemiColon | Equal NewLine* virtualMethodList);
-globalExtensionDeclaration: Given typeIdentifier typeParameterList? (Colon type)? With methodList SemiColon?;
+    : Let typeParameterList? variableIdentifier parameterList (Colon type)? Equal NewLine* expressionWithTerminator;
+globalRecordDeclaration: Type typeParameterList? typeIdentifier fieldList (Colon type)? (SemiColon | With methodList);
+globalInterfaceDeclaration: Type typeParameterList? typeIdentifier (SemiColon | Equal NewLine* virtualMethodList);
+globalExtensionDeclaration: Given typeParameterList? typeIdentifier (Colon type)? With methodList SemiColon?;
 globalSumTypeDeclaration
-    : Type typeIdentifier typeParameterList? Equal NewLine*
+    : Type typeParameterList? typeIdentifier Equal NewLine*
      LeftBrace NewLine* recordConstructor (Comma NewLine* recordConstructor)* NewLine* RightBrace SemiColon?;
 
 recordConstructor: typeIdentifier fieldList;
@@ -93,9 +93,8 @@ functionDeclaration
     : Let variableIdentifier parameterList (Colon type)? Equal NewLine* expressionWithTerminator;
 
 memberAccessCallSuffix
-    : NewLine? Dot variableIdentifier
-     (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)?
-      LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen;
+    : NewLine? Dot (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)?
+     variableIdentifier LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen;
 
 callSuffix
     : (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)?
@@ -190,7 +189,7 @@ literalExpression
     ;
 
 type
-    : typeIdentifier (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)?
+    : (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)? typeIdentifier
     | functionType
     ;
 
