@@ -307,18 +307,32 @@ class KotlinCodeGenerator : CodeGenerator<String> {
         }): ${node.returnType.generateName()} {${Wrap}return (${visit(node.body)});$Wrap}$Wrap "
     }
 
-    override fun visit(node: CallExpressionNode): String {
-        return "${visit(node.expr)}(${
-            joinString(node.args) { visit(it) }
-        })"
+    override fun visit(node: FunctionCallExpressionNode): String {
+        return if (node.types.isEmpty()) {
+            "${visit(node.expr)}(${
+                joinString(node.args) { visit(it) }
+            })"
+        } else {
+            "${visit(node.expr)}<${
+                joinString(node.types) { it.generateName() }
+            }> (${
+                joinString(node.args) { visit(it) }
+            })"
+        }
     }
 
-    override fun visit(node: GenericsCallExpressionNode): String {
-        return "${visit(node.expr)}<${
-            joinString(node.types) { it.generateName() }
-        }> (${
-            joinString(node.args) { visit(it) }
-        })"
+    override fun visit(node: ConstructCallExpressionNode): String {
+        return if (node.types.isEmpty()) {
+            "${node.id.name}(${
+                joinString(node.args) { visit(it) }
+            })"
+        } else {
+            "${node.id.name}<${
+                joinString(node.types) { it.generateName() }
+            }> (${
+                joinString(node.args) { visit(it) }
+            })"
+        }
     }
 
     override fun visit(node: MemberExpressionNode): String {
@@ -487,6 +501,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
                                     processConditionWithoutPattern(condition.right)
                                 }) { ${visit(thenBranch.value)} } else { ${visit(elseBranch)} }"
                             }
+
                             is Either.Right -> {
                                 val rightCondition = thenBranch.value.first
                                 val expr = thenBranch.value.second

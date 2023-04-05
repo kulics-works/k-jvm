@@ -225,13 +225,16 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         TODO("Not yet implemented")
     }
 
-    override fun visit(node: CallExpressionNode): String {
-        return "${visit(node.expr)}(${
-            joinString(node.args) { visit(it) as String }
-        })"
+    override fun visit(node: FunctionCallExpressionNode): Any {
+        if (node.types.isEmpty()) {
+            return "${visit(node.expr)}(${
+                joinString(node.args) { visit(it) as String }
+            })"
+        }
+        TODO("Not yet implemented")
     }
 
-    override fun visit(node: GenericsCallExpressionNode): Any {
+    override fun visit(node: ConstructCallExpressionNode): Any {
         TODO("Not yet implemented")
     }
 

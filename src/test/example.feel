@@ -277,7 +277,7 @@ let callGenericsFunction(): Int = genericsFunction(Int)(1);
 type (T1: Any, T2: Any)Pair(first: T1, second: T2);
 
 let genericsRecord(): Void = {
-    let a: (Int, Int)Pair = Pair(Int, Int)(1, 2);
+    let a: (Int, Int)Pair = (Int, Int)Pair(1, 2);
     a.first + a.second;
 }
 
@@ -286,8 +286,8 @@ type (T: Any)Some(value: T): (T)Option;
 type (T: Any)None(): (T)Option;
 
 let genericsEnum(): Int = {
-    let x: (Int)Option = Some(Int)(123);
-    let y: (Int)Option = Some(Int)(123);
+    let x: (Int)Option = (Int)Some(123);
+    let y: (Int)Option = (Int)Some(123);
     if x as v: (Int)Some then v.value else 0
 }
 
@@ -296,12 +296,12 @@ type (T: Any)ImplementType(): (T, Int)GenericsInterface;
 type (T: Any, R: Any)ImplementType2(): (R, T)GenericsInterface;
 
 let genericsSubtyping(): Void = {
-    let i: (Int, Int)GenericsInterface = ImplementType(Int)();
-    let j: (Int, Float)GenericsInterface = ImplementType2(Float, Int)();
+    let i: (Int, Int)GenericsInterface = (Int)ImplementType();
+    let j: (Int, Float)GenericsInterface = (Float, Int)ImplementType2();
 }
 
 let (E: Any)genericsSubtyping2(): Void = {
-    let i: (E, E)GenericsInterface = ImplementType2(E, E)();
+    let i: (E, E)GenericsInterface = (E, E)ImplementType2();
 }
 
 let array(): Void = {
@@ -367,10 +367,10 @@ let (T: (T)Eq)complicatedGenericsType(a: T, b: T): Bool = a.eq(b);
 
 let complicatedGenericsType2(): Void = {
     complicatedGenericsType(EqFoo)(EqFoo(), EqFoo());
-    let a = EqPair(EqFoo, EqFoo)(EqFoo(), EqFoo());
-    complicatedGenericsType(EqPair(EqFoo, EqFoo))(a, a);
+    let a = (EqFoo, EqFoo)EqPair(EqFoo(), EqFoo());
+    complicatedGenericsType((EqFoo, EqFoo)EqPair)(a, a);
     let b: ((EqFoo, EqFoo)EqPair)Eq = a;
-    let c: ((EqBar, EqBar)EqPair2)Eq = EqPair2(EqBar, EqBar)(EqBar(), EqBar());
+    let c: ((EqBar, EqBar)EqPair2)Eq = (EqBar, EqBar)EqPair2(EqBar(), EqBar());
 }
 
 let functionType(x: Int, f: (Int)-> Int): Int = f(x);

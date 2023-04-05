@@ -71,14 +71,16 @@ class LambdaExpressionNode(
     }
 }
 
-class CallExpressionNode(val expr: ExpressionNode, val args: List<ExpressionNode>, type: Type) : ExpressionNode(type) {
+class FunctionCallExpressionNode(
+    val expr: ExpressionNode, val types: List<Type>, val args: List<ExpressionNode>, type: Type
+) : ExpressionNode(type) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)
     }
 }
 
-class GenericsCallExpressionNode(
-    val expr: ExpressionNode, val types: List<Type>, val args: List<ExpressionNode>, type: Type
+class ConstructCallExpressionNode(
+    val id: Identifier, val types: List<Type>, val args: List<ExpressionNode>, type: Type
 ) : ExpressionNode(type) {
     override fun <T> accept(visitor: NodeVisitor<T>): T {
         return visitor.visit(this)

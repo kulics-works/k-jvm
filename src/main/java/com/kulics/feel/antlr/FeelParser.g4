@@ -177,7 +177,12 @@ literalPattern
 primaryExpression
     : literalExpression
     | variableIdentifier
-    | typeIdentifier
+    | constructExpression
+    ;
+
+constructExpression
+    : (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)? typeIdentifier
+        LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen
     ;
 
 literalExpression

@@ -34,8 +34,8 @@ interface NodeVisitor<T> {
     fun visit(node: LogicExpressionNode): T
     fun visit(node: BlockExpressionNode): T
     fun visit(node: LambdaExpressionNode): T
-    fun visit(node: CallExpressionNode): T
-    fun visit(node: GenericsCallExpressionNode): T
+    fun visit(node: FunctionCallExpressionNode): T
+    fun visit(node: ConstructCallExpressionNode): T
     fun visit(node: MemberExpressionNode): T
     fun visit(node: IfThenElseExpressionNode): T
     fun visit(node: IfDoExpressionNode): T
