@@ -212,6 +212,9 @@ fun DelegateVisitor.visitTypeParameter(ctx: TypeParameterContext): TypeParameter
     val idName = visitIdentifier(ctx.typeIdentifier())
     val typeParameter = TypeParameter(idName, builtinTypeAny)
     addType(typeParameter)
+    if (ctx.type() == null) {
+        return typeParameter
+    }
     return when (val typeNode = visitType(ctx.type())) {
         is FunctionTypeNode -> {
             println("the constraint type is not interface")

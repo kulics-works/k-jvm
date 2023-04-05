@@ -266,7 +266,7 @@ let whileDoLogical(): Void = {
     }
 }
 
-let (T: Any)genericsFunction(a: T): T = {
+let (T)genericsFunction(a: T): T = {
     let b: T = a;
     b;
     a
@@ -274,16 +274,16 @@ let (T: Any)genericsFunction(a: T): T = {
 
 let callGenericsFunction(): Int = genericsFunction(Int)(1);
 
-type (T1: Any, T2: Any)Pair(first: T1, second: T2);
+type (T1, T2)Pair(first: T1, second: T2);
 
 let genericsRecord(): Void = {
     let a: (Int, Int)Pair = (Int, Int)Pair(1, 2);
     a.first + a.second;
 }
 
-type (T: Any)Option;
-type (T: Any)Some(value: T): (T)Option;
-type (T: Any)None(): (T)Option;
+type (T)Option;
+type (T)Some(value: T): (T)Option;
+type (T)None(): (T)Option;
 
 let genericsEnum(): Int = {
     let x: (Int)Option = (Int)Some(123);
@@ -291,16 +291,16 @@ let genericsEnum(): Int = {
     if x as v: (Int)Some then v.value else 0
 }
 
-type (T1: Any, T2: Any)GenericsInterface;
-type (T: Any)ImplementType(): (T, Int)GenericsInterface;
-type (T: Any, R: Any)ImplementType2(): (R, T)GenericsInterface;
+type (T1, T2)GenericsInterface;
+type (T)ImplementType(): (T, Int)GenericsInterface;
+type (T, R)ImplementType2(): (R, T)GenericsInterface;
 
 let genericsSubtyping(): Void = {
     let i: (Int, Int)GenericsInterface = (Int)ImplementType();
     let j: (Int, Float)GenericsInterface = (Float, Int)ImplementType2();
 }
 
-let (E: Any)genericsSubtyping2(): Void = {
+let (E)genericsSubtyping2(): Void = {
     let i: (E, E)GenericsInterface = (E, E)ImplementType2();
 }
 
@@ -339,7 +339,7 @@ let instanceConstraint(): Void = {
     interfaceConstraint(C1)(C1());
 }
 
-type (T: Any)Eq = {
+type (T)Eq = {
     eq(other: T): Bool;
 }
 
@@ -357,7 +357,7 @@ type (T1: (T1)Eq, T2: (T2)Eq)EqPair(first: T1, second: T2): ((T1, T2)EqPair)Eq w
     eq(other: (T1, T2)EqPair): Bool = first.eq(other.first) & second.eq(other.second);
 }
 
-type (T1: Any, T2: Any)EqPair2(first: T1, second: T2);
+type (T1, T2)EqPair2(first: T1, second: T2);
 
 given (T1: (T1)Eq, T2: (T2)Eq)EqPair2: ((T1, T2)EqPair2)Eq with {
     eq(other: (T1, T2)EqPair2): Bool = first.eq(other.first) & second.eq(other.second);
