@@ -127,10 +127,6 @@ class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
         return delegate.visitMemberAccessCallSuffix(ctx)
     }
 
-    override fun visitCallSuffix(ctx: CallSuffixContext): Pair<List<Type>, List<ExpressionNode>> {
-        return delegate.visitCallSuffix(ctx)
-    }
-
     override fun visitMemberAccess(ctx: MemberAccessContext): String {
         return delegate.visitMemberAccess(ctx)
     }

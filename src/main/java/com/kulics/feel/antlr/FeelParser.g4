@@ -97,8 +97,8 @@ memberAccessCallSuffix
      variableIdentifier LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen;
 
 callSuffix
-    : (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)?
-     LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen;
+    : LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen
+    ;
 
 memberAccess: NewLine? Dot variableIdentifier;
 
@@ -176,13 +176,19 @@ literalPattern
 
 primaryExpression
     : literalExpression
-    | variableIdentifier
     | constructExpression
+    | functionCallExpression
+    | variableIdentifier
     ;
 
 constructExpression
     : (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)? typeIdentifier
         LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen
+    ;
+
+functionCallExpression
+    : (LeftParen NewLine* type (Comma NewLine* type)* NewLine* RightParen)? variableIdentifier
+              LeftParen NewLine* (expression (Comma NewLine* expression)*)? NewLine* RightParen
     ;
 
 literalExpression

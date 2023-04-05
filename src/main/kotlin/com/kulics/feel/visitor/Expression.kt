@@ -75,7 +75,7 @@ fun DelegateVisitor.visitMemberAccessFunctionCallExpression(
         MemberExpressionNode(expr, member)
     }
     val callExprNode = when (val memberType = memberAccessExpr.type) {
-        is FunctionType -> processFunctionCall(memberAccessExpr, typeArgs to args, memberType)
+        is FunctionType -> processFunctionCall(memberAccessExpr, args, memberType)
         is GenericsType -> processGenericsFunctionCall(memberAccessExpr, typeArgs to args, memberType)
         else -> {
             println("the type of expression is not a function")
@@ -89,10 +89,11 @@ fun DelegateVisitor.visitFunctionCallExpression(
     exprCtx: ExpressionContext, callCtx: CallSuffixContext
 ): ExpressionNode {
     val expr = visitExpression(exprCtx)
-    val callArgs = visitCallSuffix(callCtx)
     return when (val type = expr.type) {
-        is FunctionType -> processFunctionCall(expr, callArgs, type)
-        is GenericsType -> processGenericsFunctionCall(expr, callArgs, type)
+        is FunctionType -> {
+            processFunctionCall(expr, (callCtx.expression().map { visitExpression(it) }), type)
+        }
+
         else -> {
             println("the type of expression is not a function")
             throw CompilingCheckException()
@@ -101,23 +102,19 @@ fun DelegateVisitor.visitFunctionCallExpression(
 }
 
 private fun DelegateVisitor.processFunctionCall(
-    expr: ExpressionNode, callArgs: Pair<List<Type>, List<ExpressionNode>>, type: FunctionType
+    expr: ExpressionNode, callArgs: List<ExpressionNode>, type: FunctionType
 ): FunctionCallExpressionNode {
-    if (callArgs.first.isNotEmpty()) {
-        println("the type of expression is not a generics function")
-        throw CompilingCheckException()
-    }
-    if (type.parameterTypes.size != callArgs.second.size) {
-        println("the size of args is ${callArgs.second.size}, but need ${type.parameterTypes.size}")
+    if (type.parameterTypes.size != callArgs.size) {
+        println("the size of args is ${callArgs.size}, but need ${type.parameterTypes.size}")
         throw CompilingCheckException()
     }
     val argList = mutableListOf<ExpressionNode>()
     for ((i, v) in type.parameterTypes.withIndex()) {
-        if (cannotAssign(callArgs.second[i].type, v)) {
-            println("the type of args${i}: '${callArgs.second[i].type.name}' is not '${v.name}'")
+        if (cannotAssign(callArgs[i].type, v)) {
+            println("the type of args${i}: '${callArgs[i].type.name}' is not '${v.name}'")
             throw CompilingCheckException()
         }
-        argList.add(callArgs.second[i])
+        argList.add(callArgs[i])
     }
     return FunctionCallExpressionNode(expr, emptyList(), argList, type.returnType)
 }
@@ -292,12 +289,6 @@ fun DelegateVisitor.visitMemberAccessCallSuffix(ctx: MemberAccessCallSuffixConte
 
 data class MemberAccessCallSuffix(val memberName: String, val typeArgs: List<Type>, val args: List<ExpressionNode>)
 
-fun DelegateVisitor.visitCallSuffix(ctx: CallSuffixContext): Pair<List<Type>, List<ExpressionNode>> {
-    return (ctx.type().map {
-        checkTypeNode(visitType(it))
-    }) to (ctx.expression().map { visitExpression(it) })
-}
-
 fun DelegateVisitor.visitMemberAccess(ctx: MemberAccessContext): String {
     return visitIdentifier(ctx.variableIdentifier())
 }
@@ -313,6 +304,41 @@ fun DelegateVisitor.visitPrimaryExpression(ctx: PrimaryExpressionContext): Expre
             throw CompilingCheckException()
         } else {
             IdentifierExpressionNode(id)
+        }
+    } else if (ctx.functionCallExpression() != null) {
+        val callCtx = ctx.functionCallExpression()
+        val name = visitIdentifier(callCtx.variableIdentifier())
+        val id = getIdentifier(name)
+        return if (id == null) {
+            println("the identifier '${name}' is not define")
+            throw CompilingCheckException()
+        } else {
+            when (val type = id.type) {
+                is FunctionType -> {
+                    if (callCtx.type().isNotEmpty()) {
+                        println("the type is not a generics type")
+                        throw CompilingCheckException()
+                    }
+                    processFunctionCall(
+                        IdentifierExpressionNode(id),
+                        (callCtx.expression().map { visitExpression(it) }),
+                        type
+                    )
+                }
+
+                is GenericsType -> {
+                    processGenericsFunctionCall(IdentifierExpressionNode(id), (
+                            callCtx.type().map {
+                                checkTypeNode(visitType(it))
+                            } to callCtx.expression().map { visitExpression(it) }
+                            ), type)
+                }
+
+                else -> {
+                    println("the type of expression is not a function")
+                    throw CompilingCheckException()
+                }
+            }
         }
     } else {
         visitConstructExpression(ctx.constructExpression())

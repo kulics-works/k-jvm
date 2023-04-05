@@ -41,8 +41,8 @@ let semicolon(): Void = {
 }
 
 let call_id(): Void = {
-    let a = id(Int)(1);
-    let b = id(Float)(1.0);
+    let a = (Int)id(1);
+    let b = (Float)id(1.0);
 }
 
 let blockExpr1: Int = {
@@ -272,7 +272,7 @@ let (T)genericsFunction(a: T): T = {
     a
 }
 
-let callGenericsFunction(): Int = genericsFunction(Int)(1);
+let callGenericsFunction(): Int = (Int)genericsFunction(1);
 
 type (T1, T2)Pair(first: T1, second: T2);
 
@@ -305,8 +305,8 @@ let (E)genericsSubtyping2(): Void = {
 }
 
 let array(): Void = {
-    let mut a = emptyArray(Int)();
-    a = newArray(Int)(5, 5);
+    let mut a = (Int)emptyArray();
+    a = (Int)newArray(5, 5);
     let b = a.get(2);
     a.set(2, b);
 }
@@ -336,7 +336,7 @@ let (T: I2)interfaceConstraint(v: T): Void = {
 }
 
 let instanceConstraint(): Void = {
-    interfaceConstraint(C1)(C1());
+    (C1)interfaceConstraint(C1());
 }
 
 type (T)Eq = {
@@ -366,9 +366,9 @@ given (T1: (T1)Eq, T2: (T2)Eq)EqPair2: ((T1, T2)EqPair2)Eq with {
 let (T: (T)Eq)complicatedGenericsType(a: T, b: T): Bool = a.eq(b);
 
 let complicatedGenericsType2(): Void = {
-    complicatedGenericsType(EqFoo)(EqFoo(), EqFoo());
+    (EqFoo)complicatedGenericsType(EqFoo(), EqFoo());
     let a = (EqFoo, EqFoo)EqPair(EqFoo(), EqFoo());
-    complicatedGenericsType((EqFoo, EqFoo)EqPair)(a, a);
+    ((EqFoo, EqFoo)EqPair)complicatedGenericsType(a, a);
     let b: ((EqFoo, EqFoo)EqPair)Eq = a;
     let c: ((EqBar, EqBar)EqPair2)Eq = (EqBar, EqBar)EqPair2(EqBar(), EqBar());
 }
