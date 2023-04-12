@@ -1,6 +1,8 @@
 lexer grammar FeelLexer;
 
 Arrow: '->';
+DoubleArrow: '->>';
+FatArrow: '=>';
 
 EqualEqual: '==';
 NotEqual: '!=';
@@ -62,7 +64,6 @@ False: 'false';
 Type: 'type';
 With: 'with';
 Given: 'given';
-Fn: 'fn';
 
 FloatLiteral: Digit (Exponent | '.' Digit Exponent?);
 DecimalLiteral: Digit;

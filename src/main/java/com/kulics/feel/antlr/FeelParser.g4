@@ -106,7 +106,7 @@ assignmentExpression: variableIdentifier Equal NewLine* expression;
 
 assignmentExpressionWithBlock: variableIdentifier Equal NewLine* expressionWithBlock;
 
-lambdaExpression: Fn parameterList (Colon type)? Equal NewLine* expression;
+lambdaExpression: parameterList (Colon type)? FatArrow NewLine* expression;
 
 ifDoExpression
     : If NewLine* condition Do NewLine* expression
