@@ -38,8 +38,10 @@ Mul: '*';
 Div: '/';
 Mod: '%';
 
-BitAnd: '&';
-BitOr: '|';
+AndAnd: '&&';
+OrOr: '||';
+And: '&';
+Or: '|';
 Caret: '^';
 
 BackQuote: '`';
@@ -56,9 +58,8 @@ For: 'for';
 Do: 'do';
 Is: 'is';
 As: 'as';
-And: 'and';
-Or: 'or';
-Not: 'not';
+In: 'in';
+Case: 'case';
 True: 'true';
 False: 'false';
 Type: 'type';
