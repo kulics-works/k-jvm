@@ -1,6 +1,6 @@
-package com.kulics.feel.codeGenerator
+package com.kulics.k.codeGenerator
 
-import com.kulics.feel.node.*
+import com.kulics.k.node.*
 
 interface CodeGenerator<T> : NodeVisitor<T> {
     fun generateCode(filePath: String)

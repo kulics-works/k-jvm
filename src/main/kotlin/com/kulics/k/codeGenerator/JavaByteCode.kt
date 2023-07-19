@@ -1,7 +1,7 @@
-package com.kulics.feel.codeGenerator
+package com.kulics.k.codeGenerator
 
-import com.kulics.feel.node.*
-import com.kulics.feel.visitor.*
+import com.kulics.k.node.*
+import com.kulics.k.visitor.*
 import javassist.*
 
 class JavaByteCodeGenerator : CodeGenerator<Any> {
@@ -182,7 +182,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
         return when (node.type) {
             builtinTypeInt -> "(new com.feel.Int(${node.text}))"
             builtinTypeFloat -> "(new com.feel.Float(${node.text}))"
-            builtinTypeChar -> "(new com.feel.Char(${node.text}))"
+            builtinTypeRune -> "(new com.feel.Char(${node.text}))"
             builtinTypeString -> "(new com.feel.String(${node.text}))"
             builtinTypeBool -> "(new com.feel.Bool(${node.text}))"
             else -> ""
@@ -258,7 +258,7 @@ class JavaByteCodeGenerator : CodeGenerator<Any> {
                 builtinTypeInt -> "com.feel.Int"
                 builtinTypeFloat -> "com.feel.Float"
                 builtinTypeBool -> "com.feel.Bool"
-                builtinTypeChar -> "com.feel.Char"
+                builtinTypeRune -> "com.feel.Char"
                 builtinTypeString -> "com.feel.String"
                 else -> name
             }

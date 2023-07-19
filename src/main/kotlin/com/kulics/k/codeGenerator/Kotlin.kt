@@ -1,7 +1,7 @@
-package com.kulics.feel.codeGenerator
+package com.kulics.k.codeGenerator
 
-import com.kulics.feel.node.*
-import com.kulics.feel.visitor.*
+import com.kulics.k.node.*
+import com.kulics.k.visitor.*
 import java.io.File
 
 class KotlinCodeGenerator : CodeGenerator<String> {
@@ -573,7 +573,7 @@ class KotlinCodeGenerator : CodeGenerator<String> {
                     builtinTypeInt -> "Int"
                     builtinTypeFloat -> "Double"
                     builtinTypeBool -> "Boolean"
-                    builtinTypeChar -> "Char"
+                    builtinTypeRune -> "Char"
                     builtinTypeString -> "String"
                     else -> name
                 }

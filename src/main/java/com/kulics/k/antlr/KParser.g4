@@ -1,6 +1,6 @@
-parser grammar FeelParser;
+parser grammar KParser;
 
-options { tokenVocab=FeelLexer; }
+options { tokenVocab=KLexer; }
 
 program: moduleDeclaration NewLine* (NewLine* globalDeclaration NewLine*)* NewLine* EOF;
 
@@ -194,7 +194,7 @@ functionCallExpression
 literalExpression
     : integerExpression
     | floatExpression
-    | characterExpression
+    | runeExpression
     | stringExpression
     | boolExpression
     ;
@@ -214,7 +214,7 @@ variableIdentifier: LowerIdentifier;
 
 stringExpression: StringLiteral;
 
-characterExpression: CharLiteral;
+runeExpression: RuneLiteral;
 
 floatExpression: FloatLiteral;
 

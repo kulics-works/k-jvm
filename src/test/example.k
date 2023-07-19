@@ -16,7 +16,7 @@ let myTrue: Bool = true;
 
 let myFalse: Bool = false;
 
-let chr: Char = 'c';
+let chr: Rune = 'c';
 
 let str: String = "Hello, world!";
 

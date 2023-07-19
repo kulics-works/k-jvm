@@ -1,7 +1,7 @@
-package com.kulics.feel.visitor
+package com.kulics.k.visitor
 
-import com.kulics.feel.grammar.FeelParser.*
-import com.kulics.feel.node.*
+import com.kulics.k.grammar.KParser.*
+import com.kulics.k.node.*
 
 fun DelegateVisitor.visitStatement(ctx: StatementContext): StatementNode {
     return when (val stat = ctx.getChild(0)) {

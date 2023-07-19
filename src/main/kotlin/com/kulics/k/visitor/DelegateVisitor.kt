@@ -1,4 +1,4 @@
-package com.kulics.feel.visitor
+package com.kulics.k.visitor
 
 class DelegateVisitor {
     private val implementMap = mutableMapOf<Type, MutableSet<Type>>()
@@ -10,7 +10,7 @@ class DelegateVisitor {
             addType(builtinTypeInt)
             addType(builtinTypeFloat)
             addType(builtinTypeBool)
-            addType(builtinTypeChar)
+            addType(builtinTypeRune)
             addType(builtinTypeString)
             addType(builtinTypeArray)
             addIdentifier(builtinIdentifierNewArray)
@@ -19,7 +19,7 @@ class DelegateVisitor {
             addImplementType(builtinTypeInt, builtinTypeAny)
             addImplementType(builtinTypeFloat, builtinTypeAny)
             addImplementType(builtinTypeBool, builtinTypeAny)
-            addImplementType(builtinTypeChar, builtinTypeAny)
+            addImplementType(builtinTypeRune, builtinTypeAny)
             addImplementType(builtinTypeString, builtinTypeAny)
             addImplementType(builtinTypeArray, builtinTypeAny)
         })
