@@ -1,7 +1,7 @@
-package com.kulics.feel.node
+package com.kulics.k.node
 
-import com.kulics.feel.visitor.Identifier
-import com.kulics.feel.visitor.Type
+import com.kulics.k.visitor.Identifier
+import com.kulics.k.visitor.Type
 
 sealed class StatementNode : Node()
 

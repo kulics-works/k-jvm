@@ -1,7 +1,7 @@
-package com.kulics.feel.visitor
+package com.kulics.k.visitor
 
-import com.kulics.feel.grammar.FeelParser.*
-import com.kulics.feel.node.ExpressionNode
+import com.kulics.k.grammar.KParser.*
+import com.kulics.k.node.ExpressionNode
 
 fun DelegateVisitor.visitPattern(ctx: PatternContext): Pattern {
     return when (val pattern = ctx.getChild(0)) {

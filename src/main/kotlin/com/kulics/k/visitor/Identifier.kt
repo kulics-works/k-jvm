@@ -1,12 +1,12 @@
-package com.kulics.feel.visitor
+package com.kulics.k.visitor
 
-import com.kulics.feel.grammar.FeelParser
+import com.kulics.k.grammar.KParser.*
 
-fun visitIdentifier(ctx: FeelParser.VariableIdentifierContext): String {
+fun visitIdentifier(ctx: VariableIdentifierContext): String {
     return ctx.LowerIdentifier().text
 }
 
-fun visitIdentifier(ctx: FeelParser.TypeIdentifierContext): String {
+fun visitIdentifier(ctx: TypeIdentifierContext): String {
     return ctx.UpperIdentifier().text
 }
 

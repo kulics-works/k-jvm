@@ -1,10 +1,10 @@
-package com.kulics.feel.visitor
+package com.kulics.k.visitor
 
 import org.antlr.v4.runtime.BaseErrorListener
 import org.antlr.v4.runtime.RecognitionException
 import org.antlr.v4.runtime.Recognizer
 
-class FeelErrorListener : BaseErrorListener() {
+class KErrorListener : BaseErrorListener() {
     override fun syntaxError(
         recognizer: Recognizer<*, *>?,
         offendingSymbol: Any?,

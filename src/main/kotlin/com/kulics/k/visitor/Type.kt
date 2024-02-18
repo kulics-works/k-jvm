@@ -1,6 +1,6 @@
-package com.kulics.feel.visitor
+package com.kulics.k.visitor
 
-import com.kulics.feel.grammar.FeelParser.*
+import com.kulics.k.grammar.KParser.*
 
 sealed class Type {
     abstract val name: String
@@ -26,7 +26,7 @@ val builtinTypeVoid = RecordType("Void", mutableMapOf(), "Unit")
 val builtinTypeInt = RecordType("Int", mutableMapOf(), "Int")
 val builtinTypeFloat = RecordType("Float", mutableMapOf(), "Double")
 val builtinTypeBool = RecordType("Bool", mutableMapOf(), "Boolean")
-val builtinTypeChar = RecordType("Char", mutableMapOf(), "Char")
+val builtinTypeRune = RecordType("Rune", mutableMapOf(), "Rune")
 val builtinTypeString = RecordType("String", mutableMapOf(), "String")
 val builtinTypeArray = run {
     val typeParameter = TypeParameter("T", builtinTypeAny)

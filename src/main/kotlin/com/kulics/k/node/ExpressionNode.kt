@@ -1,6 +1,6 @@
-package com.kulics.feel.node
+package com.kulics.k.node
 
-import com.kulics.feel.visitor.*
+import com.kulics.k.visitor.*
 
 sealed class ExpressionNode(val type: Type) : Node() {
     override fun <T> accept(visitor: NodeVisitor<T>): T {

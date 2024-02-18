@@ -1,6 +1,6 @@
-package com.kulics.feel.node
+package com.kulics.k.node
 
-import com.kulics.feel.visitor.*
+import com.kulics.k.visitor.*
 
 sealed class DeclarationNode : Node()
 

@@ -1,6 +1,6 @@
-package com.kulics.feel.node
+package com.kulics.k.node
 
-import com.kulics.feel.visitor.CompilingCheckException
+import com.kulics.k.visitor.CompilingCheckException
 
 sealed class Node {
     open fun <T> accept(visitor: NodeVisitor<T>): T {

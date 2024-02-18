@@ -1,7 +1,7 @@
-package com.kulics.feel.visitor
+package com.kulics.k.visitor
 
-import com.kulics.feel.grammar.FeelParser.*
-import com.kulics.feel.node.*
+import com.kulics.k.grammar.KParser.*
+import com.kulics.k.node.*
 import org.antlr.v4.runtime.tree.ParseTree
 
 fun DelegateVisitor.visitExpressionWithTerminator(ctx: ExpressionWithTerminatorContext): ExpressionNode {
@@ -443,8 +443,8 @@ fun DelegateVisitor.visitLiteralExpression(ctx: LiteralExpressionContext): Expre
         LiteralExpressionNode(ctx.integerExpression().text, builtinTypeInt)
     } else if (ctx.floatExpression() != null) {
         LiteralExpressionNode(ctx.floatExpression().text, builtinTypeFloat)
-    } else if (ctx.characterExpression() != null) {
-        LiteralExpressionNode(ctx.characterExpression().text, builtinTypeChar)
+    } else if (ctx.runeExpression() != null) {
+        LiteralExpressionNode(ctx.runeExpression().text, builtinTypeRune)
     } else if (ctx.boolExpression() != null) {
         LiteralExpressionNode(ctx.boolExpression().text, builtinTypeBool)
     } else {

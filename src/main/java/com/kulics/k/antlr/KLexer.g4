@@ -1,4 +1,4 @@
-lexer grammar FeelLexer;
+lexer grammar KLexer;
 
 Arrow: '->';
 DoubleArrow: '->>';
@@ -74,7 +74,7 @@ HexLiteral: '0' [xX] [a-fA-F0-9_]* [a-fA-F0-9];
 fragment Digit: [0-9] | [0-9] [0-9_]* [0-9];
 fragment Exponent: [eE] [+-]? [0-9]+;
 
-CharLiteral: '\'' ('\\\'' | '\\' [btnfr\\] | .)*? '\'';
+RuneLiteral: '\'' ('\\\'' | '\\' [btnfr\\] | .)*? '\'';
 StringLiteral: '"' ('\\' [btnfr"\\] | ~('\\' | '"' )+)* '"';
 UpperIdentifier: [A-Z] [0-9a-zA-Z_]*;
 LowerIdentifier: [a-z] [0-9a-zA-Z_]*;

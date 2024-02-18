@@ -1,10 +1,10 @@
-package com.kulics.feel.visitor
+package com.kulics.k.visitor
 
-import com.kulics.feel.grammar.FeelParser.*
-import com.kulics.feel.grammar.FeelParserBaseVisitor
-import com.kulics.feel.node.*
+import com.kulics.k.grammar.KParser.*
+import com.kulics.k.grammar.KParserBaseVisitor
+import com.kulics.k.node.*
 
-class FeelLangVisitor : FeelParserBaseVisitor<Any>() {
+class KLangVisitor : KParserBaseVisitor<Any>() {
     private val delegate = DelegateVisitor()
 
     override fun visitVariableIdentifier(ctx: VariableIdentifierContext): String {
