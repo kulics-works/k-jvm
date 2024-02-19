@@ -1,7 +1,6 @@
 lexer grammar KLexer;
 
 Arrow: '->';
-DoubleArrow: '->>';
 FatArrow: '=>';
 
 EqualEqual: '==';

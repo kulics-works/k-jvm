@@ -141,7 +141,7 @@ let makeIntList() IntList = {
 }
 
 let sumIntList(li IntList) Int =
-    if case v: Cons in li then {
+    if li is v Cons then {
         v.head + sumIntList(v.tail)
     } else {
         0
@@ -150,7 +150,7 @@ let sumIntList(li IntList) Int =
 let typePattern() Void = {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
     let i =
-        if case v: Cons in li then {
+        if li is v Cons then {
             v.head
         } else {
             0
@@ -159,7 +159,7 @@ let typePattern() Void = {
 
 let typePattern2() Void = {
     let li IntList = Cons(1, Cons(2, Cons(3, Nil())));
-    if case v: Cons in li then {
+    if li is v Cons then {
         v.head
     } else {
         0
@@ -168,14 +168,14 @@ let typePattern2() Void = {
 
 let identifierPattern() Int = {
     let a = 1;
-    if case a in a then 123 else 123
+    if a is a then 123 else 123
 }
 
 let identifierPattern2() Void = {
     let a = 1;
-    if case a in a then {
+    if a is a then {
         localFunction()
-    } else if case a in b then {
+    } else if b is a then {
         localFunction()
     } else {
         localFunction()
@@ -184,14 +184,14 @@ let identifierPattern2() Void = {
 
 let wildcardPattern() Int = {
     let a = 1;
-    if case _ in a then 123 else 123
+    if a is _ then 123 else 123
 }
 
 let wildcardPattern2() Void = {
     let a = 1;
-    if case _ in a then {
+    if a is _ then {
         localFunction()
-    } else if case _ in a then {
+    } else if a is _ then {
         localFunction()
     } else {
         localFunction()
@@ -200,14 +200,14 @@ let wildcardPattern2() Void = {
 
 let literalPattern() Int = {
     let a = 1;
-    if case 1 in a then 123 else 123
+    if a is 1 then 123 else 123
 }
 
 let literalPattern2() Void = {
     let a = 1;
-    if case 1 in a then {
+    if a is 1 then {
         localFunction()
-    } else if case 1 in a then {
+    } else if a is 1 then {
         localFunction()
     } else {
         localFunction()
@@ -225,13 +225,13 @@ let ifDoLogical() Void = {
         localFunction()
     }
     let a = 1;
-    if case 1 in a && case 1 in a do {
+    if a is 1 && a is 1 do {
         localFunction()
     }
-    if case 1 in a && case 1 in a && (true || true && true) do {
+    if a is 1 && a is 1 && (true || true && true) do {
         localFunction()
     }
-    if (true || false) && case 1 in a do {}
+    if (true || false) && a is 1 do {}
 }
 
 let ifThenElseLogical() Void = {
@@ -245,7 +245,7 @@ let ifThenElseLogical() Void = {
         localFunction()
     } else { localFunction() }
     let a = 1;
-    if case 1 in a && case 1 in a then {
+    if a is 1 && a is 1 then {
         localFunction()
     } else { localFunction() };
 }
@@ -261,7 +261,7 @@ let whileDoLogical() Void = {
         localFunction()
     }
     let a = 1;
-    while case 1 in a && case 1 in a do {
+    while a is 1 && a is 1 do {
         localFunction()
     }
 }
@@ -288,7 +288,7 @@ type None(T)(): Option(T);
 let genericsEnum() Int = {
     let x Option(Int) = Some(Int)(123);
     let y Option(Int) = Some(Int)(123);
-    if case v: Some(Int) in x then v.value else 0
+    if x is v Some(Int) then v.value else 0
 }
 
 type GenericsInterface(T1, T2);

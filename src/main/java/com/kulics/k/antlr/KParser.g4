@@ -133,7 +133,7 @@ whileDoExpressionWithBlock
     ;
 
 condition
-    : (Case NewLine* pattern In NewLine*)? expression
+    : expression (Is NewLine* pattern NewLine*)?
     | condition AndAnd condition
     | condition OrOr condition
     | LeftParen NewLine* condition NewLine* RightParen
@@ -153,8 +153,8 @@ pattern
     ;
 
 typePattern
-    : identifierPattern Colon type
-    | wildcardPattern Colon type
+    : identifierPattern type
+    | wildcardPattern type
     | type deconstructPattern
     ;
 
