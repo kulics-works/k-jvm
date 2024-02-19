@@ -134,8 +134,8 @@ whileDoExpressionWithBlock
 
 condition
     : expression (Is NewLine* pattern NewLine*)?
-    | condition AndAnd condition
-    | condition OrOr condition
+    | condition And condition
+    | condition Or condition
     | LeftParen NewLine* condition NewLine* RightParen
     ;
 
@@ -226,8 +226,8 @@ multiplicativeOperator: (Mul | Div | Mod) NewLine?;
 
 additiveOperator: (Add | Sub)  NewLine?;
 
-logicAndOperator: And NewLine?;
+logicAndOperator: BitAnd NewLine?;
 
-logicOrOperator: Or NewLine?;
+logicOrOperator: BitOr NewLine?;
 
 compareOperator: (Less | Greater | LessEqual | GreaterEqual | EqualEqual | NotEqual) NewLine?;

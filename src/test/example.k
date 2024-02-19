@@ -215,53 +215,53 @@ let literalPattern2() Void = {
 }
 
 let ifDoLogical() Void = {
-    if true && true && true do {
+    if true and true and true do {
         localFunction()
     }
-    if true || true || true do {
+    if true or true or true do {
         localFunction()
     }
-    if true && true && true || true do {
+    if true and true and true or true do {
         localFunction()
     }
     let a = 1;
-    if a is 1 && a is 1 do {
+    if a is 1 and a is 1 do {
         localFunction()
     }
-    if a is 1 && a is 1 && (true || true && true) do {
+    if a is 1 and a is 1 and (true or true and true) do {
         localFunction()
     }
-    if (true || false) && a is 1 do {}
+    if (true or false) and a is 1 do {}
 }
 
 let ifThenElseLogical() Void = {
-    if true && true && true then {
+    if true and true and true then {
         localFunction()
     } else { localFunction() }
-    if true || true || true then {
+    if true or true or true then {
         localFunction()
     } else { localFunction() }
-    if true && true && true || true then {
+    if true and true and true or true then {
         localFunction()
     } else { localFunction() }
     let a = 1;
-    if a is 1 && a is 1 then {
+    if a is 1 and a is 1 then {
         localFunction()
     } else { localFunction() };
 }
 
 let whileDoLogical() Void = {
-    while true && true && true do {
+    while true and true and true do {
         localFunction()
     }
-    while true || true || true do {
+    while true or true or true do {
         localFunction()
     }
-    while true && true && true || true do {
+    while true and true and true or true do {
         localFunction()
     }
     let a = 1;
-    while a is 1 && a is 1 do {
+    while a is 1 and a is 1 do {
         localFunction()
     }
 }

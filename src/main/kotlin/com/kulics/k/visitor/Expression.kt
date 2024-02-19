@@ -533,11 +533,11 @@ fun DelegateVisitor.visitCondition(
             }
             ExpressionConditionNode(exprNode)
         }
-    } else if (cond.AndAnd() != null) {
+    } else if (cond.And() != null) {
         val l = visitCondition(cond.condition(0))
         val r = visitCondition(cond.condition(1))
         LogicalConditionNode(l, r, LogicOperator.And)
-    } else if (cond.OrOr() != null) {
+    } else if (cond.Or() != null) {
         val l = visitCondition(cond.condition(0))
         val r = visitCondition(cond.condition(1))
         if (l.hasPattern || r.hasPattern) {
