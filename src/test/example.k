@@ -374,6 +374,6 @@ let complicatedGenericsType2() Void = {
 }
 
 let functionType(x Int, f fn(x Int) Int) Int = f(x);
-let lambdaExpression() Int = functionType(1, (a Int) => a);
-let lambdaExpression2() Int = functionType(1, (b Int) Int => b);
+let lambdaExpression() Int = functionType(1, (a Int) -> a);
+let lambdaExpression2() Int = functionType(1, (b Int) Int -> b);
 

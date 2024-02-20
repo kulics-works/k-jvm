@@ -106,7 +106,7 @@ assignmentExpression: variableIdentifier Equal NewLine* expression;
 
 assignmentExpressionWithBlock: variableIdentifier Equal NewLine* expressionWithBlock;
 
-lambdaExpression: parameterList (type)? FatArrow NewLine* expression;
+lambdaExpression: parameterList (type)? Arrow NewLine* expression;
 
 ifDoExpression
     : If NewLine* condition Do NewLine* expression
