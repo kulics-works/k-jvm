@@ -216,14 +216,14 @@ fun DelegateVisitor.visitType(ctx: TypeContext): TypeNode {
 
 fun DelegateVisitor.visitFunctionType(ctx: FunctionTypeContext): FunctionTypeNode {
     return FunctionTypeNode(
-        visitParameterTypeList(ctx.parameterTypeList()),
+        visitParameterTypeList(ctx.parameterList()),
         visitType(ctx.type())
     )
 }
 
-fun DelegateVisitor.visitParameterTypeList(ctx: ParameterTypeListContext?): List<TypeNode> {
-    return ctx?.type()?.map {
-        visitType(it)
+fun DelegateVisitor.visitParameterTypeList(ctx: ParameterListContext?): List<TypeNode> {
+    return ctx?.parameter()?.map {
+        visitType(it.type())
     } ?: listOf()
 }
 

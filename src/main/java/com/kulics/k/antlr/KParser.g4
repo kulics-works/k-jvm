@@ -30,15 +30,15 @@ recordConstructor: typeIdentifier fieldList;
 
 typeParameterList: LeftParen NewLine* typeParameter (Comma NewLine* typeParameter)* NewLine* RightParen;
 
-typeParameter: typeIdentifier (type)?;
+typeParameter: typeIdentifier type;
 
 parameterList: LeftParen NewLine* (parameter (Comma NewLine* parameter)*)? NewLine* RightParen;
 
-parameter: variableIdentifier (type)?;
+parameter: variableIdentifier type;
 
 fieldList: LeftParen NewLine* (field (Comma NewLine* field)*)? NewLine* RightParen;
 
-field: Mut? variableIdentifier (type)?;
+field: Mut? variableIdentifier type;
 
 methodList: LeftBrace NewLine* (NewLine* method NewLine*)* NewLine* RightBrace;
 
@@ -204,9 +204,7 @@ type
     | functionType
     ;
 
-functionType: LeftParen NewLine* parameterTypeList? NewLine* RightParen Arrow type;
-
-parameterTypeList: type (Comma NewLine* type)*;
+functionType: Fn parameterList type;
 
 typeIdentifier: UpperIdentifier;
 

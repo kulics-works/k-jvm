@@ -266,7 +266,7 @@ let whileDoLogical() Void = {
     }
 }
 
-let genericsFunction(T)(a T) T = {
+let genericsFunction(T Any)(a T) T = {
     let b T = a;
     b;
     a
@@ -274,16 +274,16 @@ let genericsFunction(T)(a T) T = {
 
 let callGenericsFunction() Int = genericsFunction(Int)(1);
 
-type Pair(T1, T2)(first T1, second T2);
+type Pair(T1 Any, T2 Any)(first T1, second T2);
 
 let genericsRecord() Void = {
     let a Pair(Int, Int) = Pair(Int, Int)(1, 2);
     a.first + a.second;
 }
 
-type Option(T);
-type Some(T)(value T): Option(T);
-type None(T)(): Option(T);
+type Option(T Any);
+type Some(T Any)(value T): Option(T);
+type None(T Any)(): Option(T);
 
 let genericsEnum() Int = {
     let x Option(Int) = Some(Int)(123);
@@ -291,16 +291,16 @@ let genericsEnum() Int = {
     if x is v Some(Int) then v.value else 0
 }
 
-type GenericsInterface(T1, T2);
-type ImplementType(T)(): GenericsInterface(T, Int);
-type ImplementType2(T, R)(): GenericsInterface(R, T);
+type GenericsInterface(T1 Any, T2 Any);
+type ImplementType(T Any)(): GenericsInterface(T, Int);
+type ImplementType2(T Any, R Any)(): GenericsInterface(R, T);
 
 let genericsSubtyping() Void = {
     let i GenericsInterface(Int, Int) = ImplementType(Int)();
     let j GenericsInterface(Int, Float) = ImplementType2(Float, Int)();
 }
 
-let genericsSubtyping2(E)() Void = {
+let genericsSubtyping2(E Any)() Void = {
     let i GenericsInterface(E, E) = ImplementType2(E, E)();
 }
 
@@ -339,7 +339,7 @@ let instanceConstraint() Void = {
     interfaceConstraint(C1)(C1());
 }
 
-type Eq(T) = {
+type Eq(T Any) = {
     eq(other T) Bool;
 }
 
@@ -357,7 +357,7 @@ type EqPair(T1 Eq(T1), T2 Eq(T2))(first T1, second T2): Eq(EqPair(T1, T2)) with 
     eq(other EqPair(T1, T2)) Bool = first.eq(other.first) & second.eq(other.second);
 }
 
-type EqPair2(T1, T2)(first T1, second T2);
+type EqPair2(T1 Any, T2 Any)(first T1, second T2);
 
 given EqPair2(T1 Eq(T1), T2 Eq(T2)): Eq(EqPair2(T1, T2)) with {
     eq(other EqPair2(T1, T2)) Bool = first.eq(other.first) & second.eq(other.second);
@@ -373,7 +373,7 @@ let complicatedGenericsType2() Void = {
     let c Eq(EqPair2(EqBar, EqBar)) = EqPair2(EqBar, EqBar)(EqBar(), EqBar());
 }
 
-let functionType(x Int, f (Int)-> Int) Int = f(x);
+let functionType(x Int, f fn(x Int) Int) Int = f(x);
 let lambdaExpression() Int = functionType(1, (a Int) => a);
 let lambdaExpression2() Int = functionType(1, (b Int) Int => b);
 

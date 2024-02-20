@@ -151,10 +151,6 @@ class KLangVisitor : KParserBaseVisitor<Any>() {
         return delegate.visitFunctionType(ctx)
     }
 
-    override fun visitParameterTypeList(ctx: ParameterTypeListContext): List<TypeNode> {
-        return delegate.visitParameterTypeList(ctx)
-    }
-
     override fun visitProgram(ctx: ProgramContext): ProgramNode {
         return delegate.visitProgram(ctx)
     }

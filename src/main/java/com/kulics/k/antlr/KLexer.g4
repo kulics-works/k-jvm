@@ -59,12 +59,14 @@ Not: 'not';
 Is: 'is';
 As: 'as';
 In: 'in';
+Out: 'out';
 Case: 'case';
 True: 'true';
 False: 'false';
 Type: 'type';
 With: 'with';
 Given: 'given';
+Fn: 'fn';
 
 FloatLiteral: Digit (Exponent | '.' Digit Exponent?);
 DecimalLiteral: Digit;
